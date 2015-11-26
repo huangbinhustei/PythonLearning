@@ -4,12 +4,12 @@
 def str2list(temp):
     out_put = []
     while len(temp) > 0:
-    sym = [temp.find("+"), temp.find("-"), temp.find("*"), temp.find("/")]
+        sym = [temp.find("+"), temp.find("-"), temp.find("*"), temp.find("/")]
+        if sym[1] == 0:
+            sym[1] = temp.find("-", 1)
         for i in range(len(sym)):
             if sym[i] < 0:
                 sym[i] = 1000
-        if sym[1] == 0:
-            sym[1] = temp.find("+", 1)
         fir = min(sym)
         if fir == 1000:
             out_put.append(temp)
@@ -24,9 +24,10 @@ def str2list(temp):
 def calc(first_in, second_in, char):
     first_number = float(first_in)
     second_number = float(second_in)
-    if second_number == 0:
-        return {"+": first_number + second_number, "-": first_number - second_number, "*": first_number * second_number}[char]
-    return {"+": first_number + second_number, "-": first_number - second_number, "*": first_number * second_number,"/": first_number / second_number}[char]
+    if second_number == 0 and char == "/":
+        raise ZeroDivisionError('ZeroDivisionError')
+    return {"+": first_number + second_number, "-": first_number - second_number, "*": first_number * second_number,
+            "/": first_number / second_number}[char]
 
 
 def is_formula_first(char_formula, char_symbol):
