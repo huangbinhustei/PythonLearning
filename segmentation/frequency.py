@@ -1,52 +1,43 @@
 import heapq
 import os
-stopwords = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))  + "/DATA/stopwords/stopwords_for_game_name.txt"
+from contextlib import closing
+from collections import defaultdict
+
+stopwords = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), os.pardir)) + "/DATA/stopwords/stopwords_for_game_name.txt"
 
 with open(stopwords, "r", encoding="utf-8") as txt111:
     go_away_top = txt111.read()
+    stop_words = set(go_away_top)
+
+go_away_next = ",.!?<>() []{}，。！？《》（）-_+-*—\n/n第关升"
 
 
-def top(loc, top=10):
+def top(loc, medal=10):
+    counter = defaultdict(lambda: 0)
+    with closing(open(loc, 'r', encoding='utf-8')) as f:
+        for line in f:
+            for cell in line.strip():
+                if cell in stop_words:
+                    continue
+                counter[cell] += 1
+    temp1 = dict((k, v) for k, v in counter.items() if v > medal)
+    temp = heapq.nlargest(len(temp1), temp1.items(), lambda x: x[1])
+    return temp
+
+
+def find_next(loc, str_group, medal2=10, reverse=False):
+    counts = defaultdict(lambda: 0)
+    target = str_group
     with open(loc, "r", encoding="utf-8") as txt:
-        contain = txt.readlines()
-
-    count = []
-    sku_top = []
-    for row in contain:
-        for cell in row.strip():
-            if go_away_top.count(cell) != 0:
-                continue
-            if sku_top.count(cell) == 0:
-                sku_top.append(cell)
-                count.append(1)
-            else:
-                count[sku_top.index(cell)] += 1
-
-    next_final = list(map(lambda x, y: [x, y], sku_top, count))
-    for_print = sorted(next_final, key=lambda a: a[1], reverse=True)
-    return for_print[:top]
-
-
-go_away_next = ",.!?<>() []{}，。！？《》（）\n"
-
-
-def find_next(loc, str_group, top=10):
-    with open(loc, "r", encoding="utf-8") as txt:
-        contain = txt.read().strip("")
-        count_next = []
-        sku_next = []
-        target = str_group
-        while contain.count(target) > 0:
-            idx = contain.index(target)
-            contain = contain[idx + len(target):]
-            this_next = contain[:1]
+        contain = txt.read().strip()
+        cc = list(contain.split(target))
+        if reverse:
+            dd = map(lambda t: t[-1:], cc)
+        else:
+            dd = map(lambda t: t[:1], cc)  # 取第一个字符
+        for this_next in dd:
             if go_away_next.count(this_next) != 0:
                 continue
-            if sku_next.count(this_next) == 0:
-                sku_next.append(this_next)
-                count_next.append(1)
-            else:
-                count_next[sku_next.index(this_next)] += 1
-
-        next_final = list(map(lambda x, y: [x, y], sku_next, count_next))
-        return heapq.nlargest(top, next_final, lambda t: t[1])
+            counts[this_next] += 1
+    return heapq.nlargest(medal2, counts.items(), lambda x: x[1])

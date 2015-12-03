@@ -1,28 +1,36 @@
-import frequency
-
 import os
-wen_dang = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))  + "/DATA/doclist_mini.txt"
-# wen_dang = "/Users/baidu/微云/project/segmentation/testdata/gamelistsmall.txt"
+import frequency
+from datetime import datetime
+
+start = datetime.now()
+wen_dang = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)) + "/DATA/doclist_all.txt"
 out_put_list = []
+threshold = 0.5
+for_next = frequency.find_next
 
 
-def the_long_the_better(leader):
-    for_next = frequency.find_next
-    if for_next(wen_dang, leader[0], top=1):
-        sec = for_next(wen_dang, leader[0], top=1)[0]  # 返回的是二维数组，因为只用top1这里直接脱掉一层
-        if sec[1] / leader[1] > 0.7:
-            # new_leader = list(leader[0]+sec[0],sec[1])
-            temp_str1 = leader[0] + sec[0]
-            new_leader = [temp_str1, sec[1]]
-            the_long_the_better(new_leader)
-        elif len(leader[0]) > 2:
-            # print(leader[0])
-            out_put(leader[0])
-    return
+def the_long_the_better(leader, this_bool):
+    # 会匹配两次，假如this_bool = False 表示先向后加字，加满了之后再在词前面加字，加满了之后再输出。假如=True就是反过来
+    # 先向前，再向后（用True），准确率要高一些。
+    temp = for_next(wen_dang, leader[0], medal2=1, reverse=this_bool)
+    if temp:
+        if not this_bool:
+            sec = temp[0]  # 返回的是二维数组，因为只用top1这里直接脱掉一层
+            if (sec[1] - 1) / leader[1] > threshold:
+                new_leader = [leader[0] + sec[0], sec[1]]
+                the_long_the_better(new_leader, this_bool)
+            elif len(leader[0]) > 2:
+                the_long_the_better(leader, not this_bool)  # 一个方向匹配完之后，反方向再来一次
+        else:
+            front = temp[0]
+            if (front[1] - 1) / leader[1] > threshold:
+                new_front = [front[0] + leader[0], front[1]]
+                the_long_the_better(new_front, not this_bool)
+            elif len(leader[0]) > 2:
+                out_put(leader[0])
 
 
 def out_put(temp):
-    # out_put_list.append(four_out_put)
     for i in range(len(out_put_list)):
         if out_put_list[i].count(temp) != 0:
             return
@@ -35,10 +43,9 @@ def out_put(temp):
 # 下面才是真正的入口
 
 
-topx = frequency.top(wen_dang, top=1500)
+topx = frequency.top(wen_dang, medal=int(1 / threshold))
+print(datetime.now() - start)
 for me_item in topx:
-    the_long_the_better(me_item)
+    the_long_the_better(me_item, True)
+print(datetime.now() - start)
 print(out_put_list)
-
-
-

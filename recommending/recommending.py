@@ -2,53 +2,53 @@
 # -*- coding: utf-8 -*-
 
 
-import jieba
 import heapq
+
 import math
 import os
 
-path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))  + "/DATA/doclist_all.txt"
+user_dict = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)) + "/DATA/userdict/gamename.txt"
+path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)) + "/DATA/doclist_all.txt"
 
-# jieba.load_userdict(path)
+import jieba
+jieba.load_userdict(user_dict)
+print(jieba.load_userdict(user_dict))
 
-target = list(jieba.cut("天天炫斗商城系统详解介绍攻略",cut_all = False))
+from datetime import datetime
+from contextlib import closing
+from collections import defaultdict
+
+
+target = "天天炫斗商城系统详解介绍攻略"
+
+jieba.add_word("天天炫斗")
+jieba.del_word("商城")
+
+key_words = set(jieba.cut(target, cut_all=False))
+print(key_words)
 L2 = []
+start = datetime.now()
+with open(path, "r", encoding="utf-8") as query:
+    table = set(query.readlines())
+    weight = defaultdict(lambda: 0)
+    contain = defaultdict(lambda: 0)
+
+    for L1 in table:
+        for keyw in key_words:
+            if L1.count(keyw):
+                weight[keyw] += L1.count(keyw)
+    for keyw in key_words:
+        weight[keyw] = math.log(len(table) / weight[keyw])
+#        if k < 3:
+#            weight[k] += 3
+    for L1 in table:
+        for keyw in key_words:
+            contain[L1] += L1.count(keyw) * weight[keyw] / len(key_words)
 
 
-with open(path,"r") as query:
-	table = query.readlines()
-	contain = []
-	shows = [x-x for x in range(len(target))]
-
-	for ii in range(len(table)):
-		L1 = table[ii]
-		for jj in range(len(target)):
-			shows[jj] += L1.count(target[jj])
-			
-
-	for k in range(len(target)):
-		shows[k] = math.log(len(table)/shows[k])
-		if k < 3:
-			shows[k] += 3
-
-	for i in range(len(table)):
-		L1 = table[i]
-		L2.append(L1)
-		contain.append(0)
-		for j in range(len(target)):
-			contain[i] += L1.count(target[j]) * shows[j]/len(target)
-
-print(target)
-print(shows)
+for_print = heapq.nlargest(10, contain.items(), lambda x: x[1])
 
 
-hahahah = list(map(lambda x,y:[x,y], L2,contain))
-	
-def sec(t):
-	return t[1]
-
-for_print = heapq.nlargest(10, hahahah, key= sec)
-
-print("天天炫斗布雷泽仓木熏布鲁三大职业对比分析攻略")
-for xxx in for_print[:10]:
-	print(xxx)
+print(datetime.now() - start)
+for xxx in for_print:
+    print(xxx)
