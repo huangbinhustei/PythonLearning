@@ -67,10 +67,11 @@ def remove_bracket(this_str):
         temp_res = calc_without_bracket(str2list(temp_str))
         temp_res_chr = repr(temp_res)
         new_str = this_str[:last_left_bracket] + temp_res_chr + this_str[first_right_bracket + 1:]
-        remove_bracket(new_str)
+        return remove_bracket(new_str)  # 这个return 的意义是什么？
     else:
-        print(calc_without_bracket(str2list(this_str)))
+        final = calc_without_bracket(str2list(this_str))
+        return final
 
 
-str1 = input()
-remove_bracket(str1)
+def main(str1):
+    return remove_bracket(str1)
