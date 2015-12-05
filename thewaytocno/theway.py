@@ -3,8 +3,16 @@ import socket
 
 test = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+target = input("Ip address(only need the last，Please\n")
+target = "192.168.1."+target
 
-test.connect(('192.168.1.107', 9999))
+
+try:
+	test.connect((target, 9999))
+except Exception as e:
+	print("address，Error")
+
+
 wel = test.recv(1024).decode('utf-8')
 print(wel)
 
