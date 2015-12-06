@@ -11,7 +11,7 @@ with open(stopwords, "r", encoding="utf-8") as txt111:
     go_away_top = txt111.read()
     stop_words = set(go_away_top)
 
-go_away_next = ",.!?<>() []{}，。！？《》（）-_+-*—\n/n第关升"
+go_away_next = ",.!?<>() []{}，。！？《》（）-_+-*、—\n/n第的了关升"
 
 
 # def top(loc, need_pop, medal=10, max_n=1):
@@ -43,6 +43,7 @@ def find_next(loc, str_group, medal2=10, reverse=False):
     counts = defaultdict(lambda: 0)
     target = str_group
     with open(loc, "r", encoding="utf-8") as txt:
+    # with open(loc, "r", encoding="gbk") as txt:
         contain = txt.read().strip()
         cc = list(contain.split(target))
         if reverse:

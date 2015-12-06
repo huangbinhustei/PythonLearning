@@ -3,33 +3,32 @@
 
 
 import heapq
-
+import jieba
 import math
 import os
+from datetime import datetime
+from collections import defaultdict
 
 user_dict = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)) + "/DATA/userdict/gamename.txt"
 path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)) + "/DATA/doclist_all.txt"
 
-import jieba
 jieba.load_userdict(user_dict)
 print(jieba.load_userdict(user_dict))
 
-from datetime import datetime
-from contextlib import closing
-from collections import defaultdict
-
-
+# target = input("")
 target = "天天炫斗商城系统详解介绍攻略"
 
-jieba.add_word("天天炫斗")
-jieba.del_word("商城")
+# jieba.add_word("天天炫斗")
+# jieba.del_word("商城")
 
 key_words = set(jieba.cut(target, cut_all=False))
-print(key_words)
+# print(key_words)
 L2 = []
 start = datetime.now()
 with open(path, "r", encoding="utf-8") as query:
     table = set(query.readlines())
+    # weight = Counter()
+    # contain = Counter()
     weight = defaultdict(lambda: 0)
     contain = defaultdict(lambda: 0)
 

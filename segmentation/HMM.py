@@ -4,8 +4,9 @@ from datetime import datetime
 
 start = datetime.now()
 wen_dang = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)) + "/DATA/doclist_all.txt"
+# wen_dang = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)) + "/DATA/words.txt"
 out_put_list = []
-threshold = 0.5
+threshold = 0.1
 for_next = frequency.find_next
 
 
@@ -17,21 +18,6 @@ def out_put(temp):
             out_put_list[i] = temp
             return
     out_put_list.append(temp)
-
-
-# def the_long_the_better(leader, this_bool):
-#     temp = for_next(wen_dang, leader[0], medal2=1, reverse=this_bool)
-#     if not temp:
-#         return
-#     if this_bool:
-#         return
-#     sec = temp[0]  # 返回的是二维数组，因为只用top1这里直接脱掉一层
-#     if (sec[1] - 1) / leader[1] > threshold:
-#         new_leader = [leader[0] + sec[0], sec[1]]
-#         return the_long_the_better(new_leader, this_bool)
-#     elif len(leader[0]) > 2:
-#         out_put(leader[0])
-#
 
 
 def the_long_the_better(leader, this_bool):
@@ -60,6 +46,7 @@ def the_long_the_better(leader, this_bool):
 
 
 with open(wen_dang, 'r', encoding='utf-8') as f:
+# with open(wen_dang, 'r', encoding='gbk') as f:
     target_words = f.readlines()
     need_pop = " "
 
