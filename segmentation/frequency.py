@@ -14,19 +14,6 @@ with open(stopwords, "r", encoding="utf-8") as txt111:
 go_away_next = ",.!?<>() []{}，。！？《》（）-_+-*、—\n/n第的了关升"
 
 
-# def top(loc, need_pop, medal=10, max_n=1):
-#     counter = defaultdict(lambda: 0)
-#     with closing(open(loc, 'r', encoding='utf-8')) as f:
-#         for line in f:
-#             for cell in line.strip():
-#                 if cell in stop_words:
-#                     continue
-#                 counter[cell] += 1
-#     temp1 = dict((k, v) for k, v in counter.items() if v > medal)
-#     temp = heapq.nlargest(max_n, temp1.items(), lambda x: x[1])
-#     return temp
-
-
 def top(loc, medal=10):
     counter = defaultdict(lambda: 0)
     for line in loc:
