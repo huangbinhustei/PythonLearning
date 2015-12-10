@@ -1,46 +1,29 @@
-import xlrd
-game_name=[]
-needxx = []
+import os
+
+game_name = []
 x2pop = 0
 result = []
+wen_dang = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)) + "/DATA/doclist_mini.txt"
+namelist = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)) + "/DATA/userdict/gamename.txt"
+result_file = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)) + "/DATA/result.txt"
 
-with open("gamename.txt", "r", encoding="utf-8") as txt111:
-	for item in txt111.readlines():
-		game_name.append(item.strip())
-
-
-# for i in range(len(game_name)-1):
-# 	for j in range(i+1,len(game_name)):
-# 		if i == j:
-# 			continue
-# 		if game_name[i].find(game_name[j])>-1:
-# 			needxx.append(j)
-# 		elif game_name[j].find(game_name[i])>-1:
-# 			needxx.append(i)
+with open(namelist, "r", encoding="utf-8") as txt111:
+    for item in txt111.readlines():
+        game_name.append(item.strip())
 
 
-# for idx in needxx:
-# 	game_name.pop(idx-x2pop)
-# 	x2pop +=1
+with open(wen_dang, "r", encoding="utf-8") as data:
+    for item in data.readlines():
+        count = 0
+        temp = []
+        for name in game_name:
+            if item.find(name) > -1:
+                temp.append(name)
+                count += 1
+        result.append([item, temp])
 
 
-with xlrd.open_workbook("titlelist.xlsx") as data:
-	table = data.sheets()[0]
-	for i in range(table.nrows):
-		doc_title = table.cell(i,0).value
-		count = 0
-		temp = " "
-		for name in game_name:
-			if doc_title.find(name) > -1:
-				temp = name
-				count +=1
-		if count == 1:
-			result.append([doc_title,temp,table.cell(i,2).value,table.cell(i,3).value])
-		elif count > 1:
-			result.append([doc_title,count,table.cell(i,2).value,table.cell(i,3).value])
-
-
-with open("result.txt", "w", encoding="gbk") as f:
-	for witem in result:
-		abdfd = str(witem[0])+"\t"+str(witem[1])+"\t"+str(int(witem[2]))+"\t"+str(witem[3])+"\n"
-		f.write(abdfd)
+with open(result_file, "w", encoding="gbk") as f:
+    for item in result:
+        last_for_write = str(item[0].strip()) + "\t" + str(item[1]) + "\n"
+        f.write(last_for_write)

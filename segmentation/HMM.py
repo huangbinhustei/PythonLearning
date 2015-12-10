@@ -4,7 +4,6 @@ from datetime import datetime
 
 start = datetime.now()
 wen_dang = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)) + "/DATA/doclist_all.txt"
-# wen_dang = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)) + "/DATA/words.txt"
 out_put_list = []
 threshold = 0.5
 for_next = frequency.find_next
