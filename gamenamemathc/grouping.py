@@ -1,9 +1,12 @@
 game_name=[]
+long_game_name = []
+short_game_name = []
+
 with open("游戏名称.txt", "r", encoding="utf-8") as txt111:
 	for item in txt111.readlines():
 		game_name.append(item.strip())
-# print(len(game_name))
-needxx = []
+
+
 for i in range(len(game_name)-1):
 	for j in range(i+1,len(game_name)):
 		if i == j:
