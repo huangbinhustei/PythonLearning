@@ -11,9 +11,9 @@ result_file = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)
 
 def weight_init():
     # 权重词典的定义如下：
-    # 第0位：int，表示权重
-    # 第1位：list：内有包含这个keywords的所有标题
-    # 第2位：list：内有包含这个keywords的所有游戏名
+    # 第0位(int):表示权重
+    # 第1位(list)：内有包含这个keywords的所有标题
+    # 第2位(list)：内有包含这个keywords的所有游戏名
     return [0, [], []]
 
 
@@ -48,17 +48,6 @@ def do_sug(target):
     for item in for_print:
         print("\t" + str(item[0]) + "\t" + str(item[1]))
 
-
-# out_target = {"天天炫斗商城系统详解介绍攻略", "《魔力时代》火系英雄组合强推", "《魔力时代》实用攻略（上篇）", "《十二生肖》宠物技能学习和升级",
-#               "大话西游手游天降灵猴快速完成攻略心得", "大话西游手游召唤兽转生后亲密度提高攻略详解",
-#               "乖离性百万亚瑟王异界型金闪闪技能详解", "乖离性百万亚瑟王异界型狂战士技能详解", "乱斗西游北冰峡攻略详解", "乱斗西游蛟魔王打排行榜详解", }
-#
-# for tit in out_target:
-#     print("\n\n")
-#     print(tit)
-#     do_sug(tit)
-
-# print(datetime.now() - mid)
 
 while True:
     query = input("Query, please!\n")

@@ -22,9 +22,9 @@ with open(user_dict, "r", encoding="utf-8") as ud:
 
 def weight_init():
     # 权重词典的定义如下：
-    # 第0位：int，表示权重
-    # 第1位：list：内有包含这个keywords的所有标题
-    # 第2位：list：内有包含这个keywords的所有游戏名
+    # 第0位(int):表示权重
+    # 第1位(list)：内有包含这个keywords的所有标题
+    # 第2位(list)：内有包含这个keywords的所有游戏名
     return [0, [], []]
 
 
