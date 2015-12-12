@@ -29,8 +29,8 @@ def top(loc, medal=10):
 def find_next(loc, str_group, medal2=10, reverse=False):
     counts = defaultdict(lambda: 0)
     target = str_group
-    with open(loc, "r", encoding="utf-8") as txt:
-    # with open(loc, "r", encoding="gbk") as txt:
+    # with open(loc, "r", encoding="utf-8") as txt:
+    with open(loc, "r", encoding="gbk") as txt:
         contain = txt.read().strip()
         cc = list(contain.split(target))
         if reverse:

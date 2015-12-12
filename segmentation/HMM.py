@@ -3,13 +3,14 @@ import frequency
 from datetime import datetime
 
 start = datetime.now()
-wen_dang = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)) + "/DATA/doclist_all.txt"
+wen_dang = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)) + "/DATA/doclist_mini.txt"
 out_put_list = []
-threshold = 0.8
+threshold = 0.5
 for_next = frequency.find_next
 
 
 def out_put(temp):
+    # 新跑出来的结果和已有结果相互比较，只保留更长的一个。
     for i in range(len(out_put_list)):
         if out_put_list[i].count(temp) != 0:
             return
@@ -25,6 +26,7 @@ def the_long_the_better(leader, this_bool):
     temp = for_next(wen_dang, leader[0], medal2=3, reverse=this_bool)
     if temp:
         if not this_bool:
+            # for sec in temp:
             sec = temp[0]  # 返回的是二维数组，因为只用top1这里直接脱掉一层
             if (sec[1] - 1) / leader[1] > threshold:
                 new_leader = [leader[0] + sec[0], sec[1]]
@@ -32,6 +34,7 @@ def the_long_the_better(leader, this_bool):
             elif len(leader[0]) > 2:
                 the_long_the_better(leader, not this_bool)  # 一个方向匹配完之后，反方向再来一次
         else:
+            # for front in temp:
             front = temp[0]
             if (front[1] - 1) / leader[1] > threshold:
                 new_front = [front[0] + leader[0], front[1]]
@@ -44,16 +47,18 @@ def the_long_the_better(leader, this_bool):
 # 下面才是真正的入口
 
 
-with open(wen_dang, 'r', encoding='utf-8') as f:
-# with open(wen_dang, 'r', encoding='gbk') as f:
+# with open(wen_dang, 'r', encoding='utf-8') as f:
+with open(wen_dang, 'r', encoding='gbk') as f:
     target_words = f.readlines()
     need_pop = " "
 
     def me_replace(str11):
         return "".join(str11.split(need_pop))
+
     topx = frequency.top(target_words, medal=int(1/threshold))
     for me_item in topx:
         need_pop = the_long_the_better(me_item, True)
+        # 每找出一个最长的词组，就把这个词组从文件中删掉。
     if need_pop:
         target_words = list(map(me_replace, target_words))
     print(datetime.now() - start)
