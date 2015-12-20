@@ -12,7 +12,7 @@ from collections import defaultdict
 start = datetime.now()
 user_dict = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)) + "/DATA/userdict/gamename.txt"
 path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)) + "/DATA/doclist_all.txt"
-result_file = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)) + "/DATA/weight.txt"
+weight_file = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)) + "/DATA/weight.txt"
 
 with open(user_dict, "r", encoding="utf-8") as ud:
     for line in ud.readlines():
@@ -22,7 +22,7 @@ with open(user_dict, "r", encoding="utf-8") as ud:
 
 def weight_init():
     # 权重词典的定义如下：
-    # 第0位(int):表示权重
+    # 第0位(float):表示权重
     # 第1位(list)：内有包含这个keywords的所有标题
     # 第2位(list)：内有包含这个keywords的所有游戏名
     return [0, [], []]
@@ -45,11 +45,11 @@ def weight_calc():
             total_key_words[words][2] = list(set(total_key_words[words][2]))
             title_count = len(total_key_words[words][1])
             game_name_count = len(total_key_words[words][2])
-            total_key_words[words][0] = math.log(num_of_rows / title_count / game_name_count)
+            total_key_words[words][0] = math.log(num_of_rows / title_count / game_name_count + 0.8)
 
 
 def weight_calc_save(need_save):
-    with open(result_file, "w", encoding="utf-8") as rf:
+    with open(weight_file, "w", encoding="utf-8") as rf:
         for item in need_save:
             a1 = ",".join(item[1][1])
             a2 = ",".join(item[1][2])
@@ -58,7 +58,7 @@ def weight_calc_save(need_save):
 
 weight_calc()
 
-bigger = dict((k, v) for k, v in total_key_words.items() if (v[0] > 0 and len(v[1]) > 1))
+bigger = dict((k, v) for k, v in total_key_words.items() if (v[0] > 0 and len(v[1]) > 4 and len(k) > 1))
 order_bigger = heapq.nlargest(len(bigger), bigger.items(), lambda x: x[1])
 
 weight_calc_save(order_bigger)

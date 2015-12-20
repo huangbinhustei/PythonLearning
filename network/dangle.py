@@ -1,9 +1,9 @@
-from urllib import request
+import requests
 import re
 from datetime import datetime
 from pyquery import PyQuery as pq
 
-target_url = request.urlopen("http://ng.d.cn/channel/testlist.html").read()
+target_url = requests.get("http://ng.d.cn/channel/testlist.html").content
 
 res = pq(target_url)("tr")
 spaces = re.compile(r' {2,11}')
