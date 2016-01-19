@@ -34,5 +34,5 @@ def after_input():
 
 
 if __name__ == "__main__":
-    app.run(host="192.168.1.107", debug=True)
+    app.run(host="192.168.1.100", debug=True)
 

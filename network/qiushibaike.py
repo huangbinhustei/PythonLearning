@@ -4,21 +4,31 @@ from pyquery import PyQuery as pq
 
 
 page_number = 1
-last = []
-while 1:
-    if page_number == 10:
-        break
-    url = "http://www.qiushibaike.com/8hr/page/" + str(page_number)
-    target = requests.get(url).content.decode("utf-8")
-    flag_content = pq(target)(".content")
-    for item in flag_content:
-        a = pq(item).text()
-        if len(a) > 20:
-            last.append(a.replace(" ", "") + "\n")
-    page_number += 1
-
-for item in last:
+txt_output = []
+pic_output = []
+while page_number < 2:
     try:
-        print(item)
+        url = "http://www.qiushibaike.com/8hr/page/" + str(page_number)
+        target = requests.get(url).content.decode("utf-8")
+        flag_content = pq(target)(".content")
+        for item in flag_content:
+            a = pq(item).text()
+            if pq(item).next().has_class("thumb"):
+                find_pic = pq(pq(pq(item).next())("img")).attr("src")
+                pic_output.append([a, find_pic])
+                continue
+            txt_output.append(a.replace(" ", "") + "\n")
+        page_number += 1
     except Exception as e:
         print(e)
+
+for item in txt_output:
+    pass
+    print(item)
+
+
+print("\n" + "*"*100 + "\n")
+
+
+for item in pic_output:
+    print(item[0] + "\n" + item[1])
