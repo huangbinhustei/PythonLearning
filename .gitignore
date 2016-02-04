@@ -4,4 +4,3 @@ __pycache__
 pip.conf
 network/.vs/thewaytocno/v14/.suo
 network/templates/home_old.html
-network/zuowen1.py
