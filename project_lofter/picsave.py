@@ -12,6 +12,35 @@ def get_md5(need2md5):
     return md5.hexdigest()
 
 
+def log_rewrite(log_file_name):
+    data = []
+    set_url_this_page = []  # 这一页的所有图片url
+    flag_tuple = ("succeed", "has_saved", "failed")
+
+    def row_filter(rows, this_str):
+        for temp in rows:
+            if not temp[0].find(this_str) == 0:
+                continue
+            if temp[1] in set_url_this_page:
+                continue
+            set_url_this_page.append(temp[1])
+            data.append(temp)
+
+    if not os.path.exists(log_file_name):
+        return
+    with open(log_file_name, "r") as old_log:
+        t_row = []
+        for lines in old_log.readlines():
+            temp_row = lines.split("\t")
+            t_row.append(temp_row)
+        for flag in flag_tuple:
+            row_filter(t_row, flag)
+
+    with open(log_file_name, "w") as f:
+        for lines in data:
+            f.write("\t".join(lines))
+
+
 class PicSave(object):
 
     def __init__(self, url_set, dir_path, retry_time=3):
@@ -28,7 +57,7 @@ class PicSave(object):
             return
         self.path = path_new
 
-    def save_once(self, item_url):
+    def save_one_picture(self, item_url):
         if item_url in self.set_of_img_src:
             flag = "has_saved"
             self.save_log.append([flag, item_url, " "])
@@ -62,7 +91,7 @@ class PicSave(object):
             return
         th = []
         for item_url in self.pic_url_set:
-            th.append(threading.Thread(target=self.save_once, args=(item_url,)))
+            th.append(threading.Thread(target=self.save_one_picture, args=(item_url,)))
         for t in th:
             t.setDaemon(True)
             t.start()
@@ -71,6 +100,7 @@ class PicSave(object):
         with open(self.path + "save_log.txt", "a") as s_log:
             for list_item in self.save_log:
                 s_log.write(list_item[0] + "\t" + list_item[1] + "\t" + list_item[2] + "\n")
+        log_rewrite(self.path + "save_log.txt")
 
 
 if __name__ == '__main__':

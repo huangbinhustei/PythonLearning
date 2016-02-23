@@ -9,6 +9,7 @@ import time
 path = os.path.abspath(os.path.join(os.path.dirname(__file__))) + "/IMG/"
 img_src_has_try2save = set([])
 post_has_try2save = {" ", " "}
+url = "http://justinbieber520.lofter.com/"
 
 
 class Student(object):
@@ -20,13 +21,12 @@ class Student(object):
         self.pattern = re.compile(r'http://justinbieber520\.lofter\.com/post/(.+)')
 
     def get_sub_url(self, target_url):
-        # 根据每一页的地址，提取post地址
+        # 根据列表页的地址，提取post地址
         target = requests.get(target_url).content.decode("utf-8")
         flags_title = pq(target)(".pic")
         flags_title = pq(flags_title)(".img")
         for item in pq(pq(flags_title)("a")):
             self.set_of_post_url.add(pq(item).attr("href"))
-            # print(pq(item).attr("href"))
         return self.set_of_post_url
 
     def get_img_src(self, tar_url):
@@ -44,7 +44,7 @@ class Student(object):
         return temp_set_of_img_src
 
     def start(self):
-        # 构造每一页的地址，并分别提取每一页
+        # 构造列表页（翻页）的地址，并分别提取每一页
         page_number = 1
         while 1:
             temp_url = self.url + "?page=" + str(page_number)
@@ -56,10 +56,11 @@ class Student(object):
             time.sleep(2)
 
     def func_in_try(self, this_url):
-        for post_url in self.get_sub_url(this_url):
-            if not post_url:
-                print("抓取完毕")
-                exit()
+        post_url_set = self.get_sub_url(this_url)
+        if not any(post_url_set):
+            print("抓取完毕")
+            exit()
+        for post_url in post_url_set:
             dir_name = str(re.sub(self.pattern, r'\1', post_url))
             if dir_name in post_has_try2save:
                 # print("[本次已整理]\t\t" + post_url)
@@ -95,11 +96,9 @@ class Student(object):
                         new_save_p.start_save()
                     else:
                         print("[上次已整理]\t\t " + post_url)
-
         return True
 
-
-url = "http://justinbieber520.lofter.com/"
-new_lol = Student(url)
-new_save_p = PicSave({}, " ")
-new_lol.start()
+if __name__ == '__main__':
+    new_lol = Student(url)
+    new_save_p = PicSave({}, " ")
+    new_lol.start()
