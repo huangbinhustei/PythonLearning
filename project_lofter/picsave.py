@@ -73,8 +73,7 @@ class PicSave(object):
                 continue
             c_length = pic_target.headers["Content-Length"]
             if not c_length or int(c_length) < 3000:
-                print("c_length 不存在或小于3000")
-                print("Content-Length:\t\t" + str(c_length))
+                print("Content-Length不存在或过小:\t" + str(c_length))
                 continue
             with open(pic_path, "wb") as f:
                 f.write(pic_target.content)
