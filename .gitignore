@@ -6,3 +6,6 @@ network/.vs/thewaytocno/v14/.suo
 network/templates/home_old.html
 *.jpg
 *.db
+*.txt
+
+result_game/归档.zip
