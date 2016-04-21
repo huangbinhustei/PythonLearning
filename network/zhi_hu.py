@@ -56,13 +56,13 @@ def login():
     m_cookies = res.cookies
 
     test_url = "https://www.zhihu.com"
-    res = s.get(test_url, headers=login_header, cookies=m_cookies).content
-    print(pq(res).text())
+    res = s.get(test_url, headers=login_header, cookies=m_cookies)
+    # print(pq(res).text())
+    print(pq(res.con).html())
     # print(pq(res).text())
     # target = pq(res)("h2")
     # for item in target:
     #     print(pq(item).text())
-
 
 if __name__ == "__main__":
     login()

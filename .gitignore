@@ -15,3 +15,4 @@ project_lofter/[useless]log_arrangement.py
 project_lofter/[useless]log_arrangement.py
 network/captcha.gif
 *.gif
+/书/*.pdf
