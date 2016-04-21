@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from flask import render_template
 import sqlite3
+import json
+import time
 
 app = Flask(__name__)
 
@@ -24,11 +26,11 @@ def home(id=1):
     txt = values_temp[0][1]
     fw = txt.split(" ")
     fw = fw[1:-11]
-    print(fw)
-    preview_url = "http://192.168.1.100:5000/" + str(ch_id - 1)
-    next_url = "http://192.168.1.100:5000/" + str(ch_id + 1)
+    # print(fw)
+    preview_url = "http://192.168.1.101:5000/" + str(ch_id - 1)
+    next_url = "http://192.168.1.101:5000/" + str(ch_id + 1)
     return render_template("home.html", biao_ti=tit, nei_rong=fw, p_url=preview_url, n_url=next_url)
 
 
 if __name__ == "__main__":
-    app.run(host="192.168.1.100", debug=True)
+    app.run(host="192.168.1.101", debug=True)

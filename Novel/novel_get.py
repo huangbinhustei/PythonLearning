@@ -15,7 +15,7 @@ def database_create():
 
     try:
         cursor.execute(
-                'create table the_door'
+                'create table xian_mo_bian'
                 '(key_chapter int primary key,title varchar(100),content varchar(10000))'
         )
     except Exception as e:
@@ -29,7 +29,7 @@ def database_create():
 
 
 def save_content():
-    url = "http://www.88xiaoshuo.com/Partlist/47317/Index.shtml"
+    url = "http://shushu.com.cn/xianmobian"
     target = requests.get(url).content
     dd_list = pq(pq(target)("div"))("dd")
 
@@ -46,7 +46,7 @@ def save_content():
         if i < 500:
             i += 1
             continue
-        this_url = "http://www.88xiaoshuo.com/Partlist/47317/" + item
+        this_url = "http://shushu.com.cn/xianmobian/" + item
         if this_url in url_list_done:
             print("重复了")
             continue

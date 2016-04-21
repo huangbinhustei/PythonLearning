@@ -68,7 +68,7 @@ class PicSave(object):
         pic_path = self.path + pic_name
         for i in range(self.retry_time):
             try:
-                pic_target = requests.get(item_url, timeout=10)
+                pic_target = requests.get(item_url, timeout=20)
             except Exception as e:
                 continue
             c_length = pic_target.headers["Content-Length"]

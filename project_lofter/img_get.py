@@ -6,10 +6,32 @@ import re
 from picsave import PicSave
 import time
 
-path = os.path.abspath(os.path.join(os.path.dirname(__file__))) + "/IMG/"
+
 img_src_has_try2save = set([])
 post_has_try2save = {" ", " "}
-url = "http://justinbieber520.lofter.com/"
+
+# url = "http://justinbieber520.lofter.com/"
+# x_path_post = ([".pic", ".img"], "a")
+# path = os.path.abspath(os.path.join(os.path.dirname(__file__))) + "/IMG/"
+# pat = re.compile(r'http://justinbieber520\.lofter\.com/post/(.+)')
+
+# url = "http://wowosyyhu.lofter.com/"
+# x_path_post = ([".main", ".img"], "a")
+# path = os.path.abspath(os.path.join(os.path.dirname(__file__))) + "/IMG2/"
+# pat = re.compile(r'http://wowosyyhu\.lofter\.com/post/(.+)')
+
+# url = "http://nlrzjghxxx.lofter.com"
+# x_path_post = ([".main", ".img"], "a")
+# path = os.path.abspath(os.path.join(os.path.dirname(__file__))) + "/IMG3/"
+# pat = re.compile(r'http://nlrzjghxxx\.lofter\.com/post/(.+)')
+
+url = "http://onlyecholy.lofter.com"
+x_path_post = ([".pic", ".img"], "a")
+path = os.path.abspath(os.path.join(os.path.dirname(__file__))) + "/IMG5/"
+pat = re.compile(r'http://onlyecholy\.lofter\.com/post/(.+)')
+
+# http://fitgirlgogogo.lofter.com/
+# http://www.lofter.com/tag/%E5%81%A5%E8%BA%AB?act=qbwsjs_20160325_01?act=qbwysylofer_20150101_01
 
 
 class Student(object):
@@ -18,15 +40,17 @@ class Student(object):
         self.set_of_img_src = set([])
         self.ind = 0
         self.url = url_begin
-        self.pattern = re.compile(r'http://justinbieber520\.lofter\.com/post/(.+)')
+        self.pattern = pat
+        self.temp = set([])  # 用来判断是否抓取完毕的，感觉略诡异
 
-    def get_sub_url(self, target_url):
+    def get_post_url(self, target_url):
         # 根据列表页的地址，提取post地址
         target = requests.get(target_url).content.decode("utf-8")
-        flags_title = pq(target)(".pic")
-        flags_title = pq(flags_title)(".img")
-        for item in pq(pq(flags_title)("a")):
+
+        flags_title = pq(pq(target)(x_path_post[0][0]))(x_path_post[0][1])
+        for item in pq(flags_title)(x_path_post[1]):
             self.set_of_post_url.add(pq(item).attr("href"))
+
         return self.set_of_post_url
 
     def get_img_src(self, tar_url):
@@ -35,6 +59,7 @@ class Student(object):
         target_content = requests.get(tar_url).content.decode("utf-8")
         target_div = pq(target_content)("div")
         target_img = pq(target_div)(".pic")
+        # target_img = pq(target_div)(".img")
         target_a = pq(target_img)("a")
         for item in target_a:
             img_src_item = pq(item).attr("bigimgsrc")
@@ -56,10 +81,12 @@ class Student(object):
             time.sleep(2)
 
     def func_in_try(self, this_url):
-        post_url_set = self.get_sub_url(this_url)
-        if not any(post_url_set):
-            print("抓取完毕")
-            exit()
+        post_url_set = self.get_post_url(this_url)
+        # if self.temp != post_url_set:
+        #     self.temp = post_url_set
+        # else:
+        #     print("抓取完毕")
+        #     exit()
         for post_url in post_url_set:
             dir_name = str(re.sub(self.pattern, r'\1', post_url))
             if dir_name in post_has_try2save:
@@ -97,6 +124,7 @@ class Student(object):
                     else:
                         print("[上次已整理]\t\t " + post_url)
         return True
+
 
 if __name__ == '__main__':
     new_lol = Student(url)
