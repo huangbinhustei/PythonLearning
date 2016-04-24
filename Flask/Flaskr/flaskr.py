@@ -7,6 +7,7 @@ from pyquery import PyQuery as pq
 import markdown2
 import time
 import random
+import html
 
 app = Flask(__name__)
 
@@ -43,9 +44,15 @@ def after_requests(response):
 
 @app.route("/")
 def show_entries():
-    cur1 = g.db.execute("select title, abstract, id, c_time, page_view from entries order by id desc limit 6")
-    entries = [dict(title=row[0], abstract=row[1], id=str(row[2]), c_time=row[3], page_view=row[4])
-               for row in cur1.fetchall()]
+    cur1 = g.db.execute("select title,abstract,id,c_time,page_view,thumb from entries order by id desc limit 6")
+    entries = []
+    for row in cur1.fetchall():
+        temp_thumb = row[5]
+        if "" == temp_thumb:
+            temp_thumb = "http://192.168.1.101/%E5%A3%81%E7%BA%B8/01991_autumnlake_1600x1200.jpg"
+        entries.append(dict(
+            title=row[0], abstract=row[1], id=str(row[2]), c_time=row[3], page_view=row[4], thumb=temp_thumb)
+        )
 
     cur2 = g.db.execute("select title, id, c_time, page_view from entries order by page_view desc limit 10")
     titles = []
@@ -62,7 +69,7 @@ def show_entries():
 def view(page_number):
     sql = "select title, text, c_time, page_view from entries where id =" + str(page_number)
     cur = g.db.execute(sql)
-    entries = [dict(title=row[0], text=row[1], c_time=row[2], page_view=row[3]) for row in cur.fetchall()]
+    entries = [dict(title=row[0], text=html.unescape(row[1]), c_time=row[2], page_view=row[3]) for row in cur.fetchall()]
     return render_template("view.html", entries=entries)
 
 
@@ -78,14 +85,22 @@ def add_entry():
     if request.method == "POST":
         title = request.form["title"]
         text = markdown2.markdown(request.form["text"])
+        abstract = pq(text).text()[:100] + "..."
         c_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         page_view = int(random.uniform(100, 5000))
+        try:
+            thumb = pq(pq(text)("img")[0]).attr("src")
+        except:
+            print("没有图")
+            thumb = ""
+        text = html.escape(text, quote=True)
 
         if not str(title).strip() or not str(request.form["text"]).strip():
             return render_template("add.html", error="请输入标题和正文")
-        abstract = pq(text).text()[:80] + "..."
-        sql = "insert into entries (title, text, abstract, c_time, page_view) values" \
-              " (\"" + title + "\",\"" + text + "\",\"" + abstract + "\",\"" + c_time + "\",\"" + str(page_view) + "\")"
+
+        sql = "insert into entries (title, text, abstract, c_time, page_view, thumb) values" \
+              " (\"" + title + "\",\"" + text + "\",\"" + abstract + "\",\"" + c_time + "\",\"" + str(page_view) +  "\",\"" + str(thumb) + "\")"
+
         g.db.execute(sql)
         g.db.commit()
         flash("done")

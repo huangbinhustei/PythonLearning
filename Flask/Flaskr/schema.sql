@@ -7,5 +7,7 @@ create table entries (
     c_time string not null,
     renew_time string,
     page_view integer,
-    user_view integer
+    tag string,
+    category string,
+    thumb string
 );

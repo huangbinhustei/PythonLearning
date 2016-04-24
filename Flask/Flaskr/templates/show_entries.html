@@ -8,25 +8,32 @@
         </div>
 
 		<article>
-			<ul>
-				{% for entry in entries %}
-					<li><h4><a href="/view/{{entry.id}}">{{ entry.title }}</a></h4>
-					<p style="font-size: 10px;color: #999">{{ entry.c_time[:10] }}&nbsp;&nbsp;|&nbsp;&nbsp;{{ entry.page_view }} ℃</p>
-					<p style="color: #333">{{ entry.abstract|safe }}</p>
-					<HR>
-				{% else %}
-					<li><em>Unbelievable. No entries here so far</em>
-				{% endfor %}
-			</ul>
+
+			{% for entry in entries %}
+				<div class=container>
+					<div class=container-thumb>
+						<a href="/view/{{entry.id}}">
+							<img class=img-in-container src="{{ entry.thumb }}">
+						</a>
+					</div>
+
+					<div class=container-body>
+						<h2 class=title-in-container><a href="/view/{{entry.id}}">{{ entry.title }}</a></h2>
+						<p class=content-in-container>{{ entry.c_time[:10] }}&nbsp;&nbsp;|&nbsp;&nbsp;{{ entry.page_view }} ℃</p>
+						<p class=content-in-container>{{ entry.abstract|safe }}</p>
+					</div>
+				</div>
+				<br/>
+			{% endfor %}
+
 		</article>
 
 		<aside>
-			<h4 style="color: #666">最热文档 Top 10</h4>
+			<h2 class=title-in-container style="color:#666">最热文档 Top 10</h2>
 			<ul>
 				{% for title in titles %}
 					<li><a href="/view/{{title.id}}">{{ title.title }}</a>
-					<p style="font-size: 10px;color: #bbb">{{ title.page_view}}&nbsp;℃</p>
-					<hr style="margin:4px;border-bottom: 1px dashed #eee;">
+					<p class=aside-desc>{{ title.page_view}}&nbsp;℃</p>
 				{% else %}
 					<li><em>Unbelievable. No entries here so far</em>
 				{% endfor %}
