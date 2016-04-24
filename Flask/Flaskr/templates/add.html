@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+{% block body %}
+	{% if session.logged_in %}
+
+        <div id="crumb_l" class=breadcrumb>
+            <span>&nbsp;你的位置：</span>
+            <a href="{{url_for("show_entries")}}">首页</a> &gt;
+            发布文章
+        </div>
+
+
+		<article>
+			<h4>发布新文章</h4>
+			{% if error %}
+				<p class=error><strong>Error:</strong> {{ error }}
+			{% endif %}
+		    <form action="{{ url_for('add_entry') }}" method=post class=add-entry>
+		        <dl>
+		            <dt>标题:
+		            <dd><input type=text size=71 name=title>
+		            <p></p>
+		            <dt>正文:
+		            <dd><textarea name=text rows=20 cols=71></textarea>
+		            <dd><input type=submit value=发布></input>
+		        </dl>
+		    </form>
+		</article>
+		
+		<aside>
+			<h4>友情提示</h4>
+			<ul>
+				<li>目前支持 markdown 的加粗/斜体/标题等，但是不能插入图片和超链接
+				<li>html 代码目前也没有转义，问题较多。
+			</ul>
+		</aside>
+	{% endif %}
+
+{% endblock %}
+
+
+
+
