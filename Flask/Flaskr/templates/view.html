@@ -10,21 +10,17 @@
 
 	<article>
 		<ul>
-		{% for entry in entries %}
 			<li><h4>{{ entry.title }}</h4></li>
 			<p style="font-size: 10px;color: #999">{{ entry.c_time[:10] }}&nbsp;&nbsp;|&nbsp;&nbsp;{{ entry.page_view }} ℃</p>
 			{{ entry.text|safe }}
-		{% else %}
-			<em>Unbelievable. No entries here so far</em>
-		{% endfor %}
 		</ul>
 	</article>
 
 	<aside>
 		<h2 class=title-in-container style="color:#666">相关推荐</h2>
 		<ul>
-			{% for entry in entries %}
-				<li><a href="/view/{{entry.id}}">{{ entry.title }}</a>
+			{% for title in titles %}
+				<li><a href="/view/{{title[0]}}">{{ title[1] }}</a>
 			{% else %}
 				<li><em>Unbelievable. No entries here so far</em>
 			{% endfor %}

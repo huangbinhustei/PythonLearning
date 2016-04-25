@@ -1,81 +1,90 @@
 # -*- coding: utf-8 -*-
 
-import sqlite3
 from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash
-from contextlib import closing
 from pyquery import PyQuery as pq
 import markdown2
 import time
 import random
 import html
+from flask.ext.sqlalchemy import SQLAlchemy
+import os
 
 app = Flask(__name__)
-
+basedir = os.path.abspath(os.path.dirname(__file__))
 app.config.update(
     DATABASE="flaskr.db",
     DEBUG=True,
     SECRET_KEY="TEMP",
     USERNAME="admin",
-    PASSWORD="admin"
+    PASSWORD="admin",
+    SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(basedir, "flaskr.db")
 )
+db = SQLAlchemy(app)
 
 
-def connect_db():
-    return sqlite3.connect(app.config["DATABASE"])
+class Docs(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String)
+    text = db.Column(db.String)
+    abstract = db.Column(db.String)
+    c_time = db.Column(db.String)
+    renew_time = db.Column(db.String)
+    page_view = db.Column(db.Integer)
+    tag = db.Column(db.String)
+    category = db.Column(db.String)
+    thumb = db.Column(db.String)
+
+    def __init__(self, c_list):
+        self.title = c_list[0]
+        self.text = c_list[1]
+        self.abstract = c_list[2]
+        self.c_time = c_list[3]
+        self.renew_time = c_list[4]
+        self.page_view = c_list[5]
+        self.tag = c_list[6]
+        self.category = c_list[7]
+        self.thumb = c_list[8]
+
+    def __repr__(self):
+        return "<Docs %r" % self.title
 
 
 def init_db():
-    with closing(connect_db()) as db:
-        with app.open_resource("schema.sql", "r") as f:
-            db.cursor().executescript(f.read())
-        db.commit()
-
-
-@app.before_request
-def before_request():
-    g.db = connect_db()
-
-
-@app.after_request
-def after_requests(response):
-    g.db.close()
-    return response
+    db.create_all()
 
 
 @app.route("/")
 def show_entries():
-    cur1 = g.db.execute("select title,abstract,id,c_time,page_view,thumb from entries order by id desc limit 6")
+    posts = Docs.query.all()
     entries = []
-    for row in cur1.fetchall():
-        temp_thumb = row[5]
+    titles = []
+    for row in posts:
+        temp_thumb = row.thumb
         if "" == temp_thumb:
             temp_thumb = "http://192.168.1.101/%E5%A3%81%E7%BA%B8/01991_autumnlake_1600x1200.jpg"
-        entries.append(dict(
-            title=row[0], abstract=row[1], id=str(row[2]), c_time=row[3], page_view=row[4], thumb=temp_thumb)
-        )
+        entry = row.__dict__
+        entry["thumb"] = temp_thumb
+        entries.append(entry)
 
-    cur2 = g.db.execute("select title, id, c_time, page_view from entries order by page_view desc limit 10")
-    titles = []
-    for row in cur2.fetchall():
-        temp_title = str(row[0])
+        temp_title = str(row.title)
         if len(temp_title) > 12:
-            temp_title = str(row[0])[:12]+"..."
-        titles.append(dict(title=temp_title, id=row[1], c_time=str(row[2]), page_view=row[3]))
+            temp_title = str(row[0])[:12] + "..."
+        temp = row.__dict__
+        temp["title"] = temp_title
+        titles.append(temp)
 
     return render_template("show_entries.html", entries=entries, titles=titles)
 
 
 @app.route("/view/<int:page_number>")
 def view(page_number):
-    sql = "select title, text, c_time, page_view from entries where id =" + str(page_number)
-    cur = g.db.execute(sql)
-    entries = [dict(title=row[0], text=html.unescape(row[1]), c_time=row[2], page_view=row[3]) for row in cur.fetchall()]
-    return render_template("view.html", entries=entries)
-
-
-@app.route("/home")
-def home():
-    return render_template("home.html")
+    this_post = Docs.query.get_or_404(page_number)
+    entry = this_post.__dict__
+    entry["text"] = html.unescape(this_post.text)
+    titles = []
+    for item in Docs.query.limit(10).all():
+        titles.append([item.__dict__["id"], item.__dict__["title"]])
+    return render_template("view.html", entry=entry, titles=titles)
 
 
 @app.route("/add", methods=["GET", "POST"])
@@ -98,11 +107,9 @@ def add_entry():
         if not str(title).strip() or not str(request.form["text"]).strip():
             return render_template("add.html", error="请输入标题和正文")
 
-        sql = "insert into entries (title, text, abstract, c_time, page_view, thumb) values" \
-              " (\"" + title + "\",\"" + text + "\",\"" + abstract + "\",\"" + c_time + "\",\"" + str(page_view) +  "\",\"" + str(thumb) + "\")"
-
-        g.db.execute(sql)
-        g.db.commit()
+        new_doc = Docs([title, text, abstract, c_time, "", page_view, "", "", thumb])
+        db.session.add(new_doc)
+        db.session.commit()
         flash("done")
         return redirect(url_for("show_entries"))
     else:
@@ -136,5 +143,5 @@ def page_not_found(error):
 
 
 if __name__ == '__main__':
-    # init_db()
+    init_db()
     app.run()
