@@ -17,7 +17,8 @@ app.config.update(
     SECRET_KEY="TEMP",
     USERNAME="admin",
     PASSWORD="admin",
-    SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(basedir, "flaskr.db")
+    SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(basedir, "flaskr.db"),
+    SQLALCHEMY_TRACK_MODIFICATIONS=True
 )
 db = SQLAlchemy(app)
 
@@ -54,8 +55,10 @@ def init_db():
 
 
 @app.route("/")
-def show_entries():
-    posts = Docs.query.all()
+@app.route("/<int:page_id>")
+def show_entries(page_id=1):
+    paginate = Docs.query.paginate(page_id, 3, False)
+    posts = paginate.items
     entries = []
     titles = []
     for row in posts:
@@ -73,12 +76,12 @@ def show_entries():
         temp["title"] = temp_title
         titles.append(temp)
 
-    return render_template("show_entries.html", entries=entries, titles=titles)
+    return render_template("show_entries.html", entries=entries, titles=titles, paginate=paginate)
 
 
-@app.route("/view/<int:page_number>")
-def view(page_number):
-    this_post = Docs.query.get_or_404(page_number)
+@app.route("/view/<int:doc_id>")
+def view(doc_id):
+    this_post = Docs.query.get_or_404(doc_id)
     entry = this_post.__dict__
     entry["text"] = html.unescape(this_post.text)
     titles = []
@@ -137,11 +140,20 @@ def logout():
     return redirect(url_for("show_entries"))
 
 
+@app.route("/home", methods=["GET"])
+def home():
+    if request.method == "GET":
+        return render_template("home.html")
+    else:
+        print("haha")
+        return render_template("home.html")
+
+
 @app.errorhandler(404)
 def page_not_found(error):
     return redirect(url_for("show_entries"))
 
 
 if __name__ == '__main__':
-    init_db()
+
     app.run()
