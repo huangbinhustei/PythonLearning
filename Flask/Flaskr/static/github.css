@@ -158,13 +158,12 @@ li>ol,li>ul {
 hr {
     height: 0px;
     padding: 0;
-    margin: 16px 0;
+    margin: 2px 0;
     background-color: #e7e7e7;
     border: 0 none;
     overflow: hidden;
     box-sizing: content-box;
-    border-bottom: 1px solid #eee;
-    
+    border-bottom: 1px solid #ccc;
 }
 
 body > h2:first-child {
@@ -382,7 +381,6 @@ pre.md-fences,
 .page {
     margin: 0.5em auto;
     width: 60em;
-    height: 90em;
     border: 1px solid #ccc;
     padding: 0.8em;
     background: #FAFFFA;
@@ -457,6 +455,14 @@ nav ul li {
     list-style: none;
 }
 
+.float-left {
+    float: left;
+    margin: 0;
+    text-align: center;
+    list-style: none;
+    border: 1px solid #000;
+}
+
 nav ul li a {
     width: 100%;
     height:31px;
@@ -522,9 +528,8 @@ li {
     line-height: 1.35;
 }
 
-.aside-desc {
+.font-unem {
     font-size: 10px;
     color: #bbb;
     line-height: 1;
-    border-bottom: 1px dashed #ccc;
 }
