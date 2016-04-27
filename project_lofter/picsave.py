@@ -50,7 +50,7 @@ class PicSave(object):
         self.path = dir_path
         self.retry_time = retry_time
 
-    def update(self, url_set_new, path_new=" "):
+    def update(self, url_set_new: object, path_new: object = " ") -> object:
         self.pic_url_set = url_set_new
         self.save_log = []
         if path_new == " ":

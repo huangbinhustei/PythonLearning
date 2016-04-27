@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from flask import Flask
-from flask import request
-from flask import render_template
+from small_flask import Flask
+from small_flask import request
+from small_flask import render_template
 import sys
 sys.path.append("..")
 import recommending.sug as tui_jian
