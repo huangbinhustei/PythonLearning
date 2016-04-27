@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash
+from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash, jsonify
 from pyquery import PyQuery as pq
 import markdown2
 import time
@@ -8,6 +8,7 @@ import random
 import html
 from flask.ext.sqlalchemy import SQLAlchemy
 import os
+import json
 
 app = Flask(__name__)
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -16,7 +17,7 @@ app.config.update(
     SECRET_KEY="TEMP",
     USERNAME="admin",
     PASSWORD="admin",
-    SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(basedir, "flaskr.db"),
+    SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(basedir, "flaskr2.db"),
     SQLALCHEMY_TRACK_MODIFICATIONS=True,
     POST_IN_SINGL_PAGE=10,
 )
@@ -149,11 +150,25 @@ def home():
         return render_template("home.html")
 
 
+@app.route("/json", methods=["GET", "POST"])
+def api_json():
+    if request.method == "POST":
+        doc_id = request.form["DOC_ID"]
+    else:
+        doc_id = request.args.get("doc_id", "")
+    this_post = Docs.query.get_or_404(doc_id)
+    entry = this_post.__dict__
+
+    return jsonify(
+        title=this_post.title,
+        pave_view=this_post.page_view,
+        c_time=entry["c_time"],
+    )
+
 @app.errorhandler(404)
 def page_not_found(error):
     return redirect(url_for("show_entries"))
 
 
 if __name__ == '__main__':
-
     app.run()

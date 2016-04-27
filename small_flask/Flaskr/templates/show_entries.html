@@ -23,8 +23,29 @@
 						<p class=content-in-container>{{ entry.abstract }}</p>
 					</div>
 				</div>
-				<br/>
+				
 			{% endfor %}
+
+				<br/>
+				<br/>
+			<div class=paginate-box>
+				{% if paginate.has_prev %} 
+					<a style="margin-right: 1em;" href="/">首页</a>
+		            <a href="/{{ paginate.prev_num }}">上一页</a>
+		        {% else %} 
+		        	<a style="margin-right: 1em;color:#999;">首页</a>
+		        	<a style="color:#999;">上一页</a>
+		        {% endif %} 
+		        	<a style="margin: 0 2em 0 2em;font-size: 10px;color:#999;">第 {{ paginate.page }} / {{ paginate.pages }} 页</a>
+		        
+		        {% if paginate.has_next %} 
+		            <a href="/{{ paginate.next_num }}">下一页</a>
+		            <a style="margin-left: 1em;" href="/{{ paginate.pages }}">末页</a>
+	            {% else %} 
+	            	<a style="color:#999;">下一页</a>
+	            	<a style="margin-left: 1em;color:#999;">末页</a>
+		        {% endif %} 
+			</div>
 
 		</article>
 
@@ -42,25 +63,7 @@
 
 		<div style="clear: both;"></div>
 
-		<div class=paginate-box>
-			{% if paginate.has_prev %} 
-				<a style="margin-right: 1em;" href="/">首页</a>
-	            <a href="/{{ paginate.prev_num }}">上一页</a>
-	        {% else %} 
-	        	<a style="margin-right: 1em;color:#999;" href="/">首页</a>
-	        	<a style="color:#999;" href="/{{ paginate.prev_num }}">上一页</a>
-	        {% endif %} 
-	        	<a style="margin: 0 2em 0 2em;font-size: 10px;color:#999;">第 {{ paginate.page }} / {{ paginate.pages }} 页</a>
-	        
-	        {% if paginate.has_next %} 
-	            <a href="/{{ paginate.next_num }}">下一页</a>
-	            <a style="margin-left: 1em;" href="/{{ paginate.pages }}">末页</a>
-            {% else %} 
-            	<a style="color:#999;" href="/{{ paginate.next_num }}">下一页</a>
-            	<a style="margin-left: 1em;color:#999;" href="/{{ paginate.pages }}">末页</a>
-	        {% endif %} 
-			
-		</div>
+
 
 		<div style="clear: both;"></div>
 
