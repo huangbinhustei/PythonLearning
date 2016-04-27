@@ -10,10 +10,12 @@
 
 	<article>
 		<ul>
-			<li><h4>{{ entry.title }}</h4></li>
-			<p style="font-size: 10px;color: #999">{{ entry.c_time[:10] }}&nbsp;&nbsp;|&nbsp;&nbsp;{{ entry.page_view }} ℃</p>
+			<li><h2>{{ entry.title }}</h2></li>
+			<p class=unimportant-desc>{{ entry.c_time[:10] }}&nbsp;&nbsp;|&nbsp;&nbsp;{{ entry.page_view }} ℃</p>
 			{{ entry.text|safe }}
 		</ul>
+		</br>
+		<p style="width: 100%;text-align: center;color: #999">-------------全文完-------------</p>
 	</article>
 
 	<aside>
@@ -28,4 +30,8 @@
 	</aside>
 
 	<div style="clear: both;"></div>
+
+	</br>
+
+
 {% endblock %}

@@ -18,7 +18,7 @@
                 {% endif %}
             </div>
 
-            <h1 style="font-family: PMingLiU;border-bottom:0px;line-height: 0"><a href="{{url_for('show_entries')}}" style="color: #333">彬彬的Flask之路</a></h1>
+            <h1><a href="{{url_for('show_entries')}}" style="color: #333">彬彬的Flask之路</a></h1>
             <br>
 
             {% for message in get_flashed_messages() %}
@@ -37,5 +37,9 @@
         {% block body %}{% endblock %}
 
     </div>
+
+<!--     <footer class=black-page>
+        <p style="color: #fff;width: 100%;align: center;">版权所有&nbsp; |&nbsp; 联系我们</p>
+    </footer> -->
 
 </body>

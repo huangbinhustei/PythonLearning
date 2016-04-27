@@ -8,19 +8,26 @@
         登录
     </div>
 
-    <h2>请登录</h2>
-    {% if error %}<p class=error><strong>Error:</strong> {{ error }}{% endif %}
-    <form action="{{ url_for('login') }}" method=post>
-        <dl >
-            <dt style="width: 72px">用户名:
-            <dd style="align-self: left"><input type=text name=username>
-            <p></p>
-            <dt style="width: 72px">密码:
-            <dd style="align-self: left"><input type=password name=password>
-            <p></p>
-            <dt><input type=submit value=登录>
-        </dl>
-    </form>
+    <article>
+        <h2>请登录</h2>
+
+        {% if error %}<p class=error><strong>Error:</strong> {{ error }}{% endif %}
+        
+        <form action="{{ url_for('login') }}" method=post>
+            <dl >
+                <dt style="width: 60px">用户名:
+                <dd><input type=text name=username>
+                <p></p>
+                <dt style="width: 60px">密码:
+                <dd><input type=password name=password>
+                <p></p>
+                <dt><input type=submit value=登录>
+            </dl>
+        </form>
+
+    </article>
+
+    
 
     <div style="clear: both;"></div>
 {% endblock %}

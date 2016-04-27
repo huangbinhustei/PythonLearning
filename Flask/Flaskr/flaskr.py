@@ -72,7 +72,7 @@ def show_entries(page_id=1):
 
         temp_title = str(row.title)
         if len(temp_title) > 12:
-            temp_title = str(row[0])[:12] + "..."
+            temp_title = str(entry["title"])[:12] + "..."
         temp = row.__dict__
         temp["title"] = temp_title
         titles.append(temp)
