@@ -378,7 +378,7 @@ pre.md-fences,
 
 }
 
-.page {
+/*.page {
     margin: 0.5em auto;
     width: 60em;
     border: 1px solid #ccc;
@@ -386,18 +386,18 @@ pre.md-fences,
     background: #FAFFFA;
     box-shadow:0px 1px 2px #ddd;
 
-}
+}*/
 
-.add-entry {
+/*.add-entry {
     font-size: 0.9em;
     border-bottom: 1px solid #ccc;
 }
 
 .add-entry dl {
     font-weight: bold;
-}
+}*/
 
-article{ 
+/*article{ 
     margin: 1em auto;
     padding: 0.8em;
     float: left;
@@ -414,17 +414,17 @@ aside{
     border: 1px solid #ddd;
     box-shadow:0px 1px 2px #eee;
     overflow:hidden; 
-}
+}*/
 
-dl {
+/*dl {
     clear: left;
 }
 
 dt {
     float: left;
-}
+}*/
 
-.metanav {
+/*.metanav {
     text-align: right;
     font-size: 0.8em;
     padding: 0.3em;
@@ -453,14 +453,6 @@ nav ul li {
     width: 9%;
     text-align: center;
     list-style: none;
-}
-
-.float-left {
-    float: left;
-    margin: 0;
-    text-align: center;
-    list-style: none;
-    border: 1px solid #000;
 }
 
 nav ul li a {
@@ -533,3 +525,20 @@ li {
     color: #bbb;
     line-height: 1;
 }
+
+.paginate-box {
+    margin-top: 1em;
+    width: 100%;
+    display: inline-block;
+    text-align: center;
+}
+
+div.paginate-box a {
+    font-size: 12px;
+}
+
+.aside-desc {
+    font-size: 10px;
+    color: #999;
+    line-height: 1
+}*/

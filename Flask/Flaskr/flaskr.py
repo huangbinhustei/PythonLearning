@@ -18,7 +18,8 @@ app.config.update(
     USERNAME="admin",
     PASSWORD="admin",
     SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(basedir, "flaskr.db"),
-    SQLALCHEMY_TRACK_MODIFICATIONS=True
+    SQLALCHEMY_TRACK_MODIFICATIONS=True,
+    POST_IN_SINGL_PAGE=3
 )
 db = SQLAlchemy(app)
 
@@ -57,7 +58,7 @@ def init_db():
 @app.route("/")
 @app.route("/<int:page_id>")
 def show_entries(page_id=1):
-    paginate = Docs.query.paginate(page_id, 3, False)
+    paginate = Docs.query.paginate(page_id, app.config["POST_IN_SINGL_PAGE"], False)
     posts = paginate.items
     entries = []
     titles = []

@@ -7,7 +7,7 @@
 
     <div class=page>
         <header>
-            <link rel=stylesheet type=text/css href="{{ url_for('static', filename='github.css') }}">
+            <link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">
 
             <div class=metanav>
                 {% if not session.logged_in %}
@@ -35,8 +35,6 @@
         </nav>
 
         {% block body %}{% endblock %}
-
-        <div style="clear: both;"></div>
 
     </div>
 
