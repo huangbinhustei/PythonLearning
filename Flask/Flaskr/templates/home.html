@@ -1,0 +1,23 @@
+{% extends "layout.html" %}
+
+{% block body %}
+
+    <div id="crumb_l" class=breadcrumb>
+        <span>&nbsp;你的位置：</span>
+        <a href="{{url_for("show_entries")}}">首页</a> &gt;
+        设置
+    </div>
+
+    
+    <form action="{{ url_for('show_entries') }}" method=post>
+        <dl >
+            <dt style="width: 72px">用户名:
+            <dd style="align-self: left"><input type=text name=username>
+            <p></p>
+            <dt style="width: 72px">密码:
+            <dd style="align-self: left"><input type=password name=password>
+            <p></p>
+            <dt><input type=submit value=登录>
+        </dl>
+    </form>
+{% endblock %}

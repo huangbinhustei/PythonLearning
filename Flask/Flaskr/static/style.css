@@ -1,0 +1,236 @@
+/*通用*/
+hr {
+    height: 0px;
+    padding: 0;
+    margin: 2px 0;
+    background-color: #e7e7e7;
+    border: 0 none;
+    overflow: hidden;
+    box-sizing: content-box;
+    border-bottom: 1px solid #ccc;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    position: relative;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    font-weight: bold;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+    cursor: text;
+}
+
+h1 {
+    font-family:"Microsoft YaHei UI Light" !important;
+    font-size: 2em;
+    line-height: 0.6;
+}
+
+h2 {
+    font-size: 1.4em;
+    line-height: 1.225;
+}
+
+h3 {
+    font-size: 1.2em;
+    line-height: 1.4;
+}
+
+html {
+    font-size: 16px;
+    color: #333;
+}
+
+body {
+    font-family: "Open Sans","Clear Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+    color: rgb(51, 51, 51);
+    line-height: 1.6;
+    background: #eee;
+    -webkit-font-smoothing: antialiased;
+}
+
+dl {
+    clear: left;
+    font-size: 0.9em;
+}
+
+dt {
+    float: left;
+    font-size: 0.9em;
+}
+
+a {
+    color: #4183C4;
+}
+a:link{
+    text-decoration: none;
+}
+
+p {
+    font-size: 0.9em;
+    color: #555;
+}
+
+.unimportant-desc {
+    font-size: 0.8em;
+    color: #bbb;
+    line-height: 0;
+}
+
+.page {
+    margin: 0.5em auto;
+    width: 60em;
+    border: 1px solid #ccc;
+    padding: 0.8em;
+    background: #FAFFFA;
+    box-shadow:0px 1px 2px #ddd;
+}
+
+.black-page{
+    margin: 0.5em auto;
+    padding: 0.8em;
+    width: 60em;
+    border: 1px solid #ccc;
+    background: #333;
+    box-shadow:0px 1px 2px #ddd;
+    text-align: center;
+}
+
+/*分栏+面包屑*/
+
+.metanav {
+    text-align: right;
+    font-size: 0.8em;
+    padding: 0.3em;
+    margin-bottom: 1em;
+}
+
+.breadcrumb {
+    font-size: 0.8em;
+    color:#999;
+}
+
+
+nav {
+    margin: 0 0 10px 0;
+    position: relative;
+    width: 100%;
+    height: 35px;
+    line-height: 35px;
+    background: #333;
+    border-radius: 2px;
+}
+
+nav ul li {
+    float: left;
+    margin: 0;
+    width: 9%;
+    text-align: center;
+    list-style: none;
+}
+
+nav ul li a {
+    /*width: 100%;*/
+    height:31px;
+    line-height: 35px;
+    display: block;
+    font-size: 14px;
+    color: white;
+}
+
+nav ul li:hover {
+    border-bottom: 4px solid #a60000; 
+}
+
+/*内容列表*/
+
+article{ 
+    margin: 1em auto;
+    padding: 0.8em;
+    float: left;
+    width:38em; 
+    overflow:hidden; 
+    border-top: 1px solid #eee
+}
+
+.container {
+    width: 100%;
+    padding: 15px 0 20px 0;
+    border-bottom: 1px solid #eee;
+    position: relative;
+    float: left;
+}
+
+.container-thumb {
+    float: left;
+    width: 150px;
+    height: 120px;
+    overflow: hidden;
+    border: 1px solid #ccc;
+}
+
+.container-body {
+    float: left;
+    width: 440px;
+    height: 120px;
+    color: #888;
+    margin-left: 10px;
+}
+
+.title-in-container {
+    font-size: 1em;
+    margin-top: 0.5rem;
+    line-height: 1;
+    margin-bottom: 0rem;
+    cursor: text;
+    border-bottom: none;
+
+}
+
+.content-in-container {
+    font-size: 0.8em;
+    color: #999;
+    line-height: 1.2;
+}
+
+.img-in-container {
+    width: 140px;
+    height: 110px;
+    padding: 5px 0 0 5px;
+    align-self: center;
+    margin: 0 auto;   
+}
+
+/*右侧推荐*/
+
+aside{ 
+    margin: 1em auto;
+    padding: 0.8em;
+    float: right;
+    width:15em; 
+    border: 1px solid #ddd;
+    box-shadow:0px 1px 2px #eee;
+    overflow:hidden; 
+}
+
+aside li {
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+
+.paginate-box {
+    margin: 1em 0 2em 0;
+    width: 100%;
+    display: inline-block;
+    text-align: center;
+}
+
+div.paginate-box a {
+    font-size: 12px;
+}

@@ -1,0 +1,37 @@
+{% extends "layout.html" %}
+
+{% block body %}
+
+    <div id="crumb_l" class=breadcrumb>
+        <span>&nbsp;你的位置：</span>
+        <a href="{{url_for("show_entries")}}">首页</a> &gt;
+        阅读文章
+    </div>
+
+	<article>
+		<ul>
+			<li><h2>{{ entry.title }}</h2></li>
+			<p class=unimportant-desc>{{ entry.c_time[:10] }}&nbsp;&nbsp;|&nbsp;&nbsp;{{ entry.page_view }} ℃</p>
+			{{ entry.text|safe }}
+		</ul>
+		</br>
+		<p style="width: 100%;text-align: center;color: #999">-------------全文完-------------</p>
+	</article>
+
+	<aside>
+		<h2 class=title-in-container style="color:#666">相关推荐</h2>
+		<ul>
+			{% for title in titles %}
+				<li><a href="/view/{{title[0]}}">{{ title[1] }}</a>
+			{% else %}
+				<li><em>Unbelievable. No entries here so far</em>
+			{% endfor %}
+		</ul>
+	</aside>
+
+	<div style="clear: both;"></div>
+
+	</br>
+
+
+{% endblock %}
