@@ -1,25 +1,24 @@
 # -*- coding: utf-8 -*-
 
-from Flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash
+from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash
 from pyquery import PyQuery as pq
 import markdown2
 import time
 import random
 import html
-from small_flask.ext.sqlalchemy import SQLAlchemy
+from flask.ext.sqlalchemy import SQLAlchemy
 import os
 
 app = Flask(__name__)
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config.update(
-    DATABASE="flaskr.db",
     DEBUG=True,
     SECRET_KEY="TEMP",
     USERNAME="admin",
     PASSWORD="admin",
     SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(basedir, "flaskr.db"),
     SQLALCHEMY_TRACK_MODIFICATIONS=True,
-    POST_IN_SINGL_PAGE=3
+    POST_IN_SINGL_PAGE=10,
 )
 db = SQLAlchemy(app)
 

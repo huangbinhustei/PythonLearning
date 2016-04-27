@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from small_flask import Flask, request, jsonify
-from small_flask import render_template
+from flask import Flask, request, jsonify
+from flask import render_template
 import sqlite3
 import json
 import time
