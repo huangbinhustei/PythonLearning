@@ -17,7 +17,7 @@ app.config.update(
     SECRET_KEY="TEMP",
     USERNAME="admin",
     PASSWORD="admin",
-    SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(basedir, "flaskr2.db"),
+    SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(basedir, "flaskr.db"),
     SQLALCHEMY_TRACK_MODIFICATIONS=True,
     POST_IN_SINGL_PAGE=10,
 )
@@ -71,8 +71,8 @@ def show_entries(page_id=1):
         entries.append(entry)
 
         temp_title = str(row.title)
-        if len(temp_title) > 12:
-            temp_title = str(entry["title"])[:12] + "..."
+        if len(temp_title) > 24:
+            temp_title = str(entry["title"])[:24] + "..."
         temp = row.__dict__
         temp["title"] = temp_title
         titles.append(temp)

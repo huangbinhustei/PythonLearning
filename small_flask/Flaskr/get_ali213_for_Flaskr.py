@@ -23,7 +23,7 @@ app.config.update(
     SECRET_KEY="TEMP",
     USERNAME="admin",
     PASSWORD="admin",
-    SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(basedir, "flaskr2.db"),
+    SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(basedir, "flaskr.db"),
     SQLALCHEMY_TRACK_MODIFICATIONS=True,
     POST_IN_SINGL_PAGE=10,
 )
