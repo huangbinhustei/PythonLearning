@@ -10,28 +10,31 @@ import time
 img_src_has_try2save = set([])
 post_has_try2save = {" ", " "}
 
-# url = "http://justinbieber520.lofter.com/"
-# x_path_post = ([".pic", ".img"], "a")
-# path = os.path.abspath(os.path.join(os.path.dirname(__file__))) + "/IMG/"
-# pat = re.compile(r'http://justinbieber520\.lofter\.com/post/(.+)')
+target_list = [
+    (
+        "justinbieber520",
+        ([".pic", ".img"], "a", ".img"),
+        re.compile(r'http://justinbieber520\.lofter\.com/post/(.+)'),
+    ), (
+        "wowosyyhu",
+        ([".main", ".img"], "a", ".img"),
+        re.compile(r'http://wowosyyhu\.lofter\.com/post/(.+)')
+    ), (
+        "nlrzjghxxx",
+        ([".main", ".img"], "a", ".img"),
+        re.compile(r'http://nlrzjghxxx\.lofter\.com/post/(.+)'),
+    ), (
+        "onlyecholy",
+        ([".pic", ".img"], "a", ".pic"),
+        re.compile(r'http://onlyecholy\.lofter\.com/post/(.+)')
+    ), (
+        "22988861",
+        ([".main", ".img"], "a", ".img"),
+        re.compile(r'http://22988861\.lofter\.com/post/(.+)')
+    )
+]
 
-# url = "http://wowosyyhu.lofter.com/"
-# x_path_post = ([".main", ".img"], "a")
-# path = os.path.abspath(os.path.join(os.path.dirname(__file__))) + "/IMG2/"
-# pat = re.compile(r'http://wowosyyhu\.lofter\.com/post/(.+)')
-
-# url = "http://nlrzjghxxx.lofter.com"
-# x_path_post = ([".main", ".img"], "a")
-# path = os.path.abspath(os.path.join(os.path.dirname(__file__))) + "/IMG3/"
-# pat = re.compile(r'http://nlrzjghxxx\.lofter\.com/post/(.+)')
-
-url = "http://onlyecholy.lofter.com"
-x_path_post = ([".pic", ".img"], "a")
-path = os.path.abspath(os.path.join(os.path.dirname(__file__))) + "/IMG5/"
-pat = re.compile(r'http://onlyecholy\.lofter\.com/post/(.+)')
-
-# http://fitgirlgogogo.lofter.com/
-# http://www.lofter.com/tag/%E5%81%A5%E8%BA%AB?act=qbwsjs_20160325_01?act=qbwysylofer_20150101_01
+target_item = target_list[1]
 
 
 class Student(object):
@@ -58,8 +61,7 @@ class Student(object):
         temp_set_of_img_src = set([])
         target_content = requests.get(tar_url).content.decode("utf-8")
         target_div = pq(target_content)("div")
-        target_img = pq(target_div)(".pic")
-        # target_img = pq(target_div)(".img")
+        target_img = pq(target_div)(x_path_post[2])
         target_a = pq(target_img)("a")
         for item in target_a:
             img_src_item = pq(item).attr("bigimgsrc")
@@ -82,11 +84,6 @@ class Student(object):
 
     def func_in_try(self, this_url):
         post_url_set = self.get_post_url(this_url)
-        # if self.temp != post_url_set:
-        #     self.temp = post_url_set
-        # else:
-        #     print("抓取完毕")
-        #     exit()
         for post_url in post_url_set:
             dir_name = str(re.sub(self.pattern, r'\1', post_url))
             if dir_name in post_has_try2save:
@@ -118,7 +115,6 @@ class Student(object):
                                 img_set_need_retry.add(log_line[1])
                     if img_set_need_retry:
                         print("[  文件补漏]\t\t " + post_url)
-                        # print("find sth need retry")
                         new_save_p.update(img_set_need_retry, dir_path)
                         new_save_p.start_save()
                     else:
@@ -127,6 +123,11 @@ class Student(object):
 
 
 if __name__ == '__main__':
+    url = "http://" + target_item[0] + ".lofter.com/"
+    x_path_post = target_item[1]
+    path = os.path.abspath(os.path.join(os.path.dirname(__file__))) + "/" + target_item[0] + "/"
+    pat = target_item[2]
+
     new_lol = Student(url)
     new_save_p = PicSave({}, " ")
     new_lol.start()
