@@ -1,33 +1,56 @@
 {% extends "layout.html" %}
 
-{% block body %}
+{% block content %}
 
-    <div id="crumb_l" class=breadcrumb>
-        <span>&nbsp;你的位置：</span>
-        <a href="{{url_for("show_entries")}}">首页</a> &gt;
-        登录
-    </div>
+    <div class="container">
+        <ol class="breadcrumb">
+          <li><span>&nbsp;你的位置：</span><a href="{{url_for("show_entries")}}">Home</a></li>
+          <li><a href="#">2013</a></li>
+          <li class="active">登录</li>
+        </ol>
 
-    <article>
-        <h2>请登录</h2>
+        <div class="page-header">
+           <h1>请登录
+              <small>使用 Bootstrap 后的登录页</small>
+           </h1>
+        </div>
 
-        {% if error %}<p class=error><strong>Error:</strong> {{ error }}{% endif %}
-        
-        <form action="{{ url_for('login') }}" method=post>
-            <dl >
-                <dt style="width: 60px">用户名:
-                <dd><input type=text name=username>
-                <p></p>
-                <dt style="width: 60px">密码:
-                <dd><input type=password name=password>
-                <p></p>
-                <dt><input type=submit value=登录>
-            </dl>
+        {% if error %}
+            <div class="alert alert-warning">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">
+                    &times;
+                </button>
+                Error:{{ error }}
+            </div>
+        {% endif %}
+
+        <form class="form-horizontal" action="{{ url_for('login') }}" method=post>
+            <div class="form-group">
+                <label for="username" class="col-sm-2 control-laber">用户名:</label>
+                <div class="col-sm-10">
+                    <input type="text" name=username placeholder="请输入用户名"></input>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="password" class="col-sm-2 control-laber">密码:</label>
+                <div class="col-sm-10">
+                    <input type="password" name=password placeholder="请输入密码"></input>
+                </div>
+            </div>
+            <div class="form-group">
+               <div class="col-sm-offset-2 col-sm-10">
+                  <div class="checkbox">
+                     <label>
+                        <input type="checkbox"> 请记住我
+                     </label>
+                  </div>
+               </div>
+            </div>
+            <div class="form-group">
+              <div class="col-sm-offset-2 col-sm-10">
+                 <button type="submit" class="btn btn-primary">登录</button>
+              </div>
+            </div>
         </form>
-
-    </article>
-
-    
-
-    <div style="clear: both;"></div>
+    </div>
 {% endblock %}

@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+
+{% block article %}
+	<ul>
+		{% for title in titles %}
+			<li><a href="/view/{{title[0]}}">{{ title[1] }}</a>
+		{% else %}
+			<li><em>Unbelievable. No entries here so far</em>
+		{% endfor %}
+	</ul>
+
+<!-- 	<aside>
+		<h2 class=title-in-container style="color:#666">相关推荐</h2>
+		<ul>
+			{% for title in titles %}
+				<li><a href="/view/{{title[0]}}">{{ title[1] }}</a>
+			{% else %}
+				<li><em>Unbelievable. No entries here so far</em>
+			{% endfor %}
+		</ul>
+	</aside> -->
+{% endblock %}

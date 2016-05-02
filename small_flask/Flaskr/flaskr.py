@@ -7,8 +7,9 @@ import time
 import random
 import html
 from flask.ext.sqlalchemy import SQLAlchemy
+from flask.ext.bootstrap import Bootstrap
 import os
-import json
+
 
 app = Flask(__name__)
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -22,6 +23,7 @@ app.config.update(
     POST_IN_SINGL_PAGE=10,
 )
 db = SQLAlchemy(app)
+bootstrap = Bootstrap(app)
 
 
 class Docs(db.Model):
@@ -50,9 +52,27 @@ class Docs(db.Model):
     def __repr__(self):
         return "<Docs %r" % self.title
 
+    def to_dict(self, isSafe):
+        return dict(
+            title=self.title,
+            text=html.unescape(self.text) if isSafe else self.text,
+            abstract=self.abstract,
+            c_time=self.c_time,
+            renew_time=self.renew_time,
+            page_view=self.page_view,
+            tag=self.tag,
+            category=self.category,
+            thumb=self.thumb,
+        )
 
-def init_db():
-    db.create_all()
+
+def get_categories_and_tags():
+    categories = []
+    tags = []
+    for row in Docs.query.all():
+        categories.append(str(row.category))
+        tags.append(str(row.tag))
+    return [list(set(categories)), list(set(tags))]
 
 
 @app.route("/")
@@ -77,7 +97,13 @@ def show_entries(page_id=1):
         temp["title"] = temp_title
         titles.append(temp)
 
-    return render_template("show_entries.html", entries=entries, titles=titles, paginate=paginate)
+    return render_template("show_entries.html",
+                           entries=entries,
+                           titles=titles,
+                           paginate=paginate,
+                           categories=get_categories_and_tags()[0],
+                           tags=get_categories_and_tags()[1]
+                           )
 
 
 @app.route("/view/<int:doc_id>")
@@ -87,8 +113,12 @@ def view(doc_id):
     entry["text"] = html.unescape(this_post.text)
     titles = []
     for item in Docs.query.limit(10).all():
-        titles.append([item.__dict__["id"], item.__dict__["title"]])
-    return render_template("view.html", entry=entry, titles=titles)
+        titles.append([item.id, item.title, item.page_view])
+    return render_template("view.html",
+                           entry=entry,
+                           titles=titles,
+                           categories=get_categories_and_tags()[0],
+                           tags=get_categories_and_tags()[1])
 
 
 @app.route("/add", methods=["GET", "POST"])
@@ -114,10 +144,12 @@ def add_entry():
         new_doc = Docs([title, text, abstract, c_time, "", page_view, "", "", thumb])
         db.session.add(new_doc)
         db.session.commit()
-        flash("done")
+        flash("恭喜你又水了一贴")
         return redirect(url_for("show_entries"))
     else:
-        return render_template("add.html")
+        return render_template("add.html",
+                               categories=get_categories_and_tags()[0],
+                               tags=get_categories_and_tags()[1])
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -130,9 +162,11 @@ def login():
             error = 'Invalid password'
         else:
             session["logged_in"] = True
-            flash("U R IN")
+            flash("登录！")
             return redirect(url_for("show_entries"))
-    return render_template("login.html", error=error)
+    return render_template("login.html", error=error,
+                           categories=get_categories_and_tags()[0],
+                           tags=get_categories_and_tags()[1])
 
 
 @app.route("/logout", methods=["GET", "POST"])
@@ -157,18 +191,55 @@ def api_json():
     else:
         doc_id = request.args.get("doc_id", "")
     this_post = Docs.query.get_or_404(doc_id)
-    entry = this_post.__dict__
+    entry = this_post.to_dict(True)
+    return jsonify(**entry)
 
-    return jsonify(
-        title=this_post.title,
-        pave_view=this_post.page_view,
-        c_time=entry["c_time"],
-    )
+
+@app.route("/json/<int:doc_id>", methods=["GET"])
+@app.route("/json/<int:doc_id>/<name_d>", methods=["GET"])
+def json(doc_id=1, name_d=""):
+    this_post = Docs.query.get_or_404(doc_id)
+    entry = this_post.to_dict(True)
+    if name_d == "":
+        return jsonify(**entry)
+    else:
+        single_dict = dict()
+        single_dict[name_d] = entry[name_d]
+    return jsonify(**single_dict)
+
+
+@app.route("/category/<this_category>")
+def category(this_category="haha"):
+    titles = []
+    for item in Docs.query.filter_by(category=this_category).order_by(Docs.id):
+        titles.append([item.__dict__["id"], item.__dict__["title"]])
+
+    return render_template("category.html",
+                           game_name=this_category,
+                           titles=titles,
+                           categories=get_categories_and_tags()[0],
+                           tags=get_categories_and_tags()[1])
+
 
 @app.errorhandler(404)
 def page_not_found(error):
-    return redirect(url_for("show_entries"))
+    return redirect(url_for("show_entries")),404
+
+#
+# @app.before_first_request
+# def before_first_time():
+#     print("before_first_time？")
+#
+#
+# @app.before_request
+# def before_every_time():
+#     print("before_every_time")
+
+
+# @app.after_request
+# def after_every_time():
+#     print("after_every_time")
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0')

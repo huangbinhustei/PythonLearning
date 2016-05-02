@@ -1,45 +1,94 @@
-<!doctype html>
-<head>
-    <title>彬彬的Flask之路</title>
-</head>
+{% extends "bootstrap/base.html" %}
 
-<body>
+{% block title %}
+    Flasky
+{% endblock %}
 
-    <div class=page>
-        <header>
-            <link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">
+{% block navbar %}
+    <div class="navbar navbar-inverse" role="navigation">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse"> 
+                <!-- 这个button是用来下拉的，下面的四个span，后面三个是用来画按钮上的三根横线的 -->
+                    <span class="sr-only">Toggle naavigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a href="/" class="navbar-brand">Flasky</a>
+            </div>
+            <div class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li><a href="/">Home</a></li>
+                    <li class="dropdown"><a href="/" class="dropdown-toggle" data-toggle="dropdown">Tags<span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            {% for tag in tags %}
+                                <li><a href="/tag/{{ tag }}">{{ tag }}</a></li>
+                            {% else %}
+                                <li><a>Unbelievable. No entries here so far</a></li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                    <li class="dropdown"><a href="/" class="dropdown-toggle" data-toggle="dropdown">Categories<span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            {% for category in categories %}
+                                <li><a href="/category/{{ category }}">{{ category }}</a></li>
+                            {% else %}
+                                <li><a>Unbelievable. No entries here so far</a></li>
+                            {% endfor %}
+                        </ul>
+                    </li>
 
-            <div class=metanav>
-                {% if not session.logged_in %}
-                    <a href="{{ url_for('login') }}">登录</a>
-                {% else %}
-                    <a href="{{ url_for('logout') }}">退出登录&nbsp;</a>
-                    <a href="{{ url_for('add_entry') }}">&nbsp;发布</a>
-                {% endif %}
+                    {% if session.logged_in %}
+                        <li><a class="navbar-right" href="{{url_for('add_entry')}}">Post</a></li>
+                        <li><a class="navbar-right" href="{{ url_for('logout') }}">Logout</a></li>
+                    {% else %}
+                        <li><a class="navbar-right" href="{{ url_for('login') }}">Login</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+
+
+{% block content %}
+    <div class="container">
+        <ol class="breadcrumb">
+          <li><span>&nbsp;你的位置：</span><a href="{{url_for("show_entries")}}">Home</a></li>
+          <li><a href="#">2013</a></li>
+          <li class="active">十一月</li>
+        </ol>
+
+        {% for message in get_flashed_messages() %}
+            <div class="alert alert-info">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">
+                    &times;
+                </button>
+                {{ message }}
+            </div>
+        {% endfor %}
+
+        <div class="page-header">
+           <h1>彬彬的 Flask 之路
+              <small> 使用 Bootstrap 后的首页</small>
+           </h1>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-8">
+                {% block article %}{% endblock %}
             </div>
 
-            <h1><a href="{{url_for('show_entries')}}" style="color: #333">彬彬的Flask之路</a></h1>
-            <br>
-
-            {% for message in get_flashed_messages() %}
-                <div class=flash>{{ message }}</div>
-            {% endfor %}
-        </header>
-
-        <nav>
-            <ul>
-                <li style="width: 5%"><a href="{{url_for("show_entries")}}">首页</a></li>
-                <li><a href="#">分类预留</a></li>
-                <li><a href="#">标签预留</a></li>
-            </ul>
-        </nav>
-
-        {% block body %}{% endblock %}
+            <div class="col-sm-3 hidden-xs" style="float: right">
+                {% block aside %}{% endblock %}
+            </div>
+        </div>
 
     </div>
+{% endblock %}
 
-    <footer class=black-page>
+<footer>
         <p style="color: #fff;width: 100%;align: center;">版权所有&nbsp; |&nbsp; 联系我们</p>
-    </footer>
-
-</body>
+</footer>
