@@ -1,5 +1,11 @@
 {% extends "layout.html" %}
 
+{% block header %}
+	<div class="page-header">
+		<h1>Flasky&nbsp;<small>by Bootstrap</small></h1>
+	</div>
+{% endblock %}
+
 {% block article %}	
 	<ul class="media-list">
 	{% for entry in entries %}
@@ -20,20 +26,20 @@
 	<ul class=pager>
 	{% if paginate.has_prev %} 
 		<li><a href="/">首页</a></li>
-        <li><a href="/{{ paginate.prev_num }}">上一页</a></li>
-    {% else %} 
-    	<li class="disabled"><a>首页</a></li>
-    	<li class="disabled"><a>上一页</a></li>
-    {% endif %} 
-    	<li><a>第 {{ paginate.page }} / {{ paginate.pages }} 页</a>
-    
-    {% if paginate.has_next %} 
-        <li><a href="/{{ paginate.next_num }}">下一页</a></li>
-        <li><a href="/{{ paginate.pages }}">末页</a></li>
-    {% else %} 
-    	<li class="disabled"><a>下一页</a></li>
-    	<li class="disabled"><a>末页</a></li>
-    {% endif %} 
+		<li><a href="/{{ paginate.prev_num }}">上一页</a></li>
+	{% else %} 
+		<li class="disabled"><a>首页</a></li>
+		<li class="disabled"><a>上一页</a></li>
+	{% endif %} 
+		<li><a>第 {{ paginate.page }} / {{ paginate.pages }} 页</a>
+
+	{% if paginate.has_next %} 
+		<li><a href="/{{ paginate.next_num }}">下一页</a></li>
+		<li><a href="/{{ paginate.pages }}">末页</a></li>
+	{% else %} 
+		<li class="disabled"><a>下一页</a></li>
+		<li class="disabled"><a>末页</a></li>
+	{% endif %} 
 	</ul>
 {% endblock %}
 

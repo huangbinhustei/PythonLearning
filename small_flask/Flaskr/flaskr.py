@@ -7,8 +7,8 @@ import time
 import random
 import html
 from flask.ext.sqlalchemy import SQLAlchemy
-from flask.ext.bootstrap import Bootstrap
 import os
+from sqlalchemy import desc
 
 
 app = Flask(__name__)
@@ -23,7 +23,6 @@ app.config.update(
     POST_IN_SINGL_PAGE=10,
 )
 db = SQLAlchemy(app)
-bootstrap = Bootstrap(app)
 
 
 class Docs(db.Model):
@@ -112,7 +111,7 @@ def view(doc_id):
     entry = this_post.__dict__
     entry["text"] = html.unescape(this_post.text)
     titles = []
-    for item in Docs.query.limit(10).all():
+    for item in Docs.query.order_by(desc(Docs.page_view)).limit(10):
         titles.append([item.id, item.title, item.page_view])
     return render_template("view.html",
                            entry=entry,
@@ -223,7 +222,7 @@ def category(this_category="haha"):
 
 @app.errorhandler(404)
 def page_not_found(error):
-    return redirect(url_for("show_entries")),404
+    return redirect(url_for("show_entries"))
 
 #
 # @app.before_first_request

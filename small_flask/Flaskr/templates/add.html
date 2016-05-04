@@ -1,5 +1,11 @@
 {% extends "layout.html" %}
 
+{% block header %}
+	<div class="page-header">
+		<h1>发布新文章&nbsp;<small>by Bootstrap | Markdown</small></h1>
+	</div>
+{% endblock %}
+
 {% block article %}
 	<h4>发布新文章</h4>
 	{% if error %}

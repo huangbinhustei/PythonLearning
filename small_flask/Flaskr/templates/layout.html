@@ -1,10 +1,14 @@
-{% extends "bootstrap/base.html" %}
+<!doctype html>
+<head>
+    <title>Flasky</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap -->
+    <link href="//cdn.bootcss.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
+    <script src="//cdn.bootcss.com/jquery/1.11.3/jquery.min.js"></script>
+    <script src="//cdn.bootcss.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+</head>
 
-{% block title %}
-    Flasky
-{% endblock %}
-
-{% block navbar %}
+<body>
     <div class="navbar navbar-inverse" role="navigation">
         <div class="container">
             <div class="navbar-header">
@@ -49,11 +53,7 @@
             </div>
         </div>
     </div>
-{% endblock %}
 
-
-
-{% block content %}
     <div class="container">
         <ol class="breadcrumb">
           <li><span>&nbsp;你的位置：</span><a href="{{url_for("show_entries")}}">Home</a></li>
@@ -70,25 +70,20 @@
             </div>
         {% endfor %}
 
-        <div class="page-header">
-           <h1>彬彬的 Flask 之路
-              <small> 使用 Bootstrap 后的首页</small>
-           </h1>
-        </div>
+        {% block header %}{% endblock %}
 
         <div class="row">
             <div class="col-sm-8">
                 {% block article %}{% endblock %}
             </div>
-
             <div class="col-sm-3 hidden-xs" style="float: right">
                 {% block aside %}{% endblock %}
             </div>
         </div>
-
     </div>
-{% endblock %}
 
-<footer>
-        <p style="color: #fff;width: 100%;align: center;">版权所有&nbsp; |&nbsp; 联系我们</p>
-</footer>
+    <footer>
+            <p style="color: #fff;width: 100%;align: center;">版权所有&nbsp; |&nbsp; 联系我们</p>
+    </footer>
+
+</body>
