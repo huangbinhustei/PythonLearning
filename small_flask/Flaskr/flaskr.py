@@ -10,7 +10,8 @@ from flask.ext.sqlalchemy import SQLAlchemy
 import os
 from sqlalchemy import desc
 
-
+path = os.path.abspath(os.path.join(os.path.dirname(__file__))) + "/static/"
+pic_list = []
 app = Flask(__name__)
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config.update(
@@ -79,8 +80,8 @@ def get_categories_and_tags():
 def show_entries(page_id=1):
     paginate = Docs.query.paginate(page_id, app.config["POST_IN_SINGL_PAGE"], False)
     posts = paginate.items
+
     entries = []
-    titles = []
     for row in posts:
         temp_thumb = row.thumb
         if "" == temp_thumb:
@@ -89,11 +90,9 @@ def show_entries(page_id=1):
         entry["thumb"] = temp_thumb
         entries.append(entry)
 
-        temp_title = str(row.title)
-        if len(temp_title) > 24:
-            temp_title = str(entry["title"])[:24] + "..."
-        temp = row.__dict__
-        temp["title"] = temp_title
+    titles = []
+    for item in Docs.query.order_by(desc(Docs.page_view)).limit(10):
+        temp = item.__dict__
         titles.append(temp)
 
     return render_template("show_entries.html",
@@ -111,8 +110,8 @@ def view(doc_id):
     entry = this_post.__dict__
     entry["text"] = html.unescape(this_post.text)
     titles = []
-    for item in Docs.query.order_by(desc(Docs.page_view)).limit(10):
-        titles.append([item.id, item.title, item.page_view])
+    for item in Docs.query.filter_by(category=entry["category"]).order_by(Docs.id):
+        titles.append(item.__dict__)
     return render_template("view.html",
                            entry=entry,
                            titles=titles,
@@ -174,15 +173,6 @@ def logout():
     return redirect(url_for("show_entries"))
 
 
-@app.route("/home", methods=["GET"])
-def home():
-    if request.method == "GET":
-        return render_template("home.html")
-    else:
-        print("haha")
-        return render_template("home.html")
-
-
 @app.route("/json", methods=["GET", "POST"])
 def api_json():
     if request.method == "POST":
@@ -211,7 +201,7 @@ def json(doc_id=1, name_d=""):
 def category(this_category="haha"):
     titles = []
     for item in Docs.query.filter_by(category=this_category).order_by(Docs.id):
-        titles.append([item.__dict__["id"], item.__dict__["title"]])
+        titles.append(item.__dict__)
 
     return render_template("category.html",
                            game_name=this_category,
@@ -220,19 +210,28 @@ def category(this_category="haha"):
                            tags=get_categories_and_tags()[1])
 
 
-@app.errorhandler(404)
-def page_not_found(error):
-    return redirect(url_for("show_entries"))
+# @app.errorhandler(404)
+# def page_not_found(error):
+#     return redirect(url_for("show_entries"))
 
-#
-# @app.before_first_request
-# def before_first_time():
-#     print("before_first_time？")
-#
-#
-# @app.before_request
-# def before_every_time():
-#     print("before_every_time")
+
+@app.route("/pic/<dir_name>")
+def show_pic(dir_name="img"):
+    print(path + pic_list[0][0] + "/" + pic_list[0][1][1])
+    return "<img src=\"/static/" + pic_list[0][0] + "/" + pic_list[0][1][1] + "\">"
+
+
+@app.before_first_request
+def before_first_time():
+    print("before_first_time？\n\n")
+    for pic_dir in list(os.walk(path))[1:]:
+        pic_list.append([pic_dir[0].replace(path, ""), pic_dir[2]])
+    print(pic_list)
+
+
+@app.before_request
+def before_every_time():
+    print(request.headers["User-Agent"])
 
 
 # @app.after_request

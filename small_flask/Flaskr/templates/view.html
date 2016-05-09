@@ -7,21 +7,21 @@
 {% endblock %}
 
 {% block article %}	
-	<p class=unimportant-desc>{{ entry.c_time[:10] }}&nbsp;&nbsp;|&nbsp;&nbsp;{{ entry.page_view }} ℃</p>
+	<p class="unimportant-desc-without-line">{{ entry.c_time[:10] }}&nbsp;&nbsp;|&nbsp;&nbsp;{{ entry.page_view }} ℃</p>
 	{{ entry.text|safe }}
 	</br>
 	<p style="width: 100%;text-align: center;color: #999">-------------全文完-------------</p>
 {% endblock %}
 
-{% block aside %}
-	<h4 class=title-in-container style="color:#666">相关推荐</h4>
-	<ul>
-		{% for title in titles %}
-			<li style="overflow: hidden;text-overflow: ellipsis;white-space: nowrap;list-style-position: outside;"><a href="/view/{{title[0]}}">{{ title[1] }}</a>
-			<p class=unimportant-desc>{{ title[2] }}&nbsp;℃</p>
-			<hr style="margin:-6px 0 10px">
-		{% else %}
-			<li><em>Unbelievable. No entries here so far</em>
-		{% endfor %}
-	</ul>
-{% endblock %}
+{% block aside %}	
+    <h4>相关推荐</h4>
+    <br/>
+    {% for title in titles %}
+        <p class="only-one-line"><a href="/view/{{title.id}}">{{ title.title }}</a></p>
+        {% if loop.last %}
+        	<p class="unimportant-desc-without-line">{{ title.page_view}}&nbsp;℃</p>
+        {% else %}
+        	<p class="unimportant-desc">{{ title.page_view}}&nbsp;℃</p>
+        {% endif %}
+    {% endfor %}
+{% endblock %}    

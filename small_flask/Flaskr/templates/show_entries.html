@@ -7,23 +7,32 @@
 {% endblock %}
 
 {% block article %}	
+	<!-- 首页左边的图文列表，左图右文，上标题下摘要 -->
 	<ul class="media-list">
 	{% for entry in entries %}
 		<li class="media">
+			<!-- 图 -->
 			<a class="pull-left" href="/view/{{entry.id}}"><img class="img-thumbnail media-object" src="{{ entry.thumb }}" alt="{{ entry.title }}" style="height: 115px;width: 140px;"></a>
 			<div class="media-body">
+				<!-- 标题 -->
 				<h4 class=title-in-container><a href="/view/{{entry.id}}">{{ entry.title }}</a></h4>
-				<p style="font-size: 10px;line-height: 0.5">{{ entry.c_time[:10] }}&nbsp;&nbsp;|&nbsp;&nbsp;{{ entry.page_view }} ℃</p>
+				<!-- 时间和阅读量 -->
+				<p class="unimportant-desc-without-line" style="line-height: 0.5;">{{ entry.c_time[:10] }}&nbsp;&nbsp;|&nbsp;&nbsp;{{ entry.page_view }} ℃</p>
+				<!-- 摘要 -->
 				<p style="font-size: 10px;line-height:1.3;max-height: 45px;overflow: hidden;">{{ entry.abstract }}</p>
 			</div>
-			<hr>
+				
 		</li>
-
+        {% if not loop.last %}
+        	<hr>
+        {% endif %}
+		
 	{% endfor %}	
 	</ul>
 
 
 	<ul class=pager>
+	<!-- 翻页器 -->
 	{% if paginate.has_prev %} 
 		<li><a href="/">首页</a></li>
 		<li><a href="/{{ paginate.prev_num }}">上一页</a></li>
@@ -44,12 +53,14 @@
 {% endblock %}
 
 {% block aside %}
-	<h4>最热文档 Top 10</h4>
-	<ul>
-		{% for title in titles %}
-			<li><a href="/view/{{title.id}}">{{ title.title }}</a>
-			<p class=unimportant-desc>{{ title.page_view}}&nbsp;℃</p>
-			<hr>
-		{% endfor %}
-	</ul>
+    <h4>最热文档</h4>
+    <br/>
+    {% for title in titles %}
+        <p class="only-one-line"><a href="/view/{{title.id}}">{{ title.title }}</a></p>
+        {% if loop.last %}
+        	<p class="unimportant-desc-without-line">{{ title.page_view}}&nbsp;℃</p>
+        {% else %}
+        	<p class="unimportant-desc">{{ title.page_view}}&nbsp;℃</p>
+        {% endif %}
+    {% endfor %}
 {% endblock %}
