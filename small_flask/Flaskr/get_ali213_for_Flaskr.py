@@ -57,9 +57,9 @@ class Docs(db.Model):
 
 game_target = [
     ["巫师3", "http://gl.ali213.net/html/2015-5/68823", 1766],
-    ["辐射4", "http://gl.ali213.net/html/2015-11/91753", 10681],
-    ["GTA5（侠盗猎车手5）", "http://gl.ali213.net/html/2015-4/65525", 11018],
-    ["变形金刚：毁灭", "http://gl.ali213.net/html/2015-10/86933", 30165],
+    # ["辐射4", "http://gl.ali213.net/html/2015-11/91753", 10681],
+    # ["GTA5（侠盗猎车手5）", "http://gl.ali213.net/html/2015-4/65525", 11018],
+    # ["变形金刚：毁灭", "http://gl.ali213.net/html/2015-10/86933", 30165],
     # ["彩虹六号：围攻", "http://gl.ali213.net/html/2015-12/95215", 30166],
     # ["恶灵附身", "http://gl.ali213.net/html/2014-10/50191", 30167],
     # ["方舟：生存进化", "http://gl.ali213.net/html/2015-6/69805", 30168],
@@ -94,28 +94,22 @@ par_more = (
     re.compile(r'<p>游戏专题[^<]+'),
     re.compile(r'<p>[^>]+213[^<]+</p>'))
 par_need_del = ("\n", "\r", "　", "&#13;", "【游侠攻略组】")
-par_in_title = [
-    "",
-    "图文攻略详解",
-    "攻略秘籍_游侠网",
-    "全关卡流程 + 全剧情 + 全收集",
-    "全关卡流程+全剧情+全收集",
-    "图文全流程攻略",
-    "全主线+支线攻略",
-    "全剧情",
-    "全收集",
-]
+par_in_title = re.compile("_.+")
+    # "",
+    # "流程","图文","攻略","全","主线","支线","攻略","秘籍","关卡",
+    # "剧情","收集","任务","狩猎","操作","流程",
+    # "介绍","说明","技能","详解","+",
+    # "_","游侠网"
 
 par_get_tag_from_title_re = re.compile(r'_.+')
 
 
 def get_content(this_target_url):
-    this_target = requests.get(this_target_url).content.decode("utf-8")
+    this_target = requests.get(this_target_url).content
 
     # 页面描述信息
     title = pq(pq(this_target)("title")).text()
-    for item_p in par_in_title:
-        title = title.replace(item_p, "")
+    title = re.sub(par_in_title,"",title)
     tag = re.sub(par_get_tag_from_title_re, "", title)
 
     # 页面内容
@@ -145,7 +139,6 @@ if __name__ == '__main__':
         init_dict["url_head"] = game[1]
         init_dict["game_name"] = game[0]
         print(type(init_dict["game_name"]))
-        par_in_title[0] = "_" + init_dict["game_name"]
         page_number = 1
 
         while 1:
@@ -161,5 +154,5 @@ if __name__ == '__main__':
                 logging.info(str(e))
                 break
 
-            if page_number > 3:
+            if page_number > 5:
                 break
