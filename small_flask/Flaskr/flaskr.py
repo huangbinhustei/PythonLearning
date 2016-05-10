@@ -110,7 +110,7 @@ def view(doc_id):
     entry = this_post.__dict__
     entry["text"] = html.unescape(this_post.text)
     titles = []
-    for item in Docs.query.filter_by(category=entry["category"]).order_by(Docs.id):
+    for item in Docs.query.filter_by(category=entry["category"]).order_by(Docs.id).limit(15):
         titles.append(item.__dict__)
     return render_template("view.html",
                            entry=entry,

@@ -9,18 +9,18 @@
 {% block article %}
 	<ul>
 		{% for title in titles %}
-			<li><a href="/view/{{title[0]}}">{{ title.title }}</a>
+			<li><a href="/view/{{ title.id }}">{{ title.title }}</a>
 		{% else %}
 			<li><em>Unbelievable. No entries here so far</em>
 		{% endfor %}
 	</ul>
-
 {% endblock %}
 
 {% block aside %}
-	<h2 class=title-in-container style="color:#666">相关推荐</h2>
-	{% for title in titles %}
-		<p class="only-one-line"><a href="/view/{{title.id}}">{{ title.title }}</a></p>
+	<h4 class=title-in-container style="color:#666">相关推荐</h4>
+    <br/>
+	{% for category in categories %}
+		<p class="only-one-line"><a href="/category/{{ category }}">{{ category }}</a></p>
 	{% else %}
 		<em>Unbelievable. No entries here so far</em>
 	{% endfor %}
