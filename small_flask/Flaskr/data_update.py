@@ -11,7 +11,10 @@ from collections import defaultdict
 def tag_init():
     for post in Docs.query.all():
         content = pq(html.unescape(post.text)).text()
-        post.tag = ",".join(jieba.analyse.extract_tags(content, topK=2, withWeight=False))
+        if len(content) > 500:
+            post.tag = ",".join(jieba.analyse.extract_tags(content, topK=5, withWeight=False))
+        else:
+            post.tag = ""
         db.session.add(post)
 
     db.session.commit()
@@ -29,8 +32,12 @@ def tag_tab_make():
             new_tag = Tags([tag, ",".join(ids)])
             db.session.add(new_tag)
 
+    # for item in Tags.query.all():
+    #     if len(item.doc_with_tag) == 0:
+    #         db.session.delete(item)
+
     db.session.commit()
 
 if __name__ == '__main__':
-    # tag_init()
+    tag_init()
     tag_tab_make()

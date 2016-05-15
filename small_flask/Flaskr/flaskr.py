@@ -79,7 +79,7 @@ def add_entry():
         try:
             thumb = pq(pq(text)("img")[0]).attr("src")
         except:
-            print("没有图")
+            logging.error("没有图")
             thumb = ""
         text = html.escape(text, quote=True)
 
