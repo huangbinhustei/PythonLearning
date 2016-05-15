@@ -57,51 +57,44 @@ class Docs(db.Model):
 
 game_target = [
     ["巫师3", "http://gl.ali213.net/html/2015-5/68823", 1766],
-    # ["辐射4", "http://gl.ali213.net/html/2015-11/91753", 10681],
-    # ["GTA5（侠盗猎车手5）", "http://gl.ali213.net/html/2015-4/65525", 11018],
-    # ["变形金刚：毁灭", "http://gl.ali213.net/html/2015-10/86933", 30165],
-    # ["彩虹六号：围攻", "http://gl.ali213.net/html/2015-12/95215", 30166],
-    # ["恶灵附身", "http://gl.ali213.net/html/2014-10/50191", 30167],
-    # ["方舟：生存进化", "http://gl.ali213.net/html/2015-6/69805", 30168],
-    # ["古墓丽影：崛起", "http://gl.ali213.net/html/2015-11/91031", 30169],
-    # ["合金装备5：幻痛", "http://gl.ali213.net/html/2015-9/81963", 30170],
-    # ["龙之信条：黑暗崛起", "http://gl.ali213.net/html/2016-1/102239", 30171],
-    # ["三国志13", "http://gl.ali213.net/html/2016-1/105399", 30172],
-    # ["生化危机0高清版", "http://gl.ali213.net/html/2016-1/104039", 30173],
-    # ["使命召唤12：黑色行动3", "http://gl.ali213.net/html/2015-11/91245", 30174],
-    # ["侠客风云传", "http://gl.ali213.net/html/2015-7/76033", 30175],
-    # ["伊苏：树海", "http://gl.ali213.net/html/2015-10/89997", 30176],
-    # ["勇者斗恶龙：英雄", "http://gl.ali213.net/html/2015-12/95807", 30177],
-    # ["正当防卫3", "http://gl.ali213.net/html/2015-12/95217", 30178],
-    # ["刺客信条：枭雄", "http://gl.ali213.net/html/2015-11/90629", 30179],
-    # ["刺客信条4：黑旗", "http://gl.ali213.net/html/2014-6/42484", 30180],
-    # ["刺客信条：大革命", "http://gl.ali213.net/html/2014-11/53997", 30181],
-    # ["刺客信条：兄弟会", "http://gl.ali213.net/html/2014-6/42505", 30182],
-    # ["刺客信条：叛变", "http://gl.ali213.net/html/2014-11/53675", 30183],
-    # ["刺客信条：启示录", "http://gl.ali213.net/html/2014-6/42610", 30184],
-    # ["火影忍者：究极忍者风暴4", "http://gl.ali213.net/html/2015-8/77655", 30185],
-    # ["孤岛惊魂4", "http://gl.ali213.net/html/2014-11/54427", 30186],
-    # ["消逝的光芒", "http://gl.ali213.net/html/2015-1/60303", 30187],
-    # ["最终幻想13：雷霆归来", "http://gl.ali213.net/html/2015-12/96889", 30188],
-    # ["圣斗士星矢：战士魂", "http://gl.ali213.net/html/2015-12/95307", 30189]
+    ["辐射4", "http://gl.ali213.net/html/2015-11/91753", 10681],
+    ["GTA5（侠盗猎车手5）", "http://gl.ali213.net/html/2015-4/65525", 11018],
+    ["变形金刚：毁灭", "http://gl.ali213.net/html/2015-10/86933", 30165],
+    ["彩虹六号：围攻", "http://gl.ali213.net/html/2015-12/95215", 30166],
+    ["恶灵附身", "http://gl.ali213.net/html/2014-10/50191", 30167],
+    ["方舟：生存进化", "http://gl.ali213.net/html/2015-6/69805", 30168],
+    ["古墓丽影：崛起", "http://gl.ali213.net/html/2015-11/91031", 30169],
+    ["合金装备5：幻痛", "http://gl.ali213.net/html/2015-9/81963", 30170],
+    ["龙之信条：黑暗崛起", "http://gl.ali213.net/html/2016-1/102239", 30171],
+    ["三国志13", "http://gl.ali213.net/html/2016-1/105399", 30172],
+    ["生化危机0高清版", "http://gl.ali213.net/html/2016-1/104039", 30173],
+    ["使命召唤12：黑色行动3", "http://gl.ali213.net/html/2015-11/91245", 30174],
+    ["侠客风云传", "http://gl.ali213.net/html/2015-7/76033", 30175],
+    ["伊苏：树海", "http://gl.ali213.net/html/2015-10/89997", 30176],
+    ["勇者斗恶龙：英雄", "http://gl.ali213.net/html/2015-12/95807", 30177],
+    ["正当防卫3", "http://gl.ali213.net/html/2015-12/95217", 30178],
+    ["刺客信条：枭雄", "http://gl.ali213.net/html/2015-11/90629", 30179],
+    ["刺客信条4：黑旗", "http://gl.ali213.net/html/2014-6/42484", 30180],
+    ["刺客信条：大革命", "http://gl.ali213.net/html/2014-11/53997", 30181],
+    ["刺客信条：兄弟会", "http://gl.ali213.net/html/2014-6/42505", 30182],
+    ["刺客信条：叛变", "http://gl.ali213.net/html/2014-11/53675", 30183],
+    ["刺客信条：启示录", "http://gl.ali213.net/html/2014-6/42610", 30184],
+    ["火影忍者：究极忍者风暴4", "http://gl.ali213.net/html/2015-8/77655", 30185],
+    ["孤岛惊魂4", "http://gl.ali213.net/html/2014-11/54427", 30186],
+    ["消逝的光芒", "http://gl.ali213.net/html/2015-1/60303", 30187],
+    ["最终幻想13：雷霆归来", "http://gl.ali213.net/html/2015-12/96889", 30188],
+    ["圣斗士星矢：战士魂", "http://gl.ali213.net/html/2015-12/95307", 30189]
 ]
 
 init_dict = {}
 
 par_more = (
-    re.compile(r'<p>更多相关资讯.+'),
+    re.compile(r'<p>更多相关.+'),
     re.compile(r'<p></p>'),
     re.compile(r'<p>游戏专题[^<]+'),
     re.compile(r'<p>[^>]+213[^<]+</p>'))
 par_need_del = ("\n", "\r", "　", "&#13;", "【游侠攻略组】")
 par_in_title = re.compile("_.+")
-    # "",
-    # "流程","图文","攻略","全","主线","支线","攻略","秘籍","关卡",
-    # "剧情","收集","任务","狩猎","操作","流程",
-    # "介绍","说明","技能","详解","+",
-    # "_","游侠网"
-
-par_get_tag_from_title_re = re.compile(r'_.+')
 
 
 def get_content(this_target_url):
@@ -110,7 +103,7 @@ def get_content(this_target_url):
     # 页面描述信息
     title = pq(pq(this_target)("title")).text()
     title = re.sub(par_in_title,"",title)
-    tag = re.sub(par_get_tag_from_title_re, "", title)
+    tag = ""
 
     # 页面内容
     content_html = pq(pq(this_target)("div"))(".glzjshow_con")
@@ -154,5 +147,5 @@ if __name__ == '__main__':
                 logging.info(str(e))
                 break
 
-            if page_number > 5:
-                break
+            # if page_number > 5:
+            #     break

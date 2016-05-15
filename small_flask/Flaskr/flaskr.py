@@ -1,69 +1,15 @@
 # -*- coding: utf-8 -*-
 
+from header_flaskr import Docs, Tags, db, app
 from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash, jsonify
 from pyquery import PyQuery as pq
 import markdown2
-import time
-import random
 import html
-from flask.ext.sqlalchemy import SQLAlchemy
-import os
+import random
 from sqlalchemy import desc
-
-path = os.path.abspath(os.path.join(os.path.dirname(__file__))) + "/static/"
-pic_list = []
-app = Flask(__name__)
-basedir = os.path.abspath(os.path.dirname(__file__))
-app.config.update(
-    DEBUG=True,
-    SECRET_KEY="TEMP",
-    USERNAME="admin",
-    PASSWORD="admin",
-    SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(basedir, "flaskr.db"),
-    SQLALCHEMY_TRACK_MODIFICATIONS=True,
-    POST_IN_SINGL_PAGE=10,
-)
-db = SQLAlchemy(app)
-
-
-class Docs(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String)
-    text = db.Column(db.String)
-    abstract = db.Column(db.String)
-    c_time = db.Column(db.String)
-    renew_time = db.Column(db.String)
-    page_view = db.Column(db.Integer)
-    tag = db.Column(db.String)
-    category = db.Column(db.String)
-    thumb = db.Column(db.String)
-
-    def __init__(self, c_list):
-        self.title = c_list[0]
-        self.text = c_list[1]
-        self.abstract = c_list[2]
-        self.c_time = c_list[3]
-        self.renew_time = c_list[4]
-        self.page_view = c_list[5]
-        self.tag = c_list[6]
-        self.category = c_list[7]
-        self.thumb = c_list[8]
-
-    def __repr__(self):
-        return "<Docs %r" % self.title
-
-    def to_dict(self, isSafe):
-        return dict(
-            title=self.title,
-            text=html.unescape(self.text) if isSafe else self.text,
-            abstract=self.abstract,
-            c_time=self.c_time,
-            renew_time=self.renew_time,
-            page_view=self.page_view,
-            tag=self.tag,
-            category=self.category,
-            thumb=self.thumb,
-        )
+import time
+import logging
+logging.basicConfig(level=logging.INFO)
 
 
 def get_categories_and_tags():
@@ -71,7 +17,8 @@ def get_categories_and_tags():
     tags = []
     for row in Docs.query.all():
         categories.append(str(row.category))
-        tags.append(str(row.tag))
+    for row in Tags.query.all():
+        tags.append(row.tag)
     return [list(set(categories)), list(set(tags))]
 
 
@@ -160,7 +107,7 @@ def login():
             error = 'Invalid password'
         else:
             session["logged_in"] = True
-            flash("登录！")
+            flash("登录成功！")
             return redirect(url_for("show_entries"))
     return render_template("login.html", error=error,
                            categories=get_categories_and_tags()[0],
@@ -210,28 +157,39 @@ def category(this_category="haha"):
                            tags=get_categories_and_tags()[1])
 
 
+@app.route("/tag/<this_tag>")
+def tag(this_tag="haha"):
+    titles = []
+    titles2 = []
+    a = time.time()
+    for item in Docs.query.filter(Docs.tag.like("%" + this_tag + "%")).order_by(Docs.id):
+        titles.append(item.__dict__)
+    b = time.time()
+    for item in Tags.query.filter_by(tag=this_tag):
+        for doc_id in item.doc_with_tag.split(","):
+            titles2.append(Docs.query.get(doc_id).__dict__)
+    c = time.time()
+    print(str(b-a) + "\t" + str(c-b))
+    return render_template("category.html",
+                           tag=this_tag,
+                           titles=titles,
+                           categories=get_categories_and_tags()[0],
+                           tags=get_categories_and_tags()[1])
+
+
 # @app.errorhandler(404)
 # def page_not_found(error):
 #     return redirect(url_for("show_entries"))
 
 
-@app.route("/pic/<dir_name>")
-def show_pic(dir_name="img"):
-    print(path + pic_list[0][0] + "/" + pic_list[0][1][1])
-    return "<img src=\"/static/" + pic_list[0][0] + "/" + pic_list[0][1][1] + "\">"
-
-
 @app.before_first_request
 def before_first_time():
-    print("before_first_time？\n\n")
-    for pic_dir in list(os.walk(path))[1:]:
-        pic_list.append([pic_dir[0].replace(path, ""), pic_dir[2]])
-    print(pic_list)
+    logging.debug("before_first_time？\n\n")
 
 
 @app.before_request
 def before_every_time():
-    print(request.headers["User-Agent"])
+    logging.debug(request.headers["User-Agent"])
 
 
 # @app.after_request
@@ -240,4 +198,4 @@ def before_every_time():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0')
+    app.run()
