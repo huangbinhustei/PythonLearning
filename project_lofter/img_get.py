@@ -24,10 +24,6 @@ target_list = [
         ([".pic", ".img"], "a", ".pic"),
         re.compile(r'http://onlyecholy\.lofter\.com/post/(.+)')
     ), (
-        "22988861",
-        ([".main", ".img"], "a", ".img"),
-        re.compile(r'http://22988861\.lofter\.com/post/(.+)')
-    ), (
         "9110911",
         ([".main", ".img"], "a", ".img"),
         re.compile(r'http://9110911\.lofter\.com/post/(.+)')
@@ -54,7 +50,9 @@ target_list = [
     )
 ]
 
-target_item = target_list[2]
+# http://12ofme.lofter.com/
+# http://fuliti.lofter.com/
+target_item = target_list[4]
 # s = requests.session()
 
 headers = {
