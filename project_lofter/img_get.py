@@ -11,11 +11,7 @@ img_src_has_try2save = set([])
 post_has_try2save = {" ", " "}
 
 target_list = [
-    (
-        "justinbieber520",
-        ([".pic", ".img"], "a", ".img"),
-        re.compile(r'http://justinbieber520\.lofter\.com/post/(.+)'),
-    ), (
+     (
         "wowosyyhu",
         ([".main", ".img"], "a", ".img"),
         re.compile(r'http://wowosyyhu\.lofter\.com/post/(.+)')
@@ -31,10 +27,45 @@ target_list = [
         "22988861",
         ([".main", ".img"], "a", ".img"),
         re.compile(r'http://22988861\.lofter\.com/post/(.+)')
+    ), (
+        "9110911",
+        ([".main", ".img"], "a", ".img"),
+        re.compile(r'http://9110911\.lofter\.com/post/(.+)')
+    ), (
+        "wzwdkcm",
+        ([".pic", ".img"], "a", ".pic"),
+        re.compile(r'http://wzwdkcm\.lofter\.com/post/(.+)')
+    ), (
+        "dylank",
+        ([".pic", ".img"], "a", ".pic"),
+        re.compile(r'http://dylank\.lofter\.com/post/(.+)')
+    ), (
+        "wowowak",
+        ([".main", ".img"], "a", ".img"),
+        re.compile(r'http://wowowak\.lofter\.com/post/(.+)')
+    ), (
+        "380830138",
+        ([".main", ".img"], "a", ".img"),
+        re.compile(r'http://380830138\.lofter\.com/post/(.+)')
+    ), (
+        "idheihei",
+        ([".main", ".img"], "a", ".img"),
+        re.compile(r'http://380830138\.lofter\.com/post/(.+)')
     )
 ]
 
-target_item = target_list[1]
+target_item = target_list[2]
+# s = requests.session()
+
+headers = {
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+    'Accept-Encoding': 'gzip, deflate, sdch',
+    'Accept-Language': 'en-US,en;q=0.8,zh-CN;q=0.6,zh;q=0.4,zh-TW;q=0.2',
+    'Connection': 'keep-alive',
+    'Host': "http://" + target_item[0] + ".lofter.com/",
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.130 Safari/537.36',
+    # 'Referer': 'http://www.163.com/special/00774IMC/lofter_v13.html',
+}
 
 
 class Student(object):

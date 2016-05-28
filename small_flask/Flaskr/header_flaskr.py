@@ -22,6 +22,29 @@ app.config.update(
 db = SQLAlchemy(app)
 
 
+class Games(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String)
+    game_desc = db.Column(db.String)
+    cover = db.Column(db.String)
+    doc_count = db.Column(db.Integer)
+    game_type = db.Column(db.String)
+    c_time = db.Column(db.String)
+    renew_time = db.Column(db.String)
+
+    def __init__(self, init_list):
+        self.name = init_list[0]
+        self.game_desc = init_list[1]
+        self.cover = init_list[2]
+        self.doc_count = init_list[3]
+        self.game_type = init_list[4]
+        self.c_time = init_list[5]
+        self.renew_time = init_list[6]
+
+    def __repr__(self):
+        return "<Docs %r" % self.name
+
+
 class Tags(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     tag = db.Column(db.String)

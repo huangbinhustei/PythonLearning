@@ -1,11 +1,6 @@
 import requests
 from pyquery import PyQuery as pq
-import time
-import os
-import threading
 import re
-from random import uniform
-import sqlite3
 
 login_header = {
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
