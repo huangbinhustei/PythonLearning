@@ -12,9 +12,18 @@
 
 <body>
 
+
     <div class="container">
-        <div>
-            {% block bigarticle %}{% endblock %}
+        <div class="row">
+            {% for line in post_list|slice(4) %}
+                {% for title in line %}
+                <div class="col-sm-3">
+                    <p><a href="/{{ title[0] }}">
+                        <img class="img-thumbnail" src="{{ title[1] }}">
+                    </a></p>
+                </div>
+                {% endfor %}
+            {% endfor %}
         </div>
     </div>
 

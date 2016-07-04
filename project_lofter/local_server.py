@@ -11,11 +11,6 @@ path = os.path.abspath(os.path.join(os.path.dirname(__file__))) + "/static/"
 pic_dict = defaultdict(lambda: 0)
 
 
-# @app.route("/", methods=["GET", "POST"])
-# def home():
-#     return redirect(url_for("me_static"))
-
-
 @app.route("/static", methods=["GET"])
 def me_static():
     blogger = next(os.walk(path))
@@ -30,13 +25,21 @@ def me_static():
 @app.route("/static/<blog_name>", methods=["GET"])
 def me_blog(blog_name):
     posts = next(os.walk(path + "/" + blog_name))
-    posts = posts[1]
-    html_blog = ""
-    html_head = "<p><a href=\"/static/" + blog_name + "/"
-    for post_name in posts:
-        html_blog += html_head + post_name + "\">" + post_name + "</a></p>"
-    logging.debug(html_blog)
-    return html_blog
+
+    post_list = []
+    for item in posts[1]:
+        imgs = next(os.walk(path + "/" + blog_name + "/" + item))[2]
+        if not imgs:
+            continue
+        img = imgs[0]
+        if not img:
+            continue
+        elif img[:3] == "txt":
+            continue
+        temp = ["static/" + blog_name +"/" + item, blog_name + "/" + item + "/" + img]
+        print (temp)
+        post_list.append(temp)
+    return render_template("me_blog.html", post_list=post_list)
 
 
 @app.route("/static/<blog_name>/<post_name>", methods=["GET"])
