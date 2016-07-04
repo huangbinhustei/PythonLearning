@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 from header_flaskr import Docs, Tags, db, app
@@ -92,9 +93,12 @@ def add_entry():
         flash("恭喜你又水了一贴")
         return redirect(url_for("show_entries"))
     else:
+        isMarkdown = bool(request.args.get("markdown", ""))
+        print(isMarkdown)
         return render_template("add.html",
                                categories=get_categories_and_tags()[0],
-                               tags=get_categories_and_tags()[1])
+                               tags=get_categories_and_tags()[1],
+                               isMarkdown=isMarkdown)
 
 
 @app.route("/login", methods=["GET", "POST"])

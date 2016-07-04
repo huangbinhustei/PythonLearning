@@ -1,27 +1,27 @@
 {% extends "layout.html" %}
 
 {% block header %}
-	<div class="page-header">
-		<h1>{{ game_name }}&nbsp;<small>by Bootstrap</small></h1>
-	</div>
+<div class="page-header">
+	<h1>{{ game_name }}&nbsp;<small>by Bootstrap</small></h1>
+</div>
 {% endblock %}
 
-{% block article %}
-	<ul>
-		{% for title in titles %}
-			<li><a href="/view/{{ title.id }}">{{ title.title }}</a>
-		{% else %}
-			<li><em>Unbelievable. No entries here so far</em>
+{% block bigarticle %}
+<div class="row">
+	{% for line in titles|slice(4) %}
+		{% for title in line %}
+		<div class="col-sm-3">
+			<div class="thumbnail">
+				<img src="{{ title.thumb }}" alt="哈哈">
+				<div class="caption">
+					<p>{{ title.title }}</p>
+				</div>
+			</div>
+		</div>
 		{% endfor %}
-	</ul>
+	{% endfor %}
+</div>
 {% endblock %}
 
-{% block aside %}
-	<h4 class=title-in-container style="color:#666">相关推荐</h4>
-    <br/>
-	{% for category in categories %}
-		<p class="only-one-line"><a href="/category/{{ category }}">{{ category }}</a></p>
-	{% else %}
-		<em>Unbelievable. No entries here so far</em>
-	{% endfor %}
-{% endblock %}
+
+
