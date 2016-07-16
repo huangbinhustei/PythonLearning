@@ -12,9 +12,9 @@
 		{% for title in line %}
 		<div class="col-sm-3">
 			<div class="thumbnail">
-				<img src="{{ title.thumb }}" alt="哈哈">
+				<a href="/view/{{title.id}}"><img src="{{ title.thumb }}" alt="哈哈"></a>
 				<div class="caption">
-					<p>{{ title.title }}</p>
+					<p><a href="/view/{{title.id}}">{{ title.title }}</a></p>
 				</div>
 			</div>
 		</div>

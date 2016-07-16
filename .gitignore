@@ -16,3 +16,4 @@ project_lofter/[useless]log_arrangement.py
 network/captcha.gif
 *.gif
 /书/*.pdf
+/small_flask/Flaskr/npm

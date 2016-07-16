@@ -47,7 +47,11 @@ target_list = [
         "idheihei",
         ([".main", ".img"], "a", ".img"),
         re.compile(r'http://380830138\.lofter\.com/post/(.+)')
+    ),(
+        "fuliti",
+        ([".pic", ".img"], "a", ".pic"),
     )
+
 ]
 
 # http://12ofme.lofter.com/

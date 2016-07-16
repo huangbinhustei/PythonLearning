@@ -32,10 +32,6 @@ def tag_tab_make():
             new_tag = Tags([tag, ",".join(ids)])
             db.session.add(new_tag)
 
-    # for item in Tags.query.all():
-    #     if len(item.doc_with_tag) == 0:
-    #         db.session.delete(item)
-
     db.session.commit()
 
 if __name__ == '__main__':
