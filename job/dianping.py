@@ -21,12 +21,17 @@ target = GetList("4", "guangzhou")
 
 def get_shop_detail_from_view_page(shop_url):
     time.sleep(0.2)
+    a = "0"
+    b = "0"
     try:
         t_content = pq(s.get(shop_url, headers=login_header).content)(".brief-info")
-        return {pq(t_content)(".phone").text(), pq(t_content)(".address").text()}
+        if pq(t_content)(".phone").text():
+            a = pq(t_content)(".phone").text()
+        if pq(t_content)(".address").text():
+            b = pq(t_content)(".address").text()
     except:
         print("唉")
-        return {"0", "0"}
+    return {a, b}
 
 
 def get_shop_detail_from_shop_list(list_url, l):
@@ -39,7 +44,7 @@ def get_shop_detail_from_shop_list(list_url, l):
         temp = pq(shop)(".tit")
         shop_url = pq(temp)("a").attr("href")
         if shop_url in target.shop_has_saved:
-            print("has saved\t" + shop_url)
+            print(shop_url + "\thas saved")
             continue
         print(shop_url)
         shop_name = pq(temp)("a").attr("title")
@@ -56,7 +61,7 @@ def get_shop_detail_from_shop_list(list_url, l):
         with open(target.folder_name + "/shop.txt", "a") as f:
             f.write(
                 shop_url + "\t" + shop_name + "\t" +
-                "\t".join(info) + "\t" + 
+                "\t".join(info) + "\t" +
                 "\t".join(shop_detail) + "\t" +
                 "\t".join(l[1:]) + "\n")
             target.shop_has_saved.add(shop_url)
