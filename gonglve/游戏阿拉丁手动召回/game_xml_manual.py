@@ -9,8 +9,8 @@ import os
 path = os.path.abspath('.')
 xml_head = "http://cp01-wenku-test2.cp01.baidu.com:8080/static/wenku_aladdin/glyouxi/index/"
 
-new_xml_path = path + "/result_game_xml_manual/99999.xml"
-new_titles_path = path + "/result_game_xml_manual/new_titles.txt"
+new_xml_path = os.path.join(path, "result/99999.xml")
+new_titles_path = os.path.join(path, "result/new_titles.txt")
 
 par_desc_fir = re.compile(r'<desc>.+?</desc>')
 par_desc_sec = re.compile(r'<abstract>.+?</abstract>')
@@ -28,7 +28,7 @@ def write_body(game):
     game_name = game["game_name"]
     xml_url = xml_head + game["xml_name"]
     new_keys = game["keys"]
-
+    
     temp = r'<item><key>' + game_name + r'攻略</key>.+?<item>'
     par_need = re.compile(temp)
     desc = "百度攻略《游戏名》专区每天都有最新的《游戏名》攻略资料发布，提供《游戏名》下载、通关攻略、图文攻略、视频攻略、礼包发放等多种服务..".replace("游戏名", game_name)
@@ -51,13 +51,12 @@ def write_body(game):
 
 
 def xml_maker(local_conf):
-    # xml_header_maker_begin
+    # xml_header_maker
     with open(new_xml_path, "w") as f:
         f.write(r'<?xml version="1.0" encoding="utf-8"?>' + "\n")
         f.write("<DOCUMENT>\n")
-    # xml_header_maker_end
 
-    # xml_body_maker_begin
+    # xml_body_maker
     i = 0
     task_len = len(local_conf)
     for item in local_conf:
@@ -65,16 +64,14 @@ def xml_maker(local_conf):
         i += 1
         sys.stdout.write(str(i) + "/" + str(task_len) + "\t" + item["game_name"] + "\t\t\t\t\r")
         sys.stdout.flush()
-    # xml_body_maker_end
 
-    # xml_foot_maker_begin
+    # xml_foot_maker
     with open(new_xml_path, "a") as f:
         f.write("</DOCUMENT>\n")
-    # xml_foot_maker_end
 
 
 def dict_maker():
-    # title_adding_maker_begin
+    # title_adding_maker
     with open(new_xml_path, "r") as f:
         title_temp = ",".join(f.readlines())
         par_title = re.compile(r'<key>.+?</key>')
@@ -82,12 +79,11 @@ def dict_maker():
         with open(new_titles_path, "w") as tf:
             for item in titles:
                 tf.write(item.replace("<key>", "").replace("</key>", "") + "\n")
-    # title_adding_maker_end
 
 
 def load_config():
     game_list = []
-    with open(path + "/config.txt", "r") as con:
+    with open(os.path.join(path, "config.txt"), "r") as con:
         for line in con.readlines():
             line_list = line.strip().split("\t")
             game_list.append(dict(

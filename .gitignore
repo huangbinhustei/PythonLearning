@@ -17,3 +17,11 @@ network/captcha.gif
 *.gif
 /书/*.pdf
 /small_flask/Flaskr/npm
+
+*.csv
+
+*.xml
+
+*.xml
+
+*.xml

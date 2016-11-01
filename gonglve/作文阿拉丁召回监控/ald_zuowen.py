@@ -5,8 +5,11 @@ import requests
 from pyquery import PyQuery as pq
 import time
 import sys
+import os
 
-with open("/Users/baidu/Downloads/439.txt", "r") as f:
+path = os.path.abspath('.')
+
+with open(os.path.join(path, "keys.txt"), "r") as f:
 	all_title = f.readlines()
 tot = len(all_title)
 
@@ -18,15 +21,14 @@ def ald(s,fi):
 		return
 	c=r.content
 	for t in pq(c)(".c-span6"):
-		if "百度文库·作文" in pq(t).text():
+		if "百度文库·作文" in pq(t).text() or "wise_zuowen_mini" in c.decode("utf-8"):
 			fi.write(s+"\t有阿拉丁\n")
 			return
-	fi.write(s+"\t无阿拉丁\n")
 
 
 i = 0
 for item in all_title:
-	with open("/Users/baidu/Documents/百度/Git/PythonLearning/gonglve/作文query及结果.txt", "a") as f:
+	with open(os.path.join(path, "作文query及结果.txt"), "a") as f:
 		ald(item.strip(), f)
 		i += 1
 		sys.stdout.write(str(i) + "/" + str(tot) +"\r")
