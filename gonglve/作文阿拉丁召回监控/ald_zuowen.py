@@ -11,7 +11,7 @@ path = os.path.abspath('.')
 
 
 def ald(s):
-    with open(os.path.join(path, "作文query及结果2.txt"), "a") as fi:
+    with open(os.path.join(path, "作文query及结果.txt"), "a") as fi:
         r = requests.get("https://m.baidu.com/s?word=" + s)
         if 200 != r.status_code:
             fi.write(s + "\t打开失败\n")
