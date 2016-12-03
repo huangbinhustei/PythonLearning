@@ -8,6 +8,7 @@ import time
 
 a = time.time()
 same_time = 10
+block_length = 1000
 path = os.path.abspath('.')
 
 key_file_name = "keys.txt"
@@ -33,16 +34,22 @@ def ald(query_list_small):
 
 
 if __name__ == '__main__':
-    with open(os.path.join(path, key_file_name), "r") as f:
+    with open(os.path.join(path, key_file_name), "r", encoding="utf-8") as f:
         all_title = f.readlines()
     with open(os.path.join(path, result_file_name), "w") as fi:
         fi.write(str(time.ctime())+"\n\n")
 
-    th = []
-    for i in range(same_time):
-        th.append(threading.Thread(target=ald, args=(all_title[i::same_time],)))
-    for t in th:
-        t.setDaemon(True)
-        t.start()
-    for t in th:
-        t.join()
+    block_count = 0
+    while 1:
+        block = all_title[block_count * block_length: (block_count + 1) * block_length]
+        block_count += 1
+        if len(block) == 0:
+            break
+        th = []
+        for i in range(same_time):
+            th.append(threading.Thread(target=ald, args=(block[i::same_time],)))
+        for t in th:
+            t.setDaemon(True)
+            t.start()
+        for t in th:
+            t.join()
