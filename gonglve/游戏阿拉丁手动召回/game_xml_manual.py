@@ -43,7 +43,7 @@ def write_body(game):
         with open(new_xml_path, "a") as f:
             for key in new_keys:
                 for_write = "\t" + need_xml.replace("<key>" + game_name + "攻略</key>", "<key>" + key + "</key>") + "\n"
-                if "奇迹暖暖" == game_name:
+                if "奇迹暖暖" in game_name:
                     for_write = special_miracle_nikki(for_write)
                 f.write(for_write)
     else:

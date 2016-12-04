@@ -42,6 +42,7 @@ if __name__ == '__main__':
     block_count = 0
     while 1:
         block = all_title[block_count * block_length: (block_count + 1) * block_length]
+        print(str(block_count * block_length))
         block_count += 1
         if len(block) == 0:
             break
