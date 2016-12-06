@@ -14,6 +14,10 @@ img_src_has_try2save = set([])
 
 target_list = [
     (
+        "sys-peter",
+        ([".pic", ".img"], "a", ".img"),
+        re.compile(r'http://sys-peter\.lofter\.com/post/(.+)')
+    ), (
         "wowosyyhu",
         ([".main", ".img"], "a", ".img"),
         re.compile(r'http://wowosyyhu\.lofter\.com/post/(.+)')
@@ -26,9 +30,12 @@ target_list = [
         ([".main", ".img"], "a", ".img"),
         re.compile(r'http://idheihei\.lofter\.com/post/(.+)')
     )
+
 ]
 target_item = target_list[2]
 # http://12ofme.lofter.com/
+# http://fuliti.lofter.com/
+# http://vivian0610.lofter.com/?page=7&t=1475136637039
 
 
 headers = {
@@ -58,6 +65,7 @@ def get_post_url(target_url):
 
 class Student(object):
     page_offset = 30
+
     def __init__(self, url_begin):
         self.set_of_img_src = set([])
         self.url = url_begin
