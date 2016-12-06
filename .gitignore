@@ -29,3 +29,5 @@ network/captcha.gif
 *.xml
 
 network/__init__.py
+
+*.ini
