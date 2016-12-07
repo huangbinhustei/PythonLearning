@@ -4,8 +4,8 @@
 from data import Docs, db
 from sqlalchemy import desc
 
-i=0
-for item in Docs.query.order_by(desc(Docs.create_time)).all():
-    print(item.title + "\t" + item.grade + "\t" + str(item.words))
-    i+=1
-print(str(i))
+done = [item.doc_md for item in Docs.query.all()]
+done1 = [item.doc_md for item in Docs.query.order_by(desc(Docs.create_time)).all()]
+
+print(str(len(done)) + str(len(done)/20))
+print(done[1])

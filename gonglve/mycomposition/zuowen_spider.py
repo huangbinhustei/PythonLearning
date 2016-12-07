@@ -7,6 +7,7 @@ from data import Docs, db
 import time
 import threading
 
+set_md5s = set([item.doc_md for item in Docs.query.all()]) 
 magic = "?pn="
 
 
@@ -18,6 +19,8 @@ def view_spider(view_block):
     words = pq(temp[2]).text()
     former_url = pq(view_block)("a").attr("href")
     md = former_url.replace("/view/", "")
+    if md in set_md5s:
+        return
     r = requests.get("http://gl.baidu.com" + former_url)
     if r.status_code != 200:
         print("内容页抓不了")
@@ -32,7 +35,7 @@ def view_spider(view_block):
 
 
 def list_spider(start_url):
-    i = 0
+    i = 1000
     while 1:
         if 0 == i:
             url = start_url

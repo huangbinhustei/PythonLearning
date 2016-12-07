@@ -1,8 +1,0 @@
-composition：	doc_id url title content grade genre words tags author view yesterday_view today_view creat_time upgrade_tiem fromer_url former_organization
-tags：			tag_id doc_ids
-sug：			id title doc_ids
-
-首页：		按照最近一周的热度降序排列。昨日PV*0.7 + 今日PV*0.3。
-标题列表页：	select doc_id from bigtable where title is "标题"
-tag列表页：	select 
-搜索结果页：
