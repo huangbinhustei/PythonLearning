@@ -6,8 +6,15 @@ from pyquery import PyQuery as pq
 from data import Docs, db
 import time
 import threading
+import time
+import logging
+logging.basicConfig(level=logging.INFO)
 
-set_md5s = set([item.doc_md for item in Docs.query.all()]) 
+logging.info("开始统计历史抓取记录")
+a = time.time()
+set_md5s = set([item.doc_md for item in Docs.query.all()])
+b = time.time()
+logging.info("统计完成，共" + str(len(set_md5s)) + "条记录，耗时：" + str(b - a)[:5] + "秒")
 magic = "?pn="
 
 
@@ -35,7 +42,7 @@ def view_spider(view_block):
 
 
 def list_spider(start_url):
-    i = 1000
+    i = 12328
     while 1:
         if 0 == i:
             url = start_url
@@ -46,7 +53,7 @@ def list_spider(start_url):
         list_response = requests.get(url)
         if list_response.status_code != 200:
             print("抓不了")
-            continue
+            break
         blocks = pq(list_response.content)(".item-content")
         if not blocks:
             print("被防抓了 or 抓完了")
