@@ -31,3 +31,5 @@ network/captcha.gif
 network/__init__.py
 
 *.ini
+
+gonglve/mycomposition/__init__.py
