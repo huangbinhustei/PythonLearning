@@ -4,21 +4,23 @@
 import requests
 from pyquery import PyQuery as pq
 from data import Docs, db
-import time
 import threading
 import time
 import logging
+import os
 logging.basicConfig(level=logging.INFO)
 
-logging.info("开始统计历史抓取记录")
-a = time.time()
-set_md5s = set([item.doc_md for item in Docs.query.all()])
-b = time.time()
-logging.info("统计完成，共" + str(len(set_md5s)) + "条记录，耗时：" + str(b - a)[:5] + "秒")
-magic = "?pn="
+
+def loading_things_has_done():
+    logging.info("开始统计历史抓取记录")
+    a = time.time()
+    set_md5s = set([item.doc_md for item in Docs.query.all()])
+    b = time.time()
+    logging.info("统计完成，共" + str(len(set_md5s)) + "条记录，耗时：" + str(b - a)[:5] + "秒")
+    return set_md5s
 
 
-def view_spider(view_block):
+def view_spider(view_block, _records):
     title = pq(view_block)(".title")("a").text()
     temp = pq(view_block)(".com-info")(".tag")
     grade = pq(temp[0]).text()
@@ -26,7 +28,7 @@ def view_spider(view_block):
     words = pq(temp[2]).text()
     former_url = pq(view_block)("a").attr("href")
     md = former_url.replace("/view/", "")
-    if md in set_md5s:
+    if md in _records:
         return
     r = requests.get("http://gl.baidu.com" + former_url)
     if r.status_code != 200:
@@ -41,8 +43,8 @@ def view_spider(view_block):
     db.session.commit()
 
 
-def list_spider(start_url):
-    i = 12328
+def list_spider(start_url, i, _records):
+    magic = "?pn="
     while 1:
         if 0 == i:
             url = start_url
@@ -60,14 +62,19 @@ def list_spider(start_url):
             break
         th = []
         for block in blocks:
-            th.append(threading.Thread(target=view_spider, args=(block,)))
+            th.append(threading.Thread(target=view_spider, args=(block, _records,)))
         for t in th:
             t.setDaemon(True)
             t.start()
         for t in th:
             t.join()
         i += 1
+    with open(os.path.join(os.path.abspath("."), "spider_log.txt"), "w") as fs:
+        fs.write(str(i - 1))
 
 
 if __name__ == '__main__':
-    list_spider("http://gl.baidu.com/zuowen")
+    with open(os.path.join(os.path.abspath("."), "spider_log.txt"), "r") as f:
+        page = int(f.read().strip())
+    records = set([]) if True else loading_things_has_done()
+    list_spider("http://gl.baidu.com/zuowen", page, records)
