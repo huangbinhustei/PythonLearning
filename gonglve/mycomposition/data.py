@@ -58,6 +58,25 @@ class Docs(db.Model):
     def __repr__(self):
         return "<Docs %r" % self.doc_md
 
+    def to_dict(self):
+        return dict(
+            doc_md=self.doc_md,
+            title=self.title,
+            content=self.content,
+            grade=self.grade,
+            genre=self.genre,
+            words=self.words,
+            tags=self.tags,
+            author=self.author,
+            view=self.view,
+            yesterday_view=self.yesterday_view,
+            today_view=self.today_view,
+            create_time=self.create_time,
+            update_time=self.update_time,
+            former_url=self.former_url,
+            former_org=self.former_org
+        )
+
 
 class Tags(db.Model):
     id = db.Column(db.Integer, primary_key=True)
