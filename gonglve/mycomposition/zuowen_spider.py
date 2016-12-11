@@ -59,7 +59,7 @@ def list_spider(start_url, i, _records):
         blocks = pq(list_response.content)(".item-content")
         if not blocks:
             print("被防抓了 or 抓完了")
-            break
+            continue
         th = []
         for block in blocks:
             th.append(threading.Thread(target=view_spider, args=(block, _records,)))
@@ -69,8 +69,8 @@ def list_spider(start_url, i, _records):
         for t in th:
             t.join()
         i += 1
-    with open(os.path.join(os.path.abspath("."), "spider_log.txt"), "w") as fs:
-        fs.write(str(i - 1))
+        with open(os.path.join(os.path.abspath("."), "spider_log.txt"), "w") as fs:
+            fs.write(str(i - 1))
 
 
 if __name__ == '__main__':
