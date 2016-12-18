@@ -42,7 +42,19 @@ def showing():
     print("\n".join(line.title for line in lines))
     print(t()-a)
 
+
+def former_url_update():
+    print("11")
+    a = t()
+    # lines = [item for item in Docs.query.filter(Docs.doc_md == "2a4563b80066f5335b812131")]
+    Docs.query.filter(Docs.doc_md == "2a4563b80066f5335b812131").update({"view": 1})
+    # for line in lines:
+    #     line.update({"former_url": "gl.baidu.com" + line.former_url})
+    db.session.commit()
+    print(t() - a)
+
 if __name__ == '__main__':
     # counting()
-    duplicate()
+    # duplicate()
     # showing()
+    former_url_update()
