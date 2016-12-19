@@ -6,7 +6,6 @@ network/.vs/thewaytocno/v14/.suo
 network/templates/home_old.html
 *.jpg
 *.db
-*.txt
 书/Python web框架.Flask中文手册.pdf
 书/集体智慧编程中文版.pdf
 project_lofter/[useless]log_arrangement.py
@@ -33,3 +32,5 @@ network/__init__.py
 *.ini
 
 gonglve/mycomposition/__init__.py
+
+*.txt

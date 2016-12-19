@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+
+{% block header %}
+	<div class="page-header">
+		<h1>{{ entry.title }}<small>_{{ entry.grade }}作文</small></h1>
+	</div>
+{% endblock %}
+
+{% block article %}	
+	<p class="unimportant-desc-without-line">{{ entry.author }}&nbsp;&nbsp;|&nbsp;&nbsp;{{ entry.words }}字&nbsp;&nbsp;|&nbsp;&nbsp;{{ entry.genre }}</p>
+    
+	{% for item in entry.content %}
+    <p>{{ item }}</p>
+    {% endfor%}
+	</br>
+	<p style="width: 100%;text-align: center;color: #999">-------------全文完-------------</p>
+{% endblock %}
+
+{% block aside %}	
+    <!-- <h4>相关推荐</h4> -->
+    <br/>
+    {% for title in titles %}
+        <p class="only-one-line"><a href="/view/{{title.id}}">{{ title.title }}</a></p>
+        {% if loop.last %}
+        	<p class="unimportant-desc-without-line">{{ title.page_view}}&nbsp;℃</p>
+        {% else %}
+        	<p class="unimportant-desc">{{ title.page_view}}&nbsp;℃</p>
+        {% endif %}
+    {% endfor %}
+{% endblock %}    
