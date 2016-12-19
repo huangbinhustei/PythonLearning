@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block article %}	
-	<p class="unimportant-desc-without-line">{{ entry.author }}&nbsp;&nbsp;|&nbsp;&nbsp;{{ entry.words }}字&nbsp;&nbsp;|&nbsp;&nbsp;{{ entry.genre }}</p>
+	<p class="unimportant-desc-without-line">{{ entry.author }}&nbsp;&nbsp;|&nbsp;&nbsp;{{ entry.words }}字&nbsp;&nbsp;|&nbsp;&nbsp;{{ entry.genre }}&nbsp;&nbsp;|&nbsp;&nbsp;{{ entry.view }}℃</p>
     
 	{% for item in entry.content %}
     <p>{{ item }}</p>
