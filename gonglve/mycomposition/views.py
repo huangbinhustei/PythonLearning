@@ -9,9 +9,20 @@ import logging
 from collections import defaultdict
 import re
 from datetime import datetime
+from functools import wraps
 
 logging.basicConfig(level=logging.INFO)
 par = re.compile("\.[a-z0-9A-Z]+\{display: none;} 精彩内容，尽在百度攻略：http://gl\.baidu\.com")
+
+
+def cost_count(func):
+    @wraps(func)
+    def wraper(*args, **kw):
+        a = time.time()
+        ret = func(*args, **kw)
+        print(time.time()-a)
+        return ret
+    return wraper
 
 
 def view_counts(t_doc):
@@ -30,6 +41,7 @@ def view_counts(t_doc):
 
 
 @app.route("/view/<page_md>", methods=['GET'])
+@cost_count
 def page_view(page_md):
     doc = Docs.query.filter(Docs.doc_md == page_md).first()
     if not doc:
@@ -45,10 +57,9 @@ def page_view(page_md):
     
 
 @app.route("/api/view/<page_md>", methods=['GET'])
+@cost_count
 def api_view(page_md):
-    a = time.time()
     doc = Docs.query.filter(Docs.doc_md == page_md).first()
-    print(time.time() - a)
     if not doc:
         return jsonify({"error": "no such md"})
     target = request.args.get('target')
@@ -58,8 +69,8 @@ def api_view(page_md):
 
 
 @app.route("/api/list", methods=['GET'])
+@cost_count
 def api_list():
-    a = time.time()
     grade, genre, words = (request.args.get('grade'), request.args.get('genre'), request.args.get('words'))
     query = Docs.query
     if grade:
@@ -71,7 +82,6 @@ def api_list():
     lists = defaultdict(lambda: 0)
     for item in query.paginate(0, 20, False).items:
         lists[item.doc_md] = item.to_dict()
-    print(time.time() - a)
     return jsonify(**lists)
 
 
