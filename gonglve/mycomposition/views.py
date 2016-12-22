@@ -32,8 +32,8 @@ def view_counts(t_doc):
         t_doc.today_view += 1
     elif t_doc.update_time + 1 == today:
         t_doc.update_time = today
-        t_doc.today_view = 1
         t_doc.yesterday_view = t_doc.today_view
+        t_doc.today_view = 1
     else:
         t_doc.update_time = today
         t_doc.today_view = 1

@@ -25,8 +25,8 @@ class Docs(db.Model):
     doc_md = db.Column(db.String)
     title = db.Column(db.String)
     content = db.Column(db.String)
-    grade = db.Column(db.String)
-    genre = db.Column(db.String)
+    grade = db.Column(db.Integer)
+    genre = db.Column(db.Integer)
     words = db.Column(db.Integer)
     tags = db.Column(db.String)
     author = db.Column(db.String)
@@ -44,7 +44,7 @@ class Docs(db.Model):
         self.content = init_list[2]
         self.grade = init_list[3]
         self.genre = init_list[4]
-        self.words = int(init_list[5][:-1])
+        self.words = init_list[5]
         self.tags = init_list[6]
         self.author = init_list[7]
         self.view = init_list[8]

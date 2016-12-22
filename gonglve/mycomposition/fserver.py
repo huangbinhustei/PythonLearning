@@ -6,6 +6,25 @@ from sqlalchemy import desc
 from collections import defaultdict
 import time
 
+
+# https://github.com/dimka665/awesome-slugify
+# from slugify import slugify, Slugify, UniqueSlugify
+
+# slugify('Any text', to_lower=True)  # 'any-text'
+
+# custom_slugify = Slugify(to_lower=True)
+# custom_slugify('Any text')          # 'any-text'
+
+# custom_slugify.separator = '_'
+# custom_slugify('Any text')          # 'any_text'
+
+# custom_slugify = UniqueSlugify()
+# custom_slugify('Any text')          # 'any-text'
+# custom_slugify('Any text')          # 'any-text-1'
+
+
+
+
 t = time.time
 
 
@@ -54,7 +73,7 @@ def former_url_update():
     print(t() - a)
 
 if __name__ == '__main__':
-    # counting()
+    counting()
     # duplicate()
     # showing()
-    former_url_update()
+    # former_url_update()
