@@ -9,6 +9,7 @@
      - CREATE INDEX grade_index ON docs (grade);
      - CREATE INDEX genre_index ON docs (genre);
      - CREATE INDEX words_index ON docs (words);
+     - CREATE INDEX doc_md_index ON docs (doc_md);
 5. 用『.schema』可以看结构
 
 ## 待办事项

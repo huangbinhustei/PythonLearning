@@ -7,22 +7,26 @@ from sqlalchemy import desc, and_
 import time
 import logging
 from collections import defaultdict
-import re
 from datetime import datetime
 from functools import wraps
+import json
+import os
 
 logging.basicConfig(level=logging.INFO)
-par = re.compile("\.[a-z0-9A-Z]+\{display: none;} 精彩内容，尽在百度攻略：http://gl\.baidu\.com")
+basedir = os.path.abspath(os.path.dirname(__file__))
+
+with open(os.path.join(basedir, "config.json"), "r") as f:
+    map_dict = json.loads(f.read())
 
 
 def cost_count(func):
     @wraps(func)
-    def wraper(*args, **kw):
+    def costing(*args, **kw):
         a = time.time()
         ret = func(*args, **kw)
         print(time.time()-a)
         return ret
-    return wraper
+    return costing
 
 
 def view_counts(t_doc):
@@ -48,10 +52,7 @@ def page_view(page_md):
         return jsonify({"error": "no such md"})
 
     entry = doc.to_dict()
-    entry["content"] = []
-    for item in re.sub(par, "\t", doc.content).split("\t"):
-        for s in item.split(" "):
-            entry["content"].append(s)
+    entry["grade"] = map_dict["grade_map"][str(entry["grade"])]
     view_counts(doc)
     return render_template("view.html", entry=entry)
     

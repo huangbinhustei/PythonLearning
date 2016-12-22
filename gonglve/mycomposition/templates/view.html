@@ -9,15 +9,14 @@
 {% block article %}	
 	<p class="unimportant-desc-without-line">{{ entry.author }}&nbsp;&nbsp;|&nbsp;&nbsp;{{ entry.words }}字&nbsp;&nbsp;|&nbsp;&nbsp;{{ entry.genre }}&nbsp;&nbsp;|&nbsp;&nbsp;{{ entry.view }}℃</p>
     
-	{% for item in entry.content %}
-    <p>{{ item }}</p>
-    {% endfor%}
+    {{ entry.content|safe }}
+    
 	</br>
 	<p style="width: 100%;text-align: center;color: #999">-------------全文完-------------</p>
 {% endblock %}
 
 {% block aside %}	
-    <!-- <h4>相关推荐</h4> -->
+    <h4>相关推荐</h4>
     <br/>
     {% for title in titles %}
         <p class="only-one-line"><a href="/view/{{title.id}}">{{ title.title }}</a></p>
