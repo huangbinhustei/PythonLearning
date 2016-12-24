@@ -4,18 +4,23 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 import os
+from functools import wraps
+import time
+import logging
+logging.basicConfig(level=logging.INFO)
+
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 app = Flask(__name__)
 
 app.config.update(
     DEBUG=True,
-    SECRET_KEY="TEMP",
-    USERNAME="admin",
-    PASSWORD="admin",
+    # SECRET_KEY="TEMP",
+    # USERNAME="admin",
+    # PASSWORD="admin",
     SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(basedir, "composition.db"),
     SQLALCHEMY_TRACK_MODIFICATIONS=True,
-    POST_IN_SINGL_PAGE=10,
+    POST_IN_SINGLE_PAGE=10,
 )
 db = SQLAlchemy(app)
 
@@ -60,6 +65,7 @@ class Docs(db.Model):
 
     def to_dict(self):
         return dict(
+            doc_id=self.doc_id,
             doc_md=self.doc_md,
             title=self.title,
             content=self.content,
@@ -116,3 +122,15 @@ class Sugs(db.Model):
 
     def get_docs(self):
         return self.doc_by_sug.split("\t")
+
+
+def cost_count(func):
+    @wraps(func)
+    def costing(*args, **kw):
+        a = time.time()
+        ret = func(*args, **kw)
+        time_cost = int((time.time()-a) * 1000)
+        if time_cost > 100:
+            logging.warning("Func(" + str(func.__name__) + ")\tcost: " + str(time_cost) + " ms")
+        return ret
+    return costing

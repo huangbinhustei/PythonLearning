@@ -8,16 +8,100 @@
     <script src="//cdn.bootcss.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
     <!-- 我自己的css -->
     <link href="{{ url_for('static', filename='style.css') }}" rel=stylesheet type=text/css>
-
 </head>
 
 <body>
-    <div class="container page">
-        {% block header %}{% endblock %}
+
+
+
+    <div class="navbar navbar-inverse" role="navigation" style="border-radius: 0">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse"> 
+                <!-- 这个button是用来下拉的，下面的四个span，后面三个是用来画按钮上的三根横线的 -->
+                    <span class="sr-only">Toggle naavigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a href="/" class="navbar-brand">作文攻略</a>
+            </div>
+            <div class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li><a href="/">首页</a></li>
+                    <li class="dropdown"><a href="/" class="dropdown-toggle" data-toggle="dropdown">年级<span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            {% for k,v in grade_map.items() %}
+                                <li><a href="/" + {{ k }}>{{ v }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                    <li class="dropdown"><a href="/" class="dropdown-toggle" data-toggle="dropdown">文体<span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            {% for k,v in genre_map.items() %}
+                                <li><a href="/" + {{ k }}>{{ v }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                    <li class="dropdown"><a href="/" class="dropdown-toggle" data-toggle="dropdown">字数<span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            {% for k,v in genre_map.items() %}
+                                <li><a href="/" + {{ k }}>{{ v }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+
+                    <li><a class="navbar-right" href="{{ url_for('page_list') }}">返回首页</a></li>
+                </ul class="nav navbar-nav navbar-right">
+                    {% if session.logged_in %}
+                        <li class="navbar-right">
+                            <div class="btn-group navbar-btn">
+                                <button type="button" class="btn btn-default" onclick=javascript:window.location.href="{{ url_for('page_list')}}";>创建文档</button>
+
+                                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <span class="caret"></span>
+                                    <span class="sr-only">Toggle Dropdown</span>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a href="{{ url_for('page_list')}}">普通文档</a></li>
+                                    <li role="separator" class="divider"></li>
+                                    <li><a href="{{ url_for('page_list')}}?markdown=1">Markdown 文档</a></li>
+                                </ul>
+                            </div>
+                        </li>
+                    {% endif %}
+                <ul>
+                    
+                </ul>
+            </div>
+        </div>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="container">
+        <!-- {% block header %}{% endblock %} -->
         <div class="row">
             <div class="col-sm-8">
-                {% block article %}{% endblock %}
+                <div class="page">
+                    {% block article %}{% endblock %}    
+                </div>
             </div>
+
             <div class="col-sm-4 hidden-xs" style="float: right;">
                 <div class="page">
                     <!-- 右侧的相关推荐 -->

@@ -1,0 +1,43 @@
+{% extends "layout.html" %}
+
+{% block article %}	
+	<h1>{{ entry.title }}</h1>
+	<ul class="unimportant-desc-without-line" style="padding-left: 0;width: 100%;float: left;">
+		<li style="float: left;text-align: left;list-style: none;width: 4em;">{{ entry.genre }}</li>
+		<li style="float: left;text-align: left;list-style: none;width: 4em;">{{ entry.grade }}</li>
+		<li style="float: right;text-align: right;list-style: none;">{{ entry.view }}人浏览</li>
+	</ul>
+
+	   
+
+    </br>
+
+    <div class="content">{{ entry.content|safe }}</div>
+
+	<ul class="unimportant-desc-without-line">
+		<li style="float: right;">
+			作者：
+			<a href="{{ entry.former_url }}" class="unimportant-desc-without-line">{{ entry.author }}</a>
+		</li>
+	</ul>
+    
+	</br>
+	<div style="text-align: center; ">
+		<button type="button" style="width:120px;" class="btn btn-success">下一页</button>	
+	</div>
+	
+
+{% endblock %}
+
+{% block aside %}	
+    <h4>相关推荐</h4>
+    <br/>
+    {% for title in titles %}
+        <p class="only-one-line"><a href="/view/{{title.id}}">{{ title.title }}</a></p>
+        {% if loop.last %}
+        	<p class="unimportant-desc-without-line">{{ title.page_view}}&nbsp;℃</p>
+        {% else %}
+        	<p class="unimportant-desc">{{ title.page_view}}&nbsp;℃</p>
+        {% endif %}
+    {% endfor %}
+{% endblock %}    

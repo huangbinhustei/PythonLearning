@@ -1,3 +1,8 @@
+body {
+  font-family:"Microsoft YaHei" !important;
+  font-size: 1.6em;
+}
+
 .page {
   border: 1px solid #ccc ! important ;
   background: #FAFFFA;
@@ -6,7 +11,7 @@
 }
 
 .unimportant-desc-without-line {
-  font-size: 0.8em;
+  font-size: 14px;
   color: #ccc;
 }
 
@@ -20,4 +25,27 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
+}
+
+.content {
+  text-indent: 2em;
+}
+
+h1 {
+  font-family:"Microsoft YaHei UI Light" !important;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #ddd;
+}
+
+.hul {
+  padding-left: 0;
+  width: 100%;
+  float: left;
+}
+
+.hui {
+  float: left;
+  text-align: left;
+  list-style: none;
+  width: 4em;
 }

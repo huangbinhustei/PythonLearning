@@ -1,0 +1,66 @@
+{% extends "layout.html" %}
+
+{% block header %}
+	<div class="page-header">
+		<h1>作文网&nbsp;<small>by Bootstrap</small></h1>
+	</div>
+{% endblock %}
+
+{% block article %}	
+	<ul style="list-style: none;">
+		{% for entry in entries %}
+		<li>
+			<h4><a href="/view/{{entry.doc_md}}">{{ entry.title }}</a></h4>
+			<ul class="unimportant-desc-without-line" style="padding-left: 0;width: 100%;float: left;">
+				<li style="float: left;text-align: left;list-style: none;width: 4em;">{{ entry.genre }}</li>
+				<li style="float: left;text-align: left;list-style: none;width: 4em;">{{ entry.grade }}</li>
+				<li style="float: right;text-align: right;list-style: none;">{{ entry.view }}人浏览</li>
+			</ul>
+			<div style="float: none;"></div>
+				<!-- 摘要 -->
+			<!-- <p>1</p> -->
+			<p style="font-size: 10px;">{{ entry.content }}...<a href="#">【查看全部】</a></p>
+			<!-- <p>2</p> -->
+		</li>
+        {% if not loop.last %}
+        	<hr>
+        {% endif %}
+        {% endfor %}
+	</ul>
+
+
+
+
+	<ul class=pager>
+	<!-- 翻页器 -->
+	{% if paginate.has_prev %} 
+		<li><a href="/">首页</a></li>
+		<li><a href="/?page={{ paginate.prev_num }}">上一页</a></li>
+	{% else %} 
+		<li class="disabled"><a>首页</a></li>
+		<li class="disabled"><a>上一页</a></li>
+	{% endif %} 
+		<li><a>第 {{ paginate.page }} / {{ paginate.pages }} 页</a>
+
+	{% if paginate.has_next %} 
+		<li><a href="/?page={{ paginate.next_num }}">下一页</a></li>
+		<li><a href="/?page={{ paginate.pages }}">末页</a></li>
+	{% else %} 
+		<li class="disabled"><a>下一页</a></li>
+		<li class="disabled"><a>末页</a></li>
+	{% endif %} 
+	</ul>
+{% endblock %}
+
+{% block aside %}
+    <h4>最热文档</h4>
+    <br/>
+    {% for title in titles %}
+        <p class="only-one-line"><a href="/view/{{title.doc_md}}">{{ title.title }}</a></p>
+        {% if loop.last %}
+        	<p class="unimportant-desc-without-line">{{ title.view}}&nbsp;℃</p>
+        {% else %}
+        	<p class="unimportant-desc">{{ title.view}}&nbsp;℃</p>
+        {% endif %}
+    {% endfor %}
+{% endblock %}

@@ -1,8 +1,6 @@
 ## 已经完成
-1. 数据获取
-2. 去重
-3. 数据库 vacuum
-4. 数据库索引：
+1. 数据：获取（年级、体裁改成枚举值，设置默认阅读次数） → 去重 → slugify → vacuum
+2. 数据库索引：
    - 方法一：对于这种，似乎索引中的第一个（grade）必须用，否则不会使用索引。
      - create index list_index ON docs (grade, genre, words);
    - 方法二：对于这种，似乎索引都能够用上，但是比较慢。
@@ -10,16 +8,12 @@
      - CREATE INDEX genre_index ON docs (genre);
      - CREATE INDEX words_index ON docs (words);
      - CREATE INDEX doc_md_index ON docs (doc_md);
-5. 用『.schema』可以看结构
+     - CREATE INDEX view_index on docs (view desc);
+3. 用『.schema』可以看结构
 
 ## 待办事项
-1. 数据清洗：
-   1. 去掉干扰信息（目前来看干扰数据正好用作分段落）。
-   2. 年级、体裁改成枚举值。
-   3. 导入默认的阅读次数
-2. 获取标签数据（倒查表？）和相关推荐。
-3. slugify
-4. 页面分工：
+1. 获取标签数据（倒查表？）和相关推荐。
+2. 页面分工：
    1. Layout：网站标题、CSS 继承、（页面左右分区？）
    2. View：
       1. 标题、作者、访问量、正文、年级、字数、体裁
