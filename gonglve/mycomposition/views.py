@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 
 from data import Docs, db, app, cost_count
+from my_search import search_by_title
 from flask import request, sessions, g, redirect, render_template, url_for, jsonify
 from sqlalchemy import desc
 import logging
 from collections import defaultdict, OrderedDict
-from datetime import datetime
 import json
 import os
 import time
@@ -41,13 +41,15 @@ def page_list():
 
     entries = []
     for entry in paginate.items:
-        entry = entry.__dict__
-        entry["grade"] = map_dict["grade_map"][str(entry["grade"])]
-        entry["genre"] = map_dict["genre_map"][str(entry["genre"])]
-        entry["author"] = "佚名" if entry["author"] == "" else entry["author"]
-        entry["content"] = pq(entry["content"]).text()[:100]
-        print(entry["content"])
-        entries.append(entry)
+        entries.append(dict(
+            title=entry.title,
+            grade=map_dict["grade_map"][str(entry.grade)],
+            genre=map_dict["genre_map"][str(entry.genre)],
+            author="佚名" if entry.author == "" else entry.author,
+            content=pq(entry.content).text()[:100],
+            view=entry.view,
+            doc_md=entry.doc_md,
+        ))
 
     titles = []
     for item in Docs.query.order_by(desc(Docs.view)).limit(10):
@@ -91,7 +93,19 @@ def page_view(page_md):
         doc.today_view = 1
     db.session.commit()
 
-    return render_template("page_view.html", entry=entry, genre_map=genre_map, grade_map=grade_map,)
+    recommends = []
+    for line in search_by_title(entry["title"])[:10]:
+        doc_id, doc_value = line[0], str(line[1])
+        sug_doc = Docs.query.get(doc_id)
+        print("\t".join([sug_doc.title, doc_value]))
+        recommends.append(sug_doc)
+
+    return render_template("page_view.html",
+                           entry=entry,
+                           genre_map=genre_map,
+                           grade_map=grade_map,
+                           recommends=recommends,
+                           )
 
 
 @app.route("/api/view/<page_md>", methods=['GET'])
@@ -125,8 +139,8 @@ def api_list():
 
 @app.before_request
 def before_request():
-    this_url = str(request.url).replace("http://127.0.0.1:5000/", "")
-    logging.info("request @" + str(datetime.now()) + "\t:" + this_url)
+    this_url = str(request.url).replace("http://127.0.0.1:5000", "")
+    logging.info("request: " + this_url + " @ " + str(time.ctime()))
 
 
 if __name__ == '__main__':

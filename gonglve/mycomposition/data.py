@@ -124,6 +124,23 @@ class Sugs(db.Model):
         return self.doc_by_sug.split("\t")
 
 
+class Keywords(db.Model):
+    key = db.Column(db.String, primary_key=True)
+    weight = db.Column(db.Float)
+    docs = db.Column(db.String)
+
+    def __init__(self, c_list):
+        self.key = c_list[0]
+        self.weight = c_list[1]
+        self.docs = c_list[2]
+
+    def __repr__(self):
+        return "<Keywords %r" % self.docs
+
+    def get_docs(self):
+        return self.docs.split("\t")
+
+
 def cost_count(func):
     @wraps(func)
     def costing(*args, **kw):
