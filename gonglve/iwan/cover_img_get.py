@@ -46,11 +46,11 @@ def pic_size_check(t_url):
         return False
 
 
-f_out = open(os.path.join(basedir, "mid_output.txt"), "w", encoding="utf-8")
-f_error = open(os.path.join(basedir, "mid_error.txt"), "w", encoding="utf-8")
+f_out = open(os.path.join(basedir, "data", "mid_output.txt"), "w", encoding="utf-8")
+f_error = open(os.path.join(basedir, "data", "mid_error.txt"), "w", encoding="utf-8")
 
 
-with open(os.path.join(basedir, "input.txt"), "r", encoding="utf-8") as f:
+with open(os.path.join(basedir, "data", "input.txt"), "r", encoding="utf-8") as f:
     file_content = [line.strip().split("\t") for line in f.readlines()[1:]]
     bar = ProgressBar(total=len(file_content))
 
