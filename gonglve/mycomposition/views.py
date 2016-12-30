@@ -10,7 +10,6 @@ from collections import defaultdict, OrderedDict
 import json
 import os
 import time
-from pyquery import PyQuery as pq
 
 logging.basicConfig(level=logging.INFO)
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -46,7 +45,8 @@ def page_list():
             grade=map_dict["grade_map"][str(entry.grade)],
             genre=map_dict["genre_map"][str(entry.genre)],
             author="佚名" if entry.author == "" else entry.author,
-            content=pq(entry.content).text()[:100],
+            # content=pq(entry.content).text()[:100],
+            content=entry.content.replace("<p>","").replace("</p>","")[:100],
             view=entry.view,
             doc_md=entry.doc_md,
         ))
