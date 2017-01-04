@@ -2,19 +2,17 @@
 
 {% block article %}	
 	<h1>{{ entry.title }}</h1>
-	<ul class="unimportant-desc-without-line" style="padding-left: 0;width: 100%;float: left;">
-		<li style="float: left;text-align: left;list-style: none;width: 4em;">{{ entry.genre }}</li>
-		<li style="float: left;text-align: left;list-style: none;width: 4em;">{{ entry.grade }}</li>
+	<ul class="unimportant-desc" style="padding-left: 0;width: 100%;float: left;">
+		<li style="float: left;text-align: left;list-style: none;width: 4em;">{{ genre_map[entry.genre|string] }}</li>
+		<li style="float: left;text-align: left;list-style: none;width: 4em;">{{ grade_map[entry.grade|string] }}</li>
 		<li style="float: right;text-align: right;list-style: none;">{{ entry.view }}人浏览</li>
 	</ul>
-
-	   
 
     </br>
 
     <div class="content">{{ entry.content|safe }}</div>
 
-	<ul class="unimportant-desc-without-line">
+	<ul class="unimportant-desc">
 		<li style="float: right;">
 			作者：
 			<a href="{{ entry.former_url }}" class="unimportant-desc-without-line">{{ entry.author }}</a>
@@ -22,22 +20,51 @@
 	</ul>
     
 	</br>
+	<p>
+		<a href="/view/{{page_next.doc_md}}">再来一篇</a>
+	</p>
 	<div style="text-align: center; ">
-		<button type="button" style="width:120px;" class="btn btn-success">下一页</button>	
+		<button type="button" style="width:120px;" class="btn btn-success" onclick="javascript:window.location.href='#'">再来一篇</button>	
 	</div>
 	
 
 {% endblock %}
 
-{% block aside %}	
-    <h4>相关推荐</h4>
-    <br/>
-    {% for recommend in recommends %}
-        <p class="only-one-line"><a href="/view/{{recommend.doc_md}}">{{ recommend.title }}</a></p>
+{% block asideupper %}
+
+{% endblock %}
+
+{% block aside %}
+	{% if titles %}
+		<div class="page">
+		    <h4>同题目范文</h4>
+		    <br/>
+		    {% for recommend in titles %}
+	        {% if loop.last %}
+        	<p class="only-one-line" style="border-bottom: 0px;">
+	        {% else %}
+        	<p class="only-one-line">
+	        {% endif %}
+        		<a href="/view/{{recommend.doc_md}}">{{ recommend.title }}</a>
+        		<span class="unimportant-desc" style="float: right;">{{ grade_map[recommend.grade | string] }}</span>
+        	</p>
+		    {% endfor %}
+	    </div>
+	    <br/>
+    {% endif %}
+
+	<div class="page">
+	    <h4>相似题目范文</h4>
+	    <br/>
+	    {% for recommend in recommends %}
         {% if loop.last %}
-        	<p class="unimportant-desc-without-line">{{ recommend.view }}&nbsp;℃</p>
+		<p class="only-one-line" style="border-bottom: 0px;">
         {% else %}
-        	<p class="unimportant-desc">{{ recommend.view }}&nbsp;℃</p>
+    	<p class="only-one-line">
         {% endif %}
-    {% endfor %}
+    		<a href="/view/{{recommend.doc_md}}">{{ recommend.title }}</a>
+			<span class="unimportant-desc" style="float: right;">{{ grade_map[recommend.grade | string] }}</span>
+    	</p>
+	    {% endfor %}
+	</div>
 {% endblock %}    

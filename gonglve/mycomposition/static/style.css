@@ -10,21 +10,16 @@ body {
   padding: 15px;
 }
 
-.unimportant-desc-without-line {
-  font-size: 14px;
-  color: #ccc;
-}
-
 .unimportant-desc {
-  font-size: 0.8em;
+  font-size: 13px;
   color: #ccc;
-  border-bottom: 1px solid #eee
 }
 
 .only-one-line {
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
+  border-bottom: 1px solid #eee;
 }
 
 .content {

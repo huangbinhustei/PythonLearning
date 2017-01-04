@@ -7,7 +7,8 @@ import os
 from collections import defaultdict
 from multiprocessing import Pool, Manager
 from time import sleep, ctime
-from data import Docs, Keywords, db, app, cost_count
+from data import Docs, Keywords, db, app, cost_count, Titles
+basedir = os.path.abspath(os.path.dirname(__file__))
 
 num_of_titles = 289581      # = select count(DISTINCT title) from docs;
 
@@ -29,6 +30,18 @@ def database_merge(target_list):
         except:
             print(key)
     db.session.commit()
+
+
+@cost_count
+def for_process(this_list, this_queue):
+    print(str(os.getpid()) + " 子进程启动 @:" + str(ctime()))
+    temp_dict = weight_calc(this_list)
+    for key, v in temp_dict.items():
+        # 为什么我要把词典拆分成数组放到队列里面去？
+        list_1 = [key, v[0], v[1]]
+        this_queue.put(list_1)
+    this_queue.put("stop")
+    print(str(os.getpid()) + " 子进程结束 @:" + str(ctime()))
 
 
 @cost_count
@@ -67,7 +80,7 @@ def weight_database_init():
     process_count = 0
     while 1:
         a1 = dict_init_queue.get()
-        # a1 = [keyword, weights, docs]
+        # a1 格式： [keyword, weights, docs]
         this_key_word = a1[0]
         if a1 == "stop":
             process_count += 1
@@ -85,18 +98,48 @@ def weight_database_init():
     database_merge(dict_init)
 
 
-@cost_count
-def for_process(this_list, this_queue):
-    print(str(os.getpid()) + " 子进程启动 @:" + str(ctime()))
-    temp_dict = weight_calc(this_list)
-    for key, v in temp_dict.items():
-        # 为什么我要把词典拆分成数组放到队列里面去？
-        list_1 = [key, v[0], v[1]]
-        this_queue.put(list_1)
-    this_queue.put("stop")
-    print(str(os.getpid()) + " 子进程结束 @:" + str(ctime()))
+def titles_init():
+    doc_dict = defaultdict(lambda: [])
+    for doc in [[item.title, item.doc_id] for item in Docs.query.all()]:
+        doc_dict[doc[0]].append(doc[1])
+    for k, v in doc_dict.items():
+        if k == "":
+            continue
+        if len(v) == 1:
+            continue
+        new_row = Titles([k, ",".join([str(item) for item in v])])
+        db.session.add(new_row)
+    db.session.commit()
 
+
+@cost_count
+def load_docs():
+    return Docs.query.all()
+
+
+@cost_count
+def load_keywords():
+    return Keywords.query.all()
+
+
+@cost_count
+def title_weight_count():
+    doc_dict = defaultdict(lambda: 0)
+    key_dict = defaultdict(lambda: 0)
+    all_keys = load_keywords()
+    for item in all_keys:
+        key_dict[item.key] = item.weight
+    for item in load_docs():
+        for keyword in jieba.cut(item.title, cut_all=False):
+            doc_dict[item.doc_id] += key_dict[keyword]
+
+    return doc_dict
+    # with open(os.path.join(basedir, "id_weight.txt"), "w", encoding="utf-8") as f:
+    #     for k, v in doc_dict.items():
+    #         f.write(str(k) + "\t" + str(v)+"\n")
 
 if __name__ == '__main__':
     pass
+    # title_weight_count()
+    # titles_init()
     # weight_database_init()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from data import Docs, db, app, cost_count
+from data import Docs, db, app, cost_count, Titles
 from my_search import search_by_title
 from flask import request, sessions, g, redirect, render_template, url_for, jsonify
 from sqlalchemy import desc
@@ -10,10 +10,10 @@ from collections import defaultdict, OrderedDict
 import json
 import os
 import time
+import random
 
 logging.basicConfig(level=logging.INFO)
 basedir = os.path.abspath(os.path.dirname(__file__))
-
 with open(os.path.join(basedir, "config.json"), "r", encoding="utf-8") as f:
     map_dict = json.loads(f.read())
     genre_map = OrderedDict(sorted(map_dict["genre_map"].items(), key=lambda t: int(t[0])))
@@ -40,24 +40,12 @@ def page_list():
 
     entries = []
     for entry in paginate.items:
-        entries.append(dict(
-            title=entry.title,
-            grade=map_dict["grade_map"][str(entry.grade)],
-            genre=map_dict["genre_map"][str(entry.genre)],
-            author="佚名" if entry.author == "" else entry.author,
-            # content=pq(entry.content).text()[:100],
-            content=entry.content.replace("<p>","").replace("</p>","")[:100],
-            view=entry.view,
-            doc_md=entry.doc_md,
-        ))
+        temp = entry.to_dict()
+        temp["author"] = "佚名" if entry.author == "" else entry.author
+        temp["content"] = entry.content.replace("<p>", "").replace("</p>", "")[:90]
+        entries.append(temp)
 
-    titles = []
-    for item in Docs.query.order_by(desc(Docs.view)).limit(10):
-        titles.append(dict(
-            title=item.title,
-            view=item.view,
-            doc_md=item.doc_md,
-        ))
+    titles = Docs.query.order_by(desc(Docs.view)).limit(20)
 
     return render_template("page_list.html",
                            entries=entries,
@@ -76,8 +64,6 @@ def page_view(page_md):
         return jsonify({"error": "no such md"})
 
     entry = doc.to_dict()
-    entry["grade"] = map_dict["grade_map"][str(entry["grade"])]
-    entry["genre"] = map_dict["genre_map"][str(entry["genre"])]
     entry["author"] = "佚名" if entry["author"] == "" else entry["author"]
 
     doc.view += 1
@@ -93,18 +79,28 @@ def page_view(page_md):
         doc.today_view = 1
     db.session.commit()
 
-    recommends = []
-    for line in search_by_title(entry["title"])[:10]:
-        doc_id, doc_value = line[0], str(line[1])
-        sug_doc = Docs.query.get(doc_id)
-        print("\t".join([sug_doc.title, doc_value]))
-        recommends.append(sug_doc)
+    titles = Titles.query.get(doc.title)
+    if titles:
+        titles = Titles.query.get(doc.title).docs.split(",")
+        titles.remove(str(doc.doc_id))
+        page_next = random.choice(titles)
+        if len(titles) > 5:
+            titles.remove(page_next)
+        titles = Docs.query.filter(Docs.doc_id.in_(titles))[:10]
+        page_next = Docs.query.get(page_next)
+        recommends = [Docs.query.get(line[0]) for line in search_by_title(entry["title"], topx=10)]
+    else:
+        recommends = [Docs.query.get(line[0]) for line in search_by_title(entry["title"], topx=21)]
+        page_next = random.choice(recommends)
+        recommends.remove(page_next)
 
     return render_template("page_view.html",
                            entry=entry,
                            genre_map=genre_map,
                            grade_map=grade_map,
+                           titles=titles,
                            recommends=recommends,
+                           page_next=page_next,
                            )
 
 

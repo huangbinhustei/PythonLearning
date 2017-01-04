@@ -6,6 +6,7 @@ from flask_sqlalchemy import SQLAlchemy
 import os
 from functools import wraps
 import time
+import sys
 import logging
 logging.basicConfig(level=logging.INFO)
 
@@ -124,6 +125,21 @@ class Sugs(db.Model):
         return self.doc_by_sug.split("\t")
 
 
+class Titles(db.Model):
+    title = db.Column(db.String, primary_key=True)
+    docs = db.Column(db.String)
+
+    def __init__(self, c_list):
+        self.title = c_list[0]
+        self.docs = c_list[1]
+
+    def __repr__(self):
+        return "<Keywords %r" % self.docs
+
+    def get_docs(self):
+        return self.docs.split("\t")
+
+
 class Keywords(db.Model):
     key = db.Column(db.String, primary_key=True)
     weight = db.Column(db.Float)
@@ -151,3 +167,21 @@ def cost_count(func):
             logging.warning("Func(" + str(func.__name__) + ")\tcost: " + str(time_cost) + " ms")
         return ret
     return costing
+
+
+class ProgressBar:
+    def __init__(self, count=0, total=0, width=50):
+        self.count = count
+        self.total = total
+        self.width = width
+
+    def move(self):
+        self.count += 1
+        sys.stdout.write(' ' * (self.width + 9) + '\r')
+        sys.stdout.flush()
+        progress = int(self.width * self.count / self.total)
+        sys.stdout.write('{0:3}/{1:3}: '.format(self.count, self.total))
+        sys.stdout.write('+' * progress + '-' * (self.width - progress) + '\r')
+        if progress == self.width:
+            sys.stdout.write('\n')
+        sys.stdout.flush()
