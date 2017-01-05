@@ -34,3 +34,19 @@ network/__init__.py
 gonglve/mycomposition/__init__.py
 
 *.txt
+
+gonglve/json2txt/json to list.py
+
+gonglve/json2txt/ttt.json
+
+gonglve/iwan/json_maker.py
+
+gonglve/iwan/cover_img_get.py
+
+gonglve/iwan/json_maker.py
+
+gonglve/edu_gonglve/edu_spider.py
+
+gonglve/edu_gonglve/edu_spider_shixiseng.py
+
+gonglve/url.py

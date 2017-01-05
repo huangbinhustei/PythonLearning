@@ -139,7 +139,9 @@ def title_weight_count():
     #         f.write(str(k) + "\t" + str(v)+"\n")
 
 if __name__ == '__main__':
-    pass
+    input("不管如何，三思而后行！")
+    # pass
     # title_weight_count()
     # titles_init()
     # weight_database_init()
+

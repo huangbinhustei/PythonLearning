@@ -56,6 +56,22 @@ def page_list():
                            )
 
 
+@app.route("/search", methods=['GET'])
+@cost_count
+def page_search():
+    query = request.args.get('query')
+    if not query:
+        return("<h2>搜索起始页</h2>")
+    temp = ""
+    for line in search_by_title(query,need_same=True):
+        doc_id, doc_value = line[0], str(line[1])
+        try:
+            temp += "<p>" + str(doc_value)[:8] + "&nbsp;&nbsp;&nbsp;" + Docs.query.get(int(doc_id)).title + "</p>"
+        except:
+            print(item)
+    return(temp)
+
+
 @app.route("/view/<page_md>", methods=['GET'])
 @cost_count
 def page_view(page_md):
