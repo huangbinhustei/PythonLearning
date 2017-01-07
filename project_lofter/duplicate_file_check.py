@@ -8,13 +8,14 @@ from functools import wraps
 from collections import defaultdict
 import shutil
 
-basedir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "check_target")
 folder_length = defaultdict(lambda: 0)
 danger_folder = defaultdict(lambda: 0)
-safedir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "safe")
 
-if not os.path.exists(safedir):
-    os.makedirs(safedir)
+basedir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "check_target")
+no_use_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "safe")
+
+if not os.path.exists(no_use_dir):
+    os.makedirs(no_use_dir)
 
 
 def cost_count(func):
@@ -52,7 +53,7 @@ def single_folder_remove():
     for line in maybe_empty_folder:
         if len(line[1]) == 0:
             try:
-                shutil.move(line[0], safedir)
+                shutil.move(line[0], no_use_dir)
                 flag = True
             except:
                 print("同名文件夹!\n\t" + line[0] + ":移动失败")
@@ -123,16 +124,16 @@ def duplicate_file_check(all_pictures):
 
 @cost_count
 def folder_similar_check(md5_dict):
+    """
+    :return:dict_of_this:
+        folder_A： {
+            folder_B: n，其中 n 是相同文件的数量
+            folder_C: n，其中 n 是相同文件的数量
+        }
+    """
 
     def similarity_filter(t_dict, min_n):
         """
-        :param t_dict:
-         t_dict的结构：
-        folder_A： {
-            foler_B: n，其中 n 是相同文件的数量
-            foler_C: n，其中 n 是相同文件的数量
-        }
-        :param min_n:
         :return:假如 n 过小，认为两个文件夹不相同，就过滤掉
         """
         if min_n <= 1:
@@ -163,6 +164,8 @@ def folder_similar_check(md5_dict):
         print(k)
         for k1, v1 in v.items():
             print("\t" + k1 + "\t" + str(v1))
+
+    return folder_group
 
 
 @cost_count
@@ -217,10 +220,16 @@ def folder_thin():
     print("\nsave disk up to:" + str(save_disk))
 
 
+def chain_reaction(t_dict):
+    for key, value in t_dict.items():
+        pass
+
+
 def my_duplicate():
     all_pictures, all_folders = loading()
     md5_dict = duplicate_file_check(all_pictures)
-    folder_similar_check(md5_dict)
+    similar_folder_before_chain = folder_similar_check(md5_dict)
+    chain_reaction(similar_folder_before_chain)
 
 
 if __name__ == '__main__':
