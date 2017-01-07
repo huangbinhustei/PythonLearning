@@ -13,6 +13,9 @@ folder_length = defaultdict(lambda: 0)
 danger_folder = defaultdict(lambda: 0)
 safedir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "safe")
 
+if not os.path.exists(safedir):
+    os.makedirs(safedir)
+
 
 def cost_count(func):
     @wraps(func)
