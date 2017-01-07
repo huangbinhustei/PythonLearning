@@ -50,3 +50,5 @@ gonglve/edu_gonglve/edu_spider.py
 gonglve/edu_gonglve/edu_spider_shixiseng.py
 
 gonglve/url.py
+
+gonglve/iwan/url.py

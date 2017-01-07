@@ -3,130 +3,233 @@
 import hashlib
 import os
 from PIL import Image
-from collections import defaultdict
 import time
-import re
+from functools import wraps
+from collections import defaultdict
+import shutil
 
-# top_path = "D:\\Project\\PythonLearning\\project_lofter\\"
-top_path = "D:/Project/PythonLearning/project_lofter/"
-log_file = "D:/Project/PythonLearning/project_lofter/log.txt"
-log_file_folder_dict = "D:/Project/PythonLearning/project_lofter/log_file_folder_dict.txt"
-
-
-def md5(f_name):
-    m = hashlib.md5()
-    with open(f_name, "rb") as f:
-        m.update(f.read())
-    return m.hexdigest()
+basedir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "check_target")
+folder_length = defaultdict(lambda: 0)
+danger_folder = defaultdict(lambda: 0)
+safedir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "safe")
 
 
-def get_files(path):
-    files = []
-    for item in os.walk(path):
-        for s_item in item[2]:
-            files.append(os.path.join(item[0], s_item))
-    return list(set(files))
+def cost_count(func):
+    @wraps(func)
+    def costing(*args, **kw):
+        start_time = time.time()
+        ret = func(*args, **kw)
+        time_cost = int((time.time()-start_time) * 10000000)
+        print("Func(" + str(func.__name__) + ")\tcost: " + str(time_cost) + " μs")
+        return ret
+    return costing
 
 
-def size_grouping(f_list):
-    dd = defaultdict(lambda: [])
-    for file in f_list:
-        dd[os.path.getsize(file)].append(file)
-    return dd
-
-
-def img_size_grouping(f_list):
-    dd = defaultdict(lambda: [])
-    for item in f_list:
-        try:
-            img = Image.open(item)
-            dd[img.size].append(item)
-        except:
-            pass
-    return dd
-
-
-def md5_grouping(f_list):
-    dd = defaultdict(lambda: [])
-    for item in f_list:
-        dd[md5(item)].append(item)
-    return dd
-
-
-def duplicate_file_check():
+@cost_count
+def single_folder_remove():
     """
-    从文件大小/图片尺寸/MD5三个维度判断是否重复
+        1.假如某个文件夹下面只有一张图片，将图片移动到上一级文件夹。
+        2.移动图片后，假如该文件夹没有子目录，那么将他移动到 safe 目录，准备手动删除。
+        3.这个函数可能需要执行多次。
+        4.同名文件夹需要手动删除。
     :return:
     """
-    with open(log_file, "w") as f:
-        for k, v in size_grouping(get_files(top_path)).items():
-            if len(v) <= 1:
+
+    maybe_empty_folder = []
+    all_pictures, all_folders = loading()
+
+    for this_folder, target_file in danger_folder.items():
+        target_folder = os.path.abspath(os.path.join(this_folder, os.pardir))
+        shutil.move(target_file, target_folder)
+
+        remains = next(os.walk(this_folder))
+        maybe_empty_folder.append([this_folder, remains[1], remains[2]])
+
+    flag = False
+    for line in maybe_empty_folder:
+        if len(line[1]) == 0:
+            try:
+                shutil.move(line[0], safedir)
+                flag = True
+            except:
+                print("同名文件夹!\n\t" + line[0] + ":移动失败")
+    if flag:
+        print("最好再运行一次")
+
+
+@cost_count
+def duplicate_file_check(all_pictures):
+    """
+        1.从文件大小/图片尺寸/MD5三个维度判断是否重复。
+        2.发现去掉『图片尺寸』这个去重纬度，速度反而变快了。
+    :return: md5_value:[pic1, pic2 ...]
+    """
+
+    md5_pictures = defaultdict(lambda: [])
+
+    def size_grouping(f_list):
+        dd = defaultdict(lambda: [])
+        for file in f_list:
+            dd[os.path.getsize(file)].append(file)
+        return dd
+
+    def img_size_grouping(f_list):
+        dd = defaultdict(lambda: [])
+        for item in f_list:
+            try:
+                img = Image.open(item)
+                dd[img.size].append(item)
+            except:
+                pass
+        return dd
+
+    def md5_grouping(f_list):
+
+        def md5(f_name):
+            m = hashlib.md5()
+            with open(f_name, "rb") as f:
+                m.update(f.read())
+            return m.hexdigest()
+
+        dd = defaultdict(lambda: [])
+        for item in f_list:
+            dd[md5(item)].append(item)
+        return dd
+
+    # for size, pic_list_1 in size_grouping(all_picture).items():
+    #     if len(pic_list_1) <= 1:
+    #         continue
+    #     for img_size, pic_list_2 in img_size_grouping(pic_list_1).items():
+    #         if len(pic_list_2) <= 1:
+    #             continue
+    #         for md, pic_list_3 in md5_grouping(pic_list_2).items():
+    #             if len(pic_list_3) <= 1:
+    #                 continue
+    #             md5_pictures[md] = pic_list_3
+
+    for size, pic_list_1 in size_grouping(all_pictures).items():
+        if len(pic_list_1) <= 1:
+            continue
+        for md, pic_list_3 in md5_grouping(pic_list_1).items():
+            if len(pic_list_3) <= 1:
                 continue
-            for k1, v1 in img_size_grouping(v).items():
-                if len(v1) <= 1:
-                    continue
-                for k2, v2 in md5_grouping(v1).items():
-                    if len(v2) <= 1:
-                        continue
-                    temp = k2 + "\t" + ",".join(v2).replace(top_path, "")
-                    print(temp, file=f)
+            md5_pictures[md] = pic_list_3
+
+    return md5_pictures
 
 
-def folder_similar_check():
-    folders = []
-    re_par = re.compile(r'.[a-z,0-9,A-Z]{32}\.jpg')
-    # folder_dict: 第一位存文件夹包含的文件总量，第二个词典存重复文件所在的其他文件夹
-    folder_dict = defaultdict(lambda: [0, defaultdict(lambda: 0)])
-    with open(log_file, "r") as f:
-        # 获取 folder 列表，格式是"['wzwdkcm\\6a889_a27c231', 'wzwdkcm\\6a889_a27c232', '']"
-        for item in f.readlines():
-            ha = item.strip().replace(",", "").split("\t")
-            # \t前的是文件的MD5，没有价值。
-            rows = re.sub(re_par, "\t", ha[1])
-            folders.append(rows.split("\t"))
-    for rows in folders:
-        # folder 列表 → folder_dict
-        # 这里貌似有点问题，一个文件夹既有可能在前面，又有可能在后面
-        temp = os.walk(os.path.join(top_path, rows[0][1:]))
-        temp = next(temp)
-        folder_dict[rows[0]][0] = len(temp[2]) - 1
-        for s_folder in rows[1:]:
-            if s_folder == "":
-                continue
-            folder_dict[rows[0]][1][s_folder] += 1
-    # remove_single_file_folder(folder_dict)
-    with open(log_file_folder_dict, "w") as f:
-        for k, v in folder_dict.items():
-            print(str(v[0]) + "\t" + k, file=f)
-            for s_k, s_v in v[1].items():
-                print("\t" + str(s_v) + "\t" + s_k, file=f)
+@cost_count
+def folder_similar_check(md5_dict):
+
+    def similarity_filter(t_dict, min_n):
+        """
+        :param t_dict:
+         t_dict的结构：
+        folder_A： {
+            foler_B: n，其中 n 是相同文件的数量
+            foler_C: n，其中 n 是相同文件的数量
+        }
+        :param min_n:
+        :return:假如 n 过小，认为两个文件夹不相同，就过滤掉
+        """
+        if min_n <= 1:
+            return t_dict
+
+        for folder, folder_dict in t_dict.copy().items():
+            for k1, v1 in folder_dict.copy().items():
+                if min_n - 1 == v1:
+                    del folder_dict[k1]
+        for folder, folder_dict in t_dict.copy().items():
+            if len(folder_dict) == 0:
+                del t_dict[folder]
+        return t_dict
+
+    folder_group = defaultdict(lambda: defaultdict(lambda: 0))
+    for t_md5, pic_list in md5_dict.items():
+        folders = [os.path.abspath(os.path.join(pic, os.path.pardir)) for pic in pic_list]
+        for t_fold in folders:
+            temp = folders.copy()
+            temp.remove(t_fold)
+            for item in temp:
+                if item not in folder_group and item != t_fold:
+                    folder_group[t_fold][item] += 1
+
+    folder_group = similarity_filter(folder_group, 1)
+
+    for k, v in folder_group.items():
+        print(k)
+        for k1, v1 in v.items():
+            print("\t" + k1 + "\t" + str(v1))
 
 
-def remove_single_file_folder(this_folder_dict):
-    '''
-    假如某个文件夹下面只有一个文件（不算log.txt)
-    且这个文件是重复的，那么直接删除这个文件就好了。
+@cost_count
+def loading():
+
+    """
+    目标是获得：
+        all_pictures:所有图片列表
+        all_folders:所有文件夹列表 -> 没发现有什么用
     :return:
-    '''
-    sum1 = 0
-    for k, v in this_folder_dict.items():
-        if v[0] == 1:
-            temp = os.walk(os.path.join(top_path, k))
-            temp = next(temp)
-            # t_file = top_path + k + "/" + temp[2][0]
-            t_file = os.path.join(os.path.join(top_path, k), temp[2][0])
-            print(t_file)
-            temp = os.path.getsize(t_file)
-            sum1 += temp
-            print(str(temp) + "\t" + t_file)
-    print(str(sum1))
-    os.remove(t_file)
+    """
+
+    all_pictures = []
+    all_folders = []
+
+    temp_dict = defaultdict(lambda: [])
+    for item in os.walk(basedir):
+        t_pardir, t_child_dir, t_files = item
+        for s_file in t_files:
+            if s_file[-3:] in ("jpg", "gif", "png"):
+                temp_dict[t_pardir].append(os.path.join(t_pardir, s_file))
+                all_pictures.append(os.path.join(t_pardir, s_file))
+        for k, v in temp_dict.items():
+            if len(v) == 1:
+                danger_folder[k] = v[0]
+        for s_file in t_child_dir:
+            all_folders.append(os.path.join(t_pardir, s_file))
+    return all_pictures, all_folders
+
+
+def folder_thin():
+    all_pictures, all_folders = loading()
+
+    save_disk = 0
+    need_del = []
+
+    for f in all_folders:
+        pic_in_f = next(os.walk(f))[2]
+        pic_in_f = [os.path.join(f, item) for item in pic_in_f]
+        result_dict = duplicate_file_check(pic_in_f)
+        for k, v in result_dict.items():
+            if len(v) == 1:
+                continue
+            need_del += v[1:]
+    print("\n".join(need_del))
+
+    for item in need_del:
+        save_disk += os.path.getsize(item)
+        # os.remove(item)
+        # 抽样调查几个之后，就可以去掉注释，真的删文件了
+
+    print("\nsave disk up to:" + str(save_disk))
+
+
+def my_duplicate():
+    all_pictures, all_folders = loading()
+    md5_dict = duplicate_file_check(all_pictures)
+    folder_similar_check(md5_dict)
 
 
 if __name__ == '__main__':
-    times = 0
-    a = time.time()
-    # duplicate_file_check()    #这个已经完成了
-    folder_similar_check()
-    times += (time.time() - a)
-    print(times)
+    """
+    三个主要函数：
+    1. single_folder_remove：假如目录只包含一张图片，删除该目录，将图片移动到上级目录。
+    2. folder_thin：在同一个目录内，删除重复图片。
+    3. my_duplicate：看哪些目录拥有相同的图片，他们也许可以合并成一个目录。
+    """
+    # single_folder_remove()
+    # folder_thin()
+    my_duplicate()
+
+
+

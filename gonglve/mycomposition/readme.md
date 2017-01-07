@@ -37,7 +37,23 @@
       3. 筛选：年级、字数、体裁
 
 ## Table
-docs：	doc_id url title content grade genre words tags author view yesterday_view today_view creat_time upgrade_tiem fromer_url former_organization
+Docs：
+
++ doc_id
++ creat_time
++ doc_slug
++ title、content
++ grade、genre、words
++ author、org
++ view、yesterday_view、today_view、update_time
++ former_url、former_org
++ tag：
++ same_titles？
++ ​
+
+
+
+ title content grade genre words tags author view yesterday_view today_view creat_time upgrade_tiem fromer_url former_organization
 tags：	tag_id doc_ids
 sug：	id title doc_ids
 
