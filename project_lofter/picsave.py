@@ -5,7 +5,7 @@ import hashlib
 import threading
 from PIL import Image
 
-min_pic_size = 300000
+min_pic_size = 1000000
 
 
 def get_md5(need2md5):

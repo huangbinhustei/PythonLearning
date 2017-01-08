@@ -29,10 +29,14 @@ target_list = [
         "idheihei",
         ([".main", ".img"], "a", ".img"),
         re.compile(r'http://idheihei\.lofter\.com/post/(.+)')
+    ), (
+        "wanxiongjun",
+        ([".pic", ".img"], "a", ".img"),
+        re.compile(r'http://wanxiongjun\.lofter\.com/post/(.+)')
     )
 
 ]
-target_item = target_list[2]
+target_item = target_list[4]
 # http://12ofme.lofter.com/
 # http://fuliti.lofter.com/
 # http://vivian0610.lofter.com/?page=7&t=1475136637039

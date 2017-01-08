@@ -6,6 +6,7 @@ import time
 from functools import wraps
 from collections import defaultdict
 import shutil
+from PIL import Image
 
 folder_length = defaultdict(lambda: 0)
 basedir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "collated_by_folder")
@@ -181,9 +182,30 @@ def remove_all_small_pic_and_log():
     if save_disk > 0:
         print("\nsave disk up to:" + str(save_disk / 1024 / 1024) + "MB")
 
+
+def move_gif(folders):
+    gif_folder = os.path.join(os.path.abspath(os.path.dirname(__file__)), "GIF")
+    if not os.path.exists(gif_folder):
+        os.mkdir(gif_folder)
+    gif_count = 0
+    for pic in next(os.walk(folders))[2]:
+        p_pic = os.path.join(folders, pic)
+        img = Image.open(p_pic)
+        pic_type = img.format
+        img.close()
+        if pic_type == "GIF":
+            gif_count += 1
+            shutil.move(p_pic, gif_folder)
+    return gif_count
+
+
 if __name__ == '__main__':
     # remove_all_small_pic_and_log()  # 删掉过小的文件和log.txt，这个只需要做一次
-    duplicate_in_folder()   # 同一文件夹去重
+    # duplicate_in_folder()   # 同一文件夹去重
     # remove_folder_thar_less_than_one_file()     # 删除空目录，假如目录内只有一张图片，将图片剪切到父目录，再删除自己
     # my_duplicate()
+    gifs = 0
+    for fo in loading()[1]:
+        gifs += move_gif(fo)
+    print(gifs)
 

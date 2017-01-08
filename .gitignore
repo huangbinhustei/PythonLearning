@@ -2,38 +2,26 @@ DATA
 .idea
 __pycache__
 pip.conf
-network/.vs/thewaytocno/v14/.suo
-network/templates/home_old.html
+
 *.jpg
-*.db
-书/Python web框架.Flask中文手册.pdf
-书/集体智慧编程中文版.pdf
-project_lofter/[useless]log_arrangement.py
-*.one
-project_lofter/[useless]log_arrangement.py
-project_lofter/[useless]log_arrangement.py
-network/captcha.gif
+
 *.gif
-/书/*.pdf
-/small_flask/Flaskr/npm
+
+*.db
+
+*.one
 
 *.csv
 
 *.xml
 
-*.xml
+*.ini
 
-*.xml
-
-*.xml
+*.txt
 
 network/__init__.py
 
-*.ini
-
 gonglve/mycomposition/__init__.py
-
-*.txt
 
 gonglve/json2txt/json to list.py
 
