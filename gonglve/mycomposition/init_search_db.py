@@ -113,17 +113,16 @@ def titles_init():
 
 
 @cost_count
-def load_docs():
-    return Docs.query.all()
-
-
-@cost_count
-def load_keywords():
-    return Keywords.query.all()
-
-
-@cost_count
 def title_weight_count():
+
+    @cost_count
+    def load_docs():
+        return Docs.query.all()
+
+    @cost_count
+    def load_keywords():
+        return Keywords.query.all()
+
     doc_dict = defaultdict(lambda: 0)
     key_dict = defaultdict(lambda: 0)
     all_keys = load_keywords()
@@ -131,12 +130,12 @@ def title_weight_count():
         key_dict[item.key] = item.weight
     for item in load_docs():
         for keyword in jieba.cut(item.title, cut_all=False):
-            doc_dict[item.doc_id] += key_dict[keyword]
+            doc_dict[item.doc_id] += key_dict[keyword]*key_dict[keyword]
 
-    return doc_dict
-    # with open(os.path.join(basedir, "id_weight.txt"), "w", encoding="utf-8") as f:
-    #     for k, v in doc_dict.items():
-    #         f.write(str(k) + "\t" + str(v)+"\n")
+    # return doc_dict
+    with open(os.path.join(basedir, "id_weight.txt"), "w", encoding="utf-8") as f:
+        for k, v in doc_dict.items():
+            f.write(str(k) + "\t" + str(v)+"\n")
 
 if __name__ == '__main__':
     input("不管如何，三思而后行！")

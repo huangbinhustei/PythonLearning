@@ -4,7 +4,10 @@
 import jieba
 import os
 from collections import defaultdict
+import math
 from data import Docs, Keywords, db, app, cost_count, basedir, Titles
+
+jieba.initialize()
 
 
 @cost_count
@@ -23,10 +26,12 @@ id_weight = load_doc_weight()
 def search_by_title(my_query, topx=10, need_same=False):
     outputs = defaultdict(lambda: 0)
     key_words = list(jieba.cut(my_query, cut_all=False))
+    query_weight = 0
     for line in Keywords.query.filter(Keywords.key.in_(key_words)):
         docs, weight = line.docs.split(","), line.weight
         for doc_id in docs:
-            outputs[doc_id] += weight * key_words.count(line.key)
+            outputs[doc_id] += weight * weight * key_words.count(line.key)
+        query_weight += weight * weight * key_words.count(line.key)
     if not need_same:
         outputs_c = outputs.copy()
         bad_titles = Titles.query.get(my_query)
@@ -35,7 +40,9 @@ def search_by_title(my_query, topx=10, need_same=False):
             for k, v in outputs_c.items():
                 if k in bad_titles:
                     del outputs[k]
-    outputs = sorted(outputs.items(), key=lambda doc: (doc[1], doc[1] / id_weight[doc[0]]), reverse=True)[:topx]
+
+    outputs = sorted(outputs.items(), key=lambda doc: doc[1] / math.sqrt(id_weight[doc[0]]), reverse=True)[:topx]
+    outputs = [[item[0], item[1]/math.sqrt(id_weight[item[0]])/math.sqrt(query_weight)] for item in outputs]
     return outputs
 
 

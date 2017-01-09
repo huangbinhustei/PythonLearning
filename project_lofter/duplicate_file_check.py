@@ -2,27 +2,14 @@
 
 import hashlib
 import os
-import time
-from functools import wraps
 from collections import defaultdict
 import shutil
 from PIL import Image
+from com_tool import cost_count, md5
 
 folder_length = defaultdict(lambda: 0)
-basedir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "collated_by_folder")
-too_big_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "big")
-
-
-def cost_count(func):
-    @wraps(func)
-    def costing(*args, **kw):
-        start_time = time.time()
-        ret = func(*args, **kw)
-        time_cost = int((time.time()-start_time) * 1000)
-        if time_cost > 10:
-            print("Func(" + str(func.__name__) + ")\tcost: " + str(time_cost) + " ms")
-        return ret
-    return costing
+basedir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "collated")
+too_big_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "untreated")
 
 
 @cost_count
@@ -46,12 +33,6 @@ def duplicate_file_check(all_pictures):
     :return: md5_value:[pic1, pic2 ...]
     """
     md5_pictures = defaultdict(lambda: [])
-
-    def md5(f_name):
-        m = hashlib.md5()
-        with open(f_name, "rb") as f:
-            m.update(f.read())
-        return m.hexdigest()
 
     for this_file in all_pictures:
         md5_pictures[md5(this_file)].append(this_file)

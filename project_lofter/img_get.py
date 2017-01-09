@@ -143,7 +143,7 @@ if __name__ == '__main__':
     path = os.path.abspath(os.path.join(os.path.dirname(__file__))) + "/" + target_item[0] + "/"
     if not os.path.exists(path):
         os.makedirs(path)
-        logging.info("os.makedirs:" + target_item[0])
+        logging.info("make dir:" + target_item[0])
     if os.path.exists(path + "log.txt"):
         with open(path + "log.txt", "r") as f:
             post_has_try2save = set([item.split("\t")[0] for item in f.readlines()])
