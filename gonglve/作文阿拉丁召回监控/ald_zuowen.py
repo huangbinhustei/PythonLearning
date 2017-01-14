@@ -36,7 +36,7 @@ def loading():
 def soft_check(keys_new, keys_has_checked_before, t_records):
     print(str(len(keys_new)) + ":\tkeys count that need check")
     need_check = []
-    keys_has_checked_before += [item[0] for item in t_records]
+    keys_has_checked_before = keys_has_checked_before | set([item[0] for item in t_records])
     for item in [title for title in keys_new if title not in keys_has_checked_before]:
         if len(item) < 3 or "www" in item or "com" in item:
             continue
@@ -73,7 +73,7 @@ def ald(query_list_small):
 
 if __name__ == '__main__':
     keys_in_xml, need_check_title, records = loading()
-    need_check_title = soft_check(need_check_title, keys_in_xml, records)
+    # need_check_title = soft_check(need_check_title, keys_in_xml, records)
     block_count = 0
     while 1:
         block = need_check_title[block_count * block_length: (block_count + 1) * block_length]
@@ -83,7 +83,7 @@ if __name__ == '__main__':
             break
         th = []
         for i in range(same_time):
-            th.append(threading.Thread(target=ald, args=(block[i::same_time])))
+            th.append(threading.Thread(target=ald, args=(block[i::same_time],)))
         for t in th:
             t.setDaemon(True)
             t.start()
