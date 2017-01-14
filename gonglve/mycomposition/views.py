@@ -25,8 +25,8 @@ with open(os.path.join(basedir, "config.json"), "r", encoding="utf-8") as f:
 def page_list():
     try:
         page_id = int(request.args.get("page"))
-    except:
-        logging.error("Page ID Is Not Integer")
+    except ValueError:
+        logging.debug("Page ID Is Not Integer")
         page_id = 0
     grade, genre, words = (request.args.get('grade'), request.args.get('genre'), request.args.get('words'))
     query = Docs.query
@@ -61,20 +61,32 @@ def page_list():
 def page_search():
     query = request.args.get('query')
     if not query:
-        return("<h2>搜索起始页</h2>")
+        return "<h2>搜索起始页</h2>"
     temp = ""
     for line in search_by_title(query, need_same=True):
         doc_id, doc_value = line[0], str(line[1])
-        try:
-            temp += "<p>" + str(doc_value)[:8] + "|" + Docs.query.get(int(doc_id)).title + "</p>"
-        except:
-            print(query)
+        temp += "<p>" + str(doc_value)[:8] + "|" + Docs.query.get(int(doc_id)).title + "</p>"
     return temp
 
 
 @app.route("/view/<page_md>", methods=['GET'])
 @cost_count
 def page_view(page_md):
+
+    def view_update():
+        doc.view += 1
+        today = int(time.time() / 86400)
+        if doc.update_time == today:
+            doc.today_view += 1
+        elif doc.update_time + 1 == today:
+            doc.update_time = today
+            doc.yesterday_view = doc.today_view
+            doc.today_view = 1
+        else:
+            doc.update_time = today
+            doc.today_view = 1
+        db.session.commit()
+
     doc = Docs.query.filter(Docs.doc_md == page_md).first()
     if not doc:
         return jsonify({"error": "no such md"})
@@ -82,18 +94,7 @@ def page_view(page_md):
     entry = doc.to_dict()
     entry["author"] = "佚名" if entry["author"] == "" else entry["author"]
 
-    doc.view += 1
-    today = int(time.time()/86400)
-    if doc.update_time == today:
-        doc.today_view += 1
-    elif doc.update_time + 1 == today:
-        doc.update_time = today
-        doc.yesterday_view = doc.today_view
-        doc.today_view = 1
-    else:
-        doc.update_time = today
-        doc.today_view = 1
-    db.session.commit()
+    view_update()
 
     titles = Titles.query.get(doc.title)
     if titles:

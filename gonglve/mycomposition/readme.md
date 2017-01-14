@@ -38,14 +38,3 @@ Docs：
 + tag：
 + same_titles？
 + ​
-
-
-
- title content grade genre words tags author view yesterday_view today_view creat_time upgrade_tiem fromer_url former_organization
-tags：	tag_id doc_ids
-sug：	id title doc_ids
-
-首页：		按照最近一周的热度降序排列。昨日PV\*0.7 + 今日PV\*0.3。
-标题列表页：	select doc_id from composition where title is "标题"
-tag列表页：	list = [item.split(",") for item in select doc_ids from composition where tag_id is "id"]
-搜索结果页：
