@@ -25,6 +25,9 @@ with open(os.path.join(basedir, "config.json"), "r", encoding="utf-8") as f:
 def page_list():
     try:
         page_id = int(request.args.get("page"))
+    except TypeError:
+        logging.debug("Page ID Is Empty")
+        page_id = 0
     except ValueError:
         logging.debug("Page ID Is Not Integer")
         page_id = 0
