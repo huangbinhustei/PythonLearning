@@ -1,68 +1,98 @@
 {% extends "layout.html" %}
 
-{% block article %}	
-	<h1>{{ entry.title }}</h1>
-	<ul class="unimportant-desc" style="padding-left: 0;width: 100%;float: left;">
-		<li style="float: left;text-align: left;list-style: none;width: 4em;">{{ genre_map[entry.genre|string] }}</li>
-		<li style="float: left;text-align: left;list-style: none;width: 4em;">{{ grade_map[entry.grade|string] }}</li>
-		<li style="float: right;text-align: right;list-style: none;">{{ entry.view }}人浏览</li>
-	</ul>
+{% block article %}
+    <div class="page">
+        <h1>{{ entry.title }}</h1>
+        <div style="clear: both"></div>
+        <p class="unimportant-desc">
+            {{ genre_map[entry.genre|string] }}&nbsp;&nbsp;·&nbsp;&nbsp;
+            {{ grade_map[entry.grade|string] }}&nbsp;&nbsp;·&nbsp;&nbsp;
+            {{ entry.words }}字
+            <span style="float: right">
+                {{ entry.view }}人浏览
+            </span>
+        </p>
 
-    </br>
+        <div class="content">{{ entry.content|safe }}</div>
 
-    <div class="content">{{ entry.content|safe }}</div>
+        <ul class="unimportant-desc">
+            <li style="float: right;">
+                作者：
+                <a href="{{ entry.former_url }}" class="unimportant-desc-without-line">{{ entry.author }}</a>
+            </li>
+        </ul>
 
-	<ul class="unimportant-desc">
-		<li style="float: right;">
-			作者：
-			<a href="{{ entry.former_url }}" class="unimportant-desc-without-line">{{ entry.author }}</a>
-		</li>
-	</ul>
-    
-	</br>
+        <br>
+        {% if same_titles %}
+            <nav style="text-align: center">
+                <ul class="pagination">
+                    {% if same_titles[3] %}
+                        <li><a href="/view/{{ same_titles[3].doc_md }}">&laquo;</a></li>
+                    {% else %}
+                        <li class="disabled"><a href="#">&laquo;</a></li>
+                    {% endif %}
+                    {% for item in same_titles[0] %}
+                        {% if loop.index-1 == same_titles[1] %}
+                        <li class="active" style="margin: 0 auto"><a href="/view/{{ item.doc_md }}">{{ same_titles[2]*10 + loop.index }}</a></li>
+                        {% else %}
+                        <li style="margin: 0 auto"><a href="/view/{{ item.doc_md }}">{{ same_titles[2]*10 + loop.index }}</a></li>
+                        {% endif %}
+                    {% endfor %}
 
-	<div style="text-align: center; ">
-		<button type="button" style="width:220px;" class="btn btn-success" onclick=javascript:window.location.href="/view/{{page_next.doc_md}}">再来一篇</button>	
-	</div>
-	
+                    {% if same_titles[4] %}
+                    <li><a href="/view/{{ same_titles[4].doc_md }}">&raquo;</a></li>
+                    {% else %}
+                    <li class="disabled"><a href="#">&raquo;</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% else %}
+            <div style="text-align: center; ">
+                <button type="button" style="width:220px;" class="btn btn-success" onclick=javascript:window.location.href="/view/{{page_next.doc_md}}">再来一篇</button>
+            </div>
+        {% endif %}
+    </div>
 
+    <br>
+
+    {% if titles %}
+    <div class="list-group">
+        <div href="#" class="list-group-item">
+            <h4 class="list-group-item-heading">
+                {{ entry.title }}_<small>同题目范文</small>
+            </h4>
+        </div>
+        {% for recommend in titles %}
+            {% if recommend.doc_id != entry.doc_id %}
+            <a class="list-group-item" href="/view/{{recommend.doc_md}}">
+                <p class="list-group-item-heading only-one-line" style="font-size: 0.8em;">{{ recommend.content.replace("<p>", "").replace("</p>", "")[:80] }}</p>
+                <p class="list-group-item-text" style="font-size: 0.7em">
+                    {{ genre_map[recommend.genre|string] }}&nbsp;&nbsp;·&nbsp;&nbsp;
+                    {{ grade_map[recommend.grade|string] }}&nbsp;&nbsp;·&nbsp;&nbsp;
+                    {{ recommend.words }}字
+                </p>
+            </a>
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
 {% endblock %}
 
-{% block asideupper %}
-
-{% endblock %}
 
 {% block aside %}
-	{% if titles %}
-		<div class="page">
-		    <h4>同题目范文</h4>
-		    <br/>
-		    {% for recommend in titles %}
-	        {% if loop.last %}
-        	<p class="only-one-line" style="border-bottom: 0px;">
-	        {% else %}
-        	<p class="only-one-line">
-	        {% endif %}
-        		<a href="/view/{{recommend.doc_md}}">{{ recommend.title }}</a>
-        		<span class="unimportant-desc" style="float: right;">{{ grade_map[recommend.grade | string] }}</span>
-        	</p>
-		    {% endfor %}
-	    </div>
-	    <br/>
-    {% endif %}
-
-	<div class="page">
-	    <h4>相似题目范文</h4>
-	    <br/>
-	    {% for recommend in recommends %}
-        {% if loop.last %}
-		<p class="only-one-line" style="border-bottom: 0px;">
-        {% else %}
-    	<p class="only-one-line">
-        {% endif %}
-    		<a href="/view/{{recommend.doc_md}}">{{ recommend.title }}</a>
-			<span class="unimportant-desc" style="float: right;">{{ grade_map[recommend.grade | string] }}</span>
-    	</p>
-	    {% endfor %}
-	</div>
+    <div class="panel panel-default">
+        <div class="panel-heading">相似题目范文</div>
+        <div class="list-group">
+        {% for recommend in recommends %}
+            <a class="list-group-item" href="/view/{{recommend.doc_md}}">
+                <p class="list-group-item-heading">{{ recommend.title }}</p>
+                <p class="list-group-item-text" style="font-size: 0.7em">
+                    {{ genre_map[recommend.genre|string] }}&nbsp;&nbsp;·&nbsp;&nbsp;
+                    {{ grade_map[recommend.grade|string] }}&nbsp;&nbsp;·&nbsp;&nbsp;
+                    {{ recommend.words }}字
+                </p>
+            </a>
+        {% endfor %}
+        </div>
+    </div>
 {% endblock %}    

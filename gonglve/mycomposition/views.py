@@ -23,6 +23,27 @@ with open(os.path.join(basedir, "config.json"), "r", encoding="utf-8") as f:
 @app.route("/")
 @cost_count
 def page_list():
+    def page_normal_list():
+        query = Docs.query
+        if grade:
+            query = query.filter(Docs.grade == grade)
+        if genre:
+            query = query.filter(Docs.genre == genre)
+        if words:
+            query = query.filter(Docs.words >= words)
+        return query.paginate(page_id, app.config["POST_IN_SINGLE_PAGE"], False)
+
+    def page_titles():
+        query = Docs.query
+        same_titles = Titles.query.get(title)
+        if not same_titles:
+            query = query.filter(Docs.title == title)
+            return query.paginate(page_id, app.config["POST_IN_SINGLE_PAGE"], False)
+        else:
+            same_titles = same_titles.docs.split(",")
+            query = query.filter(Docs.doc_id.in_(same_titles))
+            return query.paginate(page_id, app.config["POST_IN_SINGLE_PAGE"], False)
+
     try:
         page_id = int(request.args.get("page"))
     except TypeError:
@@ -32,27 +53,25 @@ def page_list():
         logging.debug("Page ID Is Not Integer")
         page_id = 0
     grade, genre, words = (request.args.get('grade'), request.args.get('genre'), request.args.get('words'))
-    query = Docs.query
-    if grade:
-        query = query.filter(Docs.grade == grade)
-    if genre:
-        query = query.filter(Docs.genre == genre)
-    if words:
-        query = query.filter(Docs.words >= words)
-    paginate = query.paginate(page_id, app.config["POST_IN_SINGLE_PAGE"], False)
+    title = request.args.get("title")
+
+    if title:
+        paginate = page_titles()
+    else:
+        paginate = page_normal_list()
 
     entries = []
     for entry in paginate.items:
         temp = entry.to_dict()
-        temp["author"] = "佚名" if entry.author == "" else entry.author
-        temp["content"] = entry.content.replace("<p>", "").replace("</p>", "")[:90]
+        temp["author"] = entry.author
+        temp["content"] = entry.content
         entries.append(temp)
 
-    titles = Docs.query.order_by(desc(Docs.view)).limit(20)
+    hottest_titles = Docs.query.order_by(desc(Docs.view)).limit(20)
 
     return render_template("page_list.html",
                            entries=entries,
-                           titles=titles,
+                           titles=hottest_titles,
                            paginate=paginate,
                            genre_map=genre_map,
                            grade_map=grade_map,
@@ -66,10 +85,12 @@ def page_search():
     if not query:
         return "<h2>搜索起始页</h2>"
     temp = ""
+    result_search = []
     for line in search_by_title(query, need_same=True):
         doc_id, doc_value = line[0], str(line[1])
         temp += "<p>" + str(doc_value)[:8] + "|" + Docs.query.get(int(doc_id)).title + "</p>"
-    return temp
+        result_search.append([str(doc_value)[:8], Docs.query.get(int(doc_id))])
+    return render_template("page_search.html", res=result_search, query=query, genre_map=genre_map,grade_map=grade_map)
 
 
 @app.route("/view/<page_md>", methods=['GET'])
@@ -95,24 +116,35 @@ def page_view(page_md):
         return jsonify({"error": "no such md"})
 
     entry = doc.to_dict()
-    entry["author"] = "佚名" if entry["author"] == "" else entry["author"]
+    entry["author"] = entry["author"]
 
     view_update()
 
     titles = Titles.query.get(doc.title)
+    same_titles = []
     if titles:
-        titles = Titles.query.get(doc.title).docs.split(",")
-        titles.remove(str(doc.doc_id))
-        page_next = random.choice(titles)
-        if len(titles) > 5:
-            titles.remove(page_next)
-        titles = Docs.query.filter(Docs.doc_id.in_(titles))[:10]
-        page_next = Docs.query.get(page_next)
-        recommends = [Docs.query.get(line[0]) for line in search_by_title(entry["title"], topx=10)]
-    else:
-        recommends = [Docs.query.get(line[0]) for line in search_by_title(entry["title"], topx=21)]
-        page_next = random.choice(recommends)
-        recommends.remove(page_next)
+        title_ids = Titles.query.get(doc.title).docs.split(",")
+        ind = title_ids.index(str(doc.doc_id))
+        group_id = int(ind/10)
+        group_offset = ind % 10
+        titles = Docs.query.filter(Docs.doc_id.in_(title_ids[group_id*10:(group_id+1)*10]))
+        if ind == 0:
+            doc_prev = ""
+            doc_next = Docs.query.get(title_ids[1])
+        elif ind == len(title_ids)-1:
+            doc_prev = Docs.query.get(title_ids[ind-1])
+            doc_next = ""
+        else:
+            doc_prev = Docs.query.get(title_ids[ind - 1])
+            doc_next = Docs.query.get(title_ids[ind + 1])
+
+        same_titles = [titles, group_offset, group_id, doc_prev, doc_next]
+
+    recommends = [Docs.query.get(line[0]) for line in search_by_title(entry["title"], topx=15)]
+    if doc in recommends:
+        recommends.remove(doc)
+    page_next = random.choice(recommends)
+    recommends.remove(page_next)
 
     return render_template("page_view.html",
                            entry=entry,
@@ -121,6 +153,7 @@ def page_view(page_md):
                            titles=titles,
                            recommends=recommends,
                            page_next=page_next,
+                           same_titles=same_titles,
                            )
 
 

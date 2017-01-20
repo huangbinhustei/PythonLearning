@@ -5,7 +5,7 @@ body {
 
 .page {
   border: 1px solid #ccc ! important ;
-  background: #FAFFFA;
+  background: #FEFEFE;
   box-shadow:0px 1px 2px #ddd;
   padding: 15px;
 }
@@ -19,7 +19,6 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
-  border-bottom: 1px solid #eee;
 }
 
 .content {
