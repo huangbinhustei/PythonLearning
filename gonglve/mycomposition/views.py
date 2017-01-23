@@ -11,6 +11,7 @@ import json
 import os
 import time
 import random
+from pyquery import PyQuery as pq
 
 logging.basicConfig(level=logging.INFO)
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -57,8 +58,10 @@ def page_list():
 
     if title:
         paginate = page_titles()
+        query_prefix = "title=" + title
     else:
         paginate = page_normal_list()
+        query_prefix = ""
 
     entries = []
     for entry in paginate.items:
@@ -72,6 +75,7 @@ def page_list():
     return render_template("page_list.html",
                            entries=entries,
                            titles=hottest_titles,
+                           query_prefix=query_prefix,
                            paginate=paginate,
                            genre_map=genre_map,
                            grade_map=grade_map,
@@ -90,13 +94,12 @@ def page_search():
         doc_id, doc_value = line[0], str(line[1])
         temp += "<p>" + str(doc_value)[:8] + "|" + Docs.query.get(int(doc_id)).title + "</p>"
         result_search.append([str(doc_value)[:8], Docs.query.get(int(doc_id))])
-    return render_template("page_search.html", res=result_search, query=query, genre_map=genre_map,grade_map=grade_map)
+    return render_template("page_search.html", res=result_search, query=query, genre_map=genre_map, grade_map=grade_map)
 
 
 @app.route("/view/<page_md>", methods=['GET'])
 @cost_count
 def page_view(page_md):
-
     def view_update():
         doc.view += 1
         today = int(time.time() / 86400)
@@ -116,7 +119,6 @@ def page_view(page_md):
         return jsonify({"error": "no such md"})
 
     entry = doc.to_dict()
-    entry["author"] = entry["author"]
 
     view_update()
 
@@ -125,14 +127,14 @@ def page_view(page_md):
     if titles:
         title_ids = Titles.query.get(doc.title).docs.split(",")
         ind = title_ids.index(str(doc.doc_id))
-        group_id = int(ind/10)
+        group_id = int(ind / 10)
         group_offset = ind % 10
-        titles = Docs.query.filter(Docs.doc_id.in_(title_ids[group_id*10:(group_id+1)*10]))
+        titles = Docs.query.filter(Docs.doc_id.in_(title_ids[group_id * 10:(group_id + 1) * 10]))
         if ind == 0:
             doc_prev = ""
             doc_next = Docs.query.get(title_ids[1])
-        elif ind == len(title_ids)-1:
-            doc_prev = Docs.query.get(title_ids[ind-1])
+        elif ind == len(title_ids) - 1:
+            doc_prev = Docs.query.get(title_ids[ind - 1])
             doc_next = ""
         else:
             doc_prev = Docs.query.get(title_ids[ind - 1])
@@ -154,6 +156,20 @@ def page_view(page_md):
                            recommends=recommends,
                            page_next=page_next,
                            same_titles=same_titles,
+                           )
+
+
+@app.route("/edit/<page_md>", methods=['GET', 'POST'])
+@cost_count
+def page_edit(page_md):
+    entry = Docs.query.filter(Docs.doc_md == page_md).first()
+    if not entry:
+        return jsonify({"error": "no such md"})
+    entry.content = "\"" + pq(entry.content).text() + "\""
+    return render_template("page_edit.html",
+                           entry=entry,
+                           genre_map=genre_map,
+                           grade_map=grade_map,
                            )
 
 

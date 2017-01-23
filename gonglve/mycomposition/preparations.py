@@ -4,7 +4,7 @@
 from data import Docs, db, cost_count
 from sqlalchemy import desc, or_
 from collections import defaultdict
-from slugify import UniqueSlugify
+# from slugify import UniqueSlugify
 import re, os
 
 

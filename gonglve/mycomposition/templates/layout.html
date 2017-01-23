@@ -3,16 +3,23 @@
     <title>Composition</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Bootstrap -->
-    <link href="//cdn.bootcss.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
-    <script src="//cdn.bootcss.com/jquery/1.11.3/jquery.min.js"></script>
-    <script src="//cdn.bootcss.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <link href="//cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    <script src="//cdn.bootcss.com/jquery/2.1.1/jquery.min.js"></script>
+    <script src="//cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
     <!-- 我自己的css -->
     <link href="{{ url_for('static', filename='style.css') }}" rel=stylesheet type=text/css>
+    <!-- simditor  -->
+    <script src="{{ url_for('static', filename='jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='module.js') }}"></script>
+    <script src="{{ url_for('static', filename='hotkeys.js') }}"></script>
+    <script src="{{ url_for('static', filename='uploader.js') }}"></script>
+    <script src="{{ url_for('static', filename='simditor.js') }}"></script>
+    <link href="{{ url_for('static', filename='simditor.css') }}" rel=stylesheet type=text/css>
 </head>
 
 <body>
     <div class="navbar navbar-inverse" role="navigation" style="border-radius: 0">
-        <div class="container">
+        <div class="container-fluid">
             <div class="navbar-header">
                 <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse"> 
                 <!-- 这个button是用来下拉的，下面的四个span，后面三个是用来画按钮上的三根横线的 -->
