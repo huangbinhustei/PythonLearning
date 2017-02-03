@@ -7,11 +7,13 @@ from collections import defaultdict
 import math
 from data import Docs, Keywords, Grade, Genre, db, app, Titles, cost_count, basedir
 import logging
-logging.basicConfig(level=logging.ERROR)
+logging.basicConfig(level=logging.WARNING)
 
 jieba.initialize()
 page_len = app.config["POST_IN_SINGLE_PAGE"]
 page_preload_count = 10
+genre_right = {0,1,2,3,4,5,6}
+grade_right = {0,1,2,3,4,5,6,7,8,9,10,11,12}
 
 
 @cost_count
@@ -27,39 +29,41 @@ id_weight = load_doc_weight()
 
 @cost_count
 def search_by_title(my_query,
-                    grade=-1,
-                    genre=-1,
                     topx=page_len * page_preload_count,
-                    need_same=True,
+                    washer=defaultdict(int),
                     ):
 
     def filter_by_grade_and_genre(res_dict):
-        if grade == [-1] and genre == [-1]:
-            return res_dict
-        else:
-            idx = set([])
-            if grade != [-1]:
-                for item in grade:
-                    if isinstance(item, int):
-                        idx |= (Grade.query.get(item).get_docs())
-                    else:
-                        logging.error("type error: grade must be list made by int")
-            new_idx = set([])
-            if genre != [-1]:
-                for item in genre:
-                    if isinstance(item, int):
-                        new_idx |= (Genre.query.get(item).get_docs())
-                    else:
-                        logging.error("type error: genre must be int or list")
-            if idx == set([]):
-                idx = new_idx
-            elif new_idx != set([]):
-                idx &= new_idx
-
+        idx = set([])
+        for item in washer["grade"]:
+            if item in grade_right:
+                idx |= (Grade.query.get(item).get_docs())
+            else:
+                logging.error("type error: grade must be list made by int")
+        idx_genre = set([])
+        for item in washer["genre"]:
+            if item in genre_right:
+                idx_genre |= (Genre.query.get(item).get_docs())
+            else:
+                logging.error("type error: genre must be int or list")
+        if idx == set([]):
+            idx = idx_genre
+        elif idx_genre != set([]):
+            idx &= idx_genre
+        if idx:
             for t_key, t_value in res_dict.copy().items():
                 if int(t_key) not in idx:
                     del res_dict[t_key]
-            return res_dict
+        return res_dict
+
+    def remove_same_titles(res_dict):
+        bad_titles = Titles.query.get(my_query)
+        if bad_titles:
+            bad_titles = bad_titles.docs.split(",")
+            for k, v in res_dict.copy().items():
+                if k in bad_titles:
+                    del res_dict[k]
+        return res_dict
 
     outputs = defaultdict(lambda: 0)
     key_words = list(jieba.cut(my_query, cut_all=False))
@@ -70,17 +74,12 @@ def search_by_title(my_query,
             outputs[doc_id] += weight * weight * key_words.count(line.key)
         query_weight += weight * weight * key_words.count(line.key)
 
-    if not need_same:
-        bad_titles = Titles.query.get(my_query)
-        if bad_titles:
-            bad_titles = bad_titles.docs.split(",")
-            for k, v in outputs.copy().items():
-                if k in bad_titles:
-                    del outputs[k]
-
-    outputs = filter_by_grade_and_genre(outputs)
+    if washer["remove_same"]:
+        outputs = remove_same_titles(outputs)
+    if washer["filter"]:
+        outputs = filter_by_grade_and_genre(outputs)
     outputs = sorted(outputs.items(), key=lambda doc: doc[1] / math.sqrt(id_weight[doc[0]]), reverse=True)[:topx]
-    outputs = [[item[0], item[1]/math.sqrt(id_weight[item[0]])/math.sqrt(query_weight)] for item in outputs]
+    outputs = [[item[0], item[1] / math.sqrt(id_weight[item[0]]) / math.sqrt(query_weight)] for item in outputs]
 
     result_search = []
     for line in outputs:

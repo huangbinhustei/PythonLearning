@@ -24,7 +24,7 @@ with open(os.path.join(basedir, "config.json"), "r", encoding="utf-8") as f:
 def get_idx(id_name):
     _str = request.args.get(id_name)
     if _str is None:
-        return [-1]
+        return []
     if "," in _str:
         idx = [int(item) for item in _str.split(",")]
     else:
@@ -32,7 +32,7 @@ def get_idx(id_name):
             idx = [int(_str)]
         except ValueError:
             logging.debug(id_name + " ID Is Not Integer")
-            idx = [-1]
+            idx = []
     return idx
 
 
@@ -127,6 +127,7 @@ def page_list():
 @app.route("/search", methods=['GET'])
 @cost_count
 def page_search():
+    washer = defaultdict(int)
     query = request.args.get('query')
     grade = get_idx("grade")
     genre = get_idx("genre")
@@ -134,7 +135,11 @@ def page_search():
     if not query:
         return "<h2>搜索起始页</h2>"
 
-    result_search, paginate = get_paginate(search_by_title(query, grade=grade, genre=genre))
+    if -1 not in grade or -1 not in genre:
+        washer["filter"] = True
+        washer["grade"] = grade
+        washer["genre"] = genre
+    result_search, paginate = get_paginate(search_by_title(query, washer=washer))
 
     return render_template("page_search.html",
                            res=result_search,
