@@ -154,7 +154,35 @@ class Keywords(db.Model):
         return "<Keywords %r" % self.docs
 
     def get_docs(self):
-        return self.docs.split("\t")
+        return self.docs.split(",")
+
+
+class Genre(db.Model):
+    key = db.Column(db.Integer, primary_key=True)
+    docs = db.Column(db.String)
+
+    def __init__(self, c_list):
+        self.key, self.docs = c_list
+
+    def __repr__(self):
+        return "<Genre %r" % self.docs
+
+    def get_docs(self):
+        return set([int(item) for item in self.docs.split(",")])
+
+
+class Grade(db.Model):
+    key = db.Column(db.Integer, primary_key=True)
+    docs = db.Column(db.String)
+
+    def __init__(self, c_list):
+        self.key, self.docs = c_list
+
+    def __repr__(self):
+        return "<Grade %r" % self.docs
+
+    def get_docs(self):
+        return set([int(item) for item in self.docs.split(",")])
 
 
 def cost_count(func):

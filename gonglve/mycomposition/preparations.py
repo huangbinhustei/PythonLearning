@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from data import Docs, db, cost_count
+from data import Docs, Grade, Genre, db, cost_count
 from sqlalchemy import desc, or_
 from collections import defaultdict
 # from slugify import UniqueSlugify
@@ -143,8 +143,26 @@ def content_del():
     # f.close()
 
 
+@cost_count
+def genre_grade_make():
+    docs = Docs.query.all()
+    outputs = defaultdict(lambda: [])
+    outputs1 = defaultdict(lambda: [])
+    for doc in docs:
+        outputs[doc.grade].append(str(doc.doc_id))
+        outputs1[doc.genre].append(str(doc.doc_id))
+    for k, v in outputs.items():
+        new_grade = Grade([k, ",".join(v)])
+        db.session.add(new_grade)
+    for k, v in outputs1.items():
+        new_genre = Genre([k, ",".join(v)])
+        db.session.add(new_genre)
+    db.session.commit()
+
+
 if __name__ == '__main__':
     pass
+    # genre_grade_make()
     # content_del()
     # slugging()
     # duplicate()

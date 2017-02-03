@@ -11,14 +11,63 @@ import json
 import os
 import time
 import random
-from pyquery import PyQuery as pq
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.ERROR)
 basedir = os.path.abspath(os.path.dirname(__file__))
+page_len = app.config["POST_IN_SINGLE_PAGE"]
 with open(os.path.join(basedir, "config.json"), "r", encoding="utf-8") as f:
     map_dict = json.loads(f.read())
     genre_map = OrderedDict(sorted(map_dict["genre_map"].items(), key=lambda t: int(t[0])))
     grade_map = OrderedDict(sorted(map_dict["grade_map"].items(), key=lambda t: int(t[0])))
+
+
+def get_idx(id_name):
+    _str = request.args.get(id_name)
+    if _str is None:
+        return [-1]
+    if "," in _str:
+        idx = [int(item) for item in _str.split(",")]
+    else:
+        try:
+            idx = [int(_str)]
+        except ValueError:
+            logging.debug(id_name + " ID Is Not Integer")
+            idx = [-1]
+    return idx
+
+
+def get_paginate(this_list):
+    page_id = get_page_id()
+    page_max = int((len(this_list) + 1) / page_len) - 1
+    this_list = this_list[page_id * page_len:(page_id + 1) * page_len]
+    if page_id > page_max:
+        logging.info("页码过大")
+    if page_id < 0:
+        logging.info("页码过小")
+    paginate = dict(
+        has_prev=False if page_id == 0 else True,
+        has_next=False if page_id >= page_max else True,
+        page=page_id,
+        prev_num=max(0, page_id - 1),
+        next_num=min(page_id + 1, page_max))
+    return this_list, paginate
+
+
+def get_page_id():
+    try:
+        page_id = int(request.args.get("page"))
+    except TypeError:
+        logging.debug("Page ID Is Empty")
+        page_id = 0
+    except ValueError:
+        logging.debug("Page ID Is Not Integer")
+        page_id = 0
+
+    return page_id
+
+
+def time_format(a):
+    return time.ctime(a)
 
 
 @app.route("/")
@@ -45,14 +94,7 @@ def page_list():
             query = query.filter(Docs.doc_id.in_(same_titles))
             return query.paginate(page_id, app.config["POST_IN_SINGLE_PAGE"], False)
 
-    try:
-        page_id = int(request.args.get("page"))
-    except TypeError:
-        logging.debug("Page ID Is Empty")
-        page_id = 0
-    except ValueError:
-        logging.debug("Page ID Is Not Integer")
-        page_id = 0
+    page_id = get_page_id()
     grade, genre, words = (request.args.get('grade'), request.args.get('genre'), request.args.get('words'))
     title = request.args.get("title")
 
@@ -86,15 +128,21 @@ def page_list():
 @cost_count
 def page_search():
     query = request.args.get('query')
+    grade = get_idx("grade")
+    genre = get_idx("genre")
+
     if not query:
         return "<h2>搜索起始页</h2>"
-    temp = ""
-    result_search = []
-    for line in search_by_title(query, need_same=True):
-        doc_id, doc_value = line[0], str(line[1])
-        temp += "<p>" + str(doc_value)[:8] + "|" + Docs.query.get(int(doc_id)).title + "</p>"
-        result_search.append([str(doc_value)[:8], Docs.query.get(int(doc_id))])
-    return render_template("page_search.html", res=result_search, query=query, genre_map=genre_map, grade_map=grade_map)
+
+    result_search, paginate = get_paginate(search_by_title(query, grade=grade, genre=genre))
+
+    return render_template("page_search.html",
+                           res=result_search,
+                           paginate=paginate,
+                           query=query,
+                           genre_map=genre_map,
+                           grade_map=grade_map,
+                           )
 
 
 @app.route("/view/<page_md>", methods=['GET'])
@@ -126,7 +174,11 @@ def page_view(page_md):
     same_titles = []
     if titles:
         title_ids = Titles.query.get(doc.title).docs.split(",")
-        ind = title_ids.index(str(doc.doc_id))
+        if str(doc.doc_id) in title_ids:
+            ind = title_ids.index(str(doc.doc_id))
+        else:
+            ind = 0
+            logging.error(doc.doc_md + ":doc title changes without updating Titles")
         group_id = int(ind / 10)
         group_offset = ind % 10
         titles = Docs.query.filter(Docs.doc_id.in_(title_ids[group_id * 10:(group_id + 1) * 10]))
@@ -160,16 +212,83 @@ def page_view(page_md):
 
 
 @app.route("/edit/<page_md>", methods=['GET', 'POST'])
+@app.route("/dashboard/edit/<page_md>", methods=['GET', 'POST'])
 @cost_count
-def page_edit(page_md):
+def dashboard_edit(page_md):
     entry = Docs.query.filter(Docs.doc_md == page_md).first()
     if not entry:
         return jsonify({"error": "no such md"})
-    entry.content = "\"" + pq(entry.content).text() + "\""
-    return render_template("page_edit.html",
-                           entry=entry,
+    if request.method == "GET":
+        return render_template("dashboard_edit.html",
+                               entry=entry,
+                               genre_map=genre_map,
+                               grade_map=grade_map,
+                               )
+    else:
+        entry.title = request.form["title"]
+        entry.grade = int(request.form["grade"])
+        entry.genre = int(request.form["genre"])
+        entry.author = request.form["author"]
+        entry.content = request.form["content"]
+        db.session.commit()
+        return redirect(url_for("page_view", page_md=page_md))
+
+
+@app.route("/dashboard/list", methods=["GET", "POST"])
+@cost_count
+def dashboard_doc_list():
+
+    def get_by_id(idx):
+        pass
+
+    query = Docs.query
+    options = [-1, -1]  # 年级、体裁筛选的默认选项
+    page_id = get_page_id()
+    if request.method == "GET":
+        title = request.args.get("title")
+        title = "" if title is None else title
+        doc_md = ""
+    else:
+        doc_md = request.form["doc_md"]
+        title = request.form["title"]
+    grade = get_idx("grade")
+    genre = get_idx("genre")
+
+    entries = []
+    if doc_md:
+        print("if doc_md")
+        entries.append(query.filter(Docs.doc_md == doc_md).first())
+        entries, paginate = get_paginate(entries)
+    elif title:
+        print("if title")
+        for line in search_by_title(title, need_same=True):
+            doc_id, doc_value = line[0], str(line[1])
+            entries.append(Docs.query.get(int(doc_id)))
+        entries, paginate = get_paginate(entries)
+    else:
+        print("else")
+        if grade != -1:
+            query = query.filter(Docs.grade == grade)
+        if genre != -1:
+            query = query.filter(Docs.genre == genre)
+        options = [grade, genre]
+        paginate = query.paginate(page_id, app.config["POST_IN_SINGLE_PAGE"], False)
+        entries = paginate.items
+
+    return render_template("dashboard_list.html",
+                           entries=entries,
+                           paginate=paginate,
+                           options=options,
                            genre_map=genre_map,
                            grade_map=grade_map,
+                           query=title,
+                           )
+
+
+@app.route("/dashboard", methods=["GET"])
+@cost_count
+def dashboard():
+    return render_template("dashboard.html",
                            )
 
 
