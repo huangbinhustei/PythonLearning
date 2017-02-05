@@ -7,7 +7,8 @@ import os
 from collections import defaultdict
 from multiprocessing import Pool, Manager
 from time import sleep, ctime
-from data import Docs, Keywords, db, app, cost_count, Titles
+from data import Docs, Keywords, Weights, db, app, cost_count
+import math
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 num_of_titles = 289581      # = select count(DISTINCT title) from docs;
@@ -98,20 +99,6 @@ def weight_database_init():
     database_merge(dict_init)
 
 
-def titles_init():
-    doc_dict = defaultdict(lambda: [])
-    for doc in [[item.title, item.doc_id] for item in Docs.query.all()]:
-        doc_dict[doc[0]].append(doc[1])
-    for k, v in doc_dict.items():
-        if k == "":
-            continue
-        if len(v) == 1:
-            continue
-        new_row = Titles([k, ",".join([str(item) for item in v])])
-        db.session.add(new_row)
-    db.session.commit()
-
-
 @cost_count
 def title_weight_count():
 
@@ -132,15 +119,14 @@ def title_weight_count():
         for keyword in jieba.cut(item.title, cut_all=False):
             doc_dict[item.doc_id] += key_dict[keyword]*key_dict[keyword]
 
-    # return doc_dict
-    with open(os.path.join(basedir, "id_weight.txt"), "w", encoding="utf-8") as f:
-        for k, v in doc_dict.items():
-            f.write(str(k) + "\t" + str(v)+"\n")
+    for k, v in doc_dict.items():
+        new_row = Weights([k, math.sqrt(v), 0])
+        db.session.add(new_row)
+    db.session.commit()
 
 if __name__ == '__main__':
     # input("不管如何，三思而后行！")
     # pass
     title_weight_count()
-    # titles_init()
     # weight_database_init()
 

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from data import Docs, db, app, cost_count, Titles
+from data import Docs, db, app, cost_count, Sugs
 from my_search import search_by_title
 from flask import request, sessions, g, redirect, render_template, url_for, jsonify
-from sqlalchemy import desc
+from sqlalchemy import desc, and_
 import logging
 from collections import defaultdict, OrderedDict
 import json
@@ -74,7 +74,7 @@ def time_format(a):
 @cost_count
 def page_list():
     def page_normal_list():
-        query = Docs.query
+        query = Docs.query.filter(Docs.status == 0)
         if grade:
             query = query.filter(Docs.grade == grade)
         if genre:
@@ -84,15 +84,9 @@ def page_list():
         return query.paginate(page_id, app.config["POST_IN_SINGLE_PAGE"], False)
 
     def page_titles():
-        query = Docs.query
-        same_titles = Titles.query.get(title)
-        if not same_titles:
-            query = query.filter(Docs.title == title)
-            return query.paginate(page_id, app.config["POST_IN_SINGLE_PAGE"], False)
-        else:
-            same_titles = same_titles.docs.split(",")
-            query = query.filter(Docs.doc_id.in_(same_titles))
-            return query.paginate(page_id, app.config["POST_IN_SINGLE_PAGE"], False)
+        same_titles = Sugs.query.get(title).get_same()
+        query = Docs.query.filter(Docs.doc_id.in_(same_titles))
+        return query.paginate(page_id, app.config["POST_IN_SINGLE_PAGE"], False)
 
     page_id = get_page_id()
     grade, genre, words = (request.args.get('grade'), request.args.get('genre'), request.args.get('words'))
@@ -135,7 +129,7 @@ def page_search():
     if not query:
         return "<h2>搜索起始页</h2>"
 
-    if -1 not in grade or -1 not in genre:
+    if grade or genre:
         washer["filter"] = True
         washer["grade"] = grade
         washer["genre"] = genre
@@ -167,52 +161,73 @@ def page_view(page_md):
             doc.today_view = 1
         db.session.commit()
 
+    def make_pagination():
+        if len(same_docs) == 1:
+            return False
+        else:
+            if doc in same_docs:
+                ind = same_docs.index(doc)
+            else:
+                ind = 0
+                logging.error(doc.doc_md + ":doc title changes without updating Titles")
+            group_id = int(ind / 10)
+            group_offset = ind % 10
+            group_docs = same_docs[group_id * 10:(group_id + 1) * 10]
+
+            if ind == 0:
+                doc_prev = ""
+                doc_next = same_docs[1]
+            elif ind == len(same_docs) - 1:
+                doc_prev = same_docs[ind - 1]
+                doc_next = ""
+            else:
+                doc_prev = same_docs[ind - 1]
+                doc_next = same_docs[ind + 1]
+            return [group_docs, group_offset, group_id, doc_prev, doc_next]
+
+    def get_recommends():
+        recommends = sugs.get_similar()
+        if recommends:
+            r_length = len(recommends)
+            recommends = Docs.query.filter(Docs.doc_id.in_(recommends)).all()[:11]
+            page_next = random.choice(recommends)
+            recommends.remove(page_next)
+            if r_length < 11:
+                # 假如相关文档不够，就通过同年级同体裁的最热文档来补充
+                recommends += list(Docs.query
+                                   .filter(and_(Docs.grade == doc.grade, Docs.genre == doc.genre))
+                                   .order_by(desc(Docs.view))
+                                   .limit(11-r_length))
+        else:
+            # 假如没有相关文档，就通过同年级同体裁的最热文档来补充
+            recommends += list(Docs.query
+                               .filter(and_(Docs.grade == doc.grade, Docs.genre == doc.genre))
+                               .order_by(desc(Docs.view))
+                               .limit(11))
+            page_next = random.choice(recommends)
+            recommends.remove(page_next)
+        return recommends, page_next
+
     doc = Docs.query.filter(Docs.doc_md == page_md).first()
     if not doc:
         return jsonify({"error": "no such md"})
 
-    entry = doc.to_dict()
+    sugs = Sugs.query.get(doc.title)
+    same_doc_ids = sugs.get_same()
+    if not same_doc_ids:
+        logging.error("visit a doc that status == False")
+        same_doc_ids = [doc.doc_id]
+    same_docs = Docs.query.filter(Docs.doc_id.in_(same_doc_ids)).all()
 
     view_update()
-
-    titles = Titles.query.get(doc.title)
-    same_titles = []
-    if titles:
-        title_ids = Titles.query.get(doc.title).docs.split(",")
-        if str(doc.doc_id) in title_ids:
-            ind = title_ids.index(str(doc.doc_id))
-        else:
-            ind = 0
-            logging.error(doc.doc_md + ":doc title changes without updating Titles")
-        group_id = int(ind / 10)
-        group_offset = ind % 10
-        titles = Docs.query.filter(Docs.doc_id.in_(title_ids[group_id * 10:(group_id + 1) * 10]))
-        if ind == 0:
-            doc_prev = ""
-            doc_next = Docs.query.get(title_ids[1])
-        elif ind == len(title_ids) - 1:
-            doc_prev = Docs.query.get(title_ids[ind - 1])
-            doc_next = ""
-        else:
-            doc_prev = Docs.query.get(title_ids[ind - 1])
-            doc_next = Docs.query.get(title_ids[ind + 1])
-
-        same_titles = [titles, group_offset, group_id, doc_prev, doc_next]
-
-    recommends = [Docs.query.get(line[0]) for line in search_by_title(entry["title"], topx=15)]
-    if doc in recommends:
-        recommends.remove(doc)
-    page_next = random.choice(recommends)
-    recommends.remove(page_next)
-
     return render_template("page_view.html",
-                           entry=entry,
+                           entry=doc,
                            genre_map=genre_map,
                            grade_map=grade_map,
-                           titles=titles,
-                           recommends=recommends,
-                           page_next=page_next,
-                           same_titles=same_titles,
+                           same_docs=same_docs,
+                           recommends=get_recommends()[0],
+                           page_next=get_recommends()[1],
+                           pagination=make_pagination(),
                            )
 
 
@@ -234,6 +249,7 @@ def dashboard_edit(page_md):
         entry.grade = int(request.form["grade"])
         entry.genre = int(request.form["genre"])
         entry.author = request.form["author"]
+        entry.former_org = request.form["former_org"]
         entry.content = request.form["content"]
         db.session.commit()
         return redirect(url_for("page_view", page_md=page_md))
@@ -242,7 +258,6 @@ def dashboard_edit(page_md):
 @app.route("/dashboard/list", methods=["GET", "POST"])
 @cost_count
 def dashboard_doc_list():
-
     def get_by_id(idx):
         pass
 

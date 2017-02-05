@@ -3,7 +3,6 @@
 {% block article %}
     <div class="page">
         <h1>{{ entry.title }}</h1>
-        <div style="clear: both"></div>
         <p class="unimportant-desc">
             {{ genre_map[entry.genre|string] }}&nbsp;&nbsp;·&nbsp;&nbsp;
             {{ grade_map[entry.grade|string] }}&nbsp;&nbsp;·&nbsp;&nbsp;
@@ -12,6 +11,12 @@
                 {{ entry.view }}人浏览
             </span>
         </p>
+
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <b>标签：</b>{{ entry.tags }}
+            </div>
+        </div>
 
         <div class="content">{{ entry.content|safe }}</div>
 
@@ -23,24 +28,24 @@
         </ul>
 
         <br>
-        {% if same_titles %}
+        {% if pagination %}
             <nav style="text-align: center">
                 <ul class="pagination">
-                    {% if same_titles[3] %}
-                        <li><a href="/view/{{ same_titles[3].doc_md }}">&laquo;</a></li>
+                    {% if pagination[3] %}
+                        <li><a href="/view/{{ pagination[3].doc_md }}">&laquo;</a></li>
                     {% else %}
                         <li class="disabled"><a href="#">&laquo;</a></li>
                     {% endif %}
-                    {% for item in same_titles[0] %}
-                        {% if loop.index-1 == same_titles[1] %}
-                        <li class="active" style="margin: 0 auto"><a href="/view/{{ item.doc_md }}">{{ same_titles[2]*10 + loop.index }}</a></li>
+                    {% for item in pagination[0] %}
+                        {% if loop.index-1 == pagination[1] %}
+                            <li class="active" style="margin: 0 auto"><a href="/view/{{ item.doc_md }}">{{ pagination[2]*10 + loop.index }}</a></li>
                         {% else %}
-                        <li style="margin: 0 auto"><a href="/view/{{ item.doc_md }}">{{ same_titles[2]*10 + loop.index }}</a></li>
+                            <li style="margin: 0 auto"><a href="/view/{{ item.doc_md }}">{{ pagination[2]*10 + loop.index }}</a></li>
                         {% endif %}
                     {% endfor %}
 
-                    {% if same_titles[4] %}
-                    <li><a href="/view/{{ same_titles[4].doc_md }}">&raquo;</a></li>
+                    {% if pagination[4] %}
+                    <li><a href="/view/{{ pagination[4].doc_md }}">&raquo;</a></li>
                     {% else %}
                     <li class="disabled"><a href="#">&raquo;</a></li>
                     {% endif %}
@@ -55,14 +60,14 @@
 
     <br>
 
-    {% if titles %}
+    {% if same_docs|length >=2 %}
     <div class="list-group">
         <div href="#" class="list-group-item">
             <h4 class="list-group-item-heading">
-                {{ entry.title }}_<small>同题目范文</small>
+                {{ entry.title }}_<small>同题目范文:&nbsp;共&nbsp;{{ same_docs|length }}&nbsp;篇</small>
             </h4>
         </div>
-        {% for recommend in titles %}
+        {% for recommend in same_docs[:5] %}
             {% if recommend.doc_id != entry.doc_id %}
             <a class="list-group-item" href="/view/{{recommend.doc_md}}">
                 <p class="list-group-item-heading only-one-line" style="font-size: 0.8em;">{{ recommend.content.replace("<p>", "").replace("</p>", "")[:80] }}</p>
@@ -74,6 +79,11 @@
             </a>
             {% endif %}
         {% endfor %}
+        {% if same_docs|length >5 %}
+        <a class="list-group-item" href="/?title={{ entry.title }}" style="text-align: center">
+            <p class="list-group-item-heading only-one-line">查看全部&nbsp;{{ same_docs|length }}&nbsp;篇同题目范文</p>
+        </a>
+        {% endif %}
     </div>
     {% endif %}
 {% endblock %}
@@ -81,7 +91,7 @@
 
 {% block aside %}
     <div class="panel panel-default">
-        <div class="panel-heading">相似题目范文</div>
+        <div class="panel-heading">相关范文</div>
         <div class="list-group">
         {% for recommend in recommends %}
             <a class="list-group-item" href="/view/{{recommend.doc_md}}">
@@ -95,4 +105,4 @@
         {% endfor %}
         </div>
     </div>
-{% endblock %}    
+{% endblock %}

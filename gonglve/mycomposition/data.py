@@ -12,8 +12,8 @@ logging.basicConfig(level=logging.INFO)
 
 
 basedir = os.path.abspath(os.path.dirname(__file__))
-app = Flask(__name__)
 
+app = Flask(__name__)
 app.config.update(
     DEBUG=True,
     # SECRET_KEY="TEMP",
@@ -23,6 +23,7 @@ app.config.update(
     SQLALCHEMY_TRACK_MODIFICATIONS=True,
     POST_IN_SINGLE_PAGE=10,
 )
+
 db = SQLAlchemy(app)
 
 
@@ -43,6 +44,7 @@ class Docs(db.Model):
     update_time = db.Column(db.Integer)
     former_url = db.Column(db.String)
     former_org = db.Column(db.String)
+    status = db.Column(db.Boolean)
 
     def __init__(self, init_list):
         self.doc_md = init_list[0]
@@ -60,6 +62,7 @@ class Docs(db.Model):
         self.update_time = init_list[12]
         self.former_url = init_list[13]
         self.former_org = init_list[14]
+        self.status = True
 
     def __repr__(self):
         return "<Docs %r" % self.doc_md
@@ -85,59 +88,27 @@ class Docs(db.Model):
         )
 
 
-class Tags(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    tag = db.Column(db.String)
-    doc_with_tag = db.Column(db.String)
-    create_time = db.Column(db.Integer)
-    update_time = db.Column(db.Integer)
-
-    def __init__(self, c_list):
-        self.tag = c_list[0]
-        self.doc_with_tag = c_list[1]
-        self.create_time = c_list[2]
-        self.update_time = c_list[3]
-
-    def __repr__(self):
-        return "<Docs %r" % self.tag
-
-    def get_docs(self):
-        return self.doc_with_tag.split("\t")
-
-
 class Sugs(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String)
-    doc_by_sug = db.Column(db.String)
-    create_time = db.Column(db.Integer)
-    update_time = db.Column(db.Integer)
-
-    def __init__(self, c_list):
-        self.title = c_list[0]
-        self.doc_by_sug = c_list[1]
-        self.create_time = c_list[2]
-        self.update_time = c_list[3]
-
-    def __repr__(self):
-        return "<Docs %r" % self.tag
-
-    def get_docs(self):
-        return self.doc_by_sug.split("\t")
-
-
-class Titles(db.Model):
     title = db.Column(db.String, primary_key=True)
-    docs = db.Column(db.String)
+    same_docs = db.Column(db.String)
+    similar_docs = db.Column(db.String)
 
     def __init__(self, c_list):
         self.title = c_list[0]
-        self.docs = c_list[1]
+        self.same_docs = c_list[1]
+        self.similar_docs = c_list[2]
 
-    def __repr__(self):
-        return "<Keywords %r" % self.docs
+    def get_same(self):
+        if self.same_docs:
+            return [int(item) for item in self.same_docs.split(",")]
+        else:
+            return []
 
-    def get_docs(self):
-        return self.docs.split("\t")
+    def get_similar(self):
+        if self.similar_docs:
+            return [int(item) for item in self.similar_docs.split(",")]
+        else:
+            return []
 
 
 class Keywords(db.Model):
@@ -154,7 +125,18 @@ class Keywords(db.Model):
         return "<Keywords %r" % self.docs
 
     def get_docs(self):
-        return self.docs.split(",")
+        return set(map(int, self.docs.split(",")))
+
+
+class Weights(db.Model):
+    doc_id = db.Column(db.Integer, primary_key=True)
+    title_weight = db.Column(db.Float)
+    content_weight = db.Column(db.Float)
+
+    def __init__(self, c_list):
+        self.doc_id = c_list[0]
+        self.title_weight = c_list[1]
+        self.content_weight = c_list[2]
 
 
 class Genre(db.Model):
