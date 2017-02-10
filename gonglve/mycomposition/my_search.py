@@ -47,7 +47,7 @@ def search_by_title(my_query,
 
 def search_no_rank(_query_):
     outputs = defaultdict(int)
-    key_words = list(jieba.cut(_query_, cut_all=False))
+    key_words = jieba.lcut_for_search(_query_)
     query_weight = 0
     for line in Keywords.query.filter(Keywords.key.in_(key_words)):
         docs, weight = line.docs.split(","), line.weight

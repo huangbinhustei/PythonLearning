@@ -7,6 +7,7 @@ from collections import defaultdict
 # from my_search import search_by_title, id_weight
 import math
 from slugify import UniqueSlugify
+from pyquery import PyQuery as pq
 import re
 import os
 import jieba
@@ -55,15 +56,15 @@ def duplicate():
 
 @cost_count
 def property_avoid():
-    par = re.compile(r'''<p>[^/]*?高一[：:].+?</p>''')
+    par = re.compile(r'''<p>[^/]*?高三[：:].+?</p>''')
     print("property_avoid begin")
     throw = ("<p>", "</p>", ":", "：")
     comp_with_property = [item for item in
-                          Docs.query.filter(or_(Docs.content.like("%高一：%"), Docs.content.like("%高一:%")))]
+                          Docs.query.filter(or_(Docs.content.like("%高三：%"), Docs.content.like("%高三:%")))]
     for item in comp_with_property:
         danger_part = ",".join(re.findall(par, item.content))
-        writer_1 = danger_part.split("高一:")[-1].replace("</p>", "").strip()
-        writer_2 = danger_part.split("高一：")[-1].replace("</p>", "").strip()
+        writer_1 = danger_part.split("高三:")[-1].replace("</p>", "").strip()
+        writer_2 = danger_part.split("高三：")[-1].replace("</p>", "").strip()
         writer = writer_1 if len(writer_1) < len(writer_2) else writer_2
         org = danger_part.replace(writer, "")
         for p in throw:
@@ -215,9 +216,26 @@ def soft_delete(ids=[]):
     db.session.commit()
 
 
+def make_tags():
+    docs = Docs.query.filter(Docs.status == 1).all()
+    bar = ProgressBar(total=len(docs))
+    d_tag = defaultdict(int)
+    for doc in docs:
+        tags = jieba.analyse.extract_tags(doc.content)
+        for tag in tags:
+            d_tag[tag] += doc.content.count(tag)
+        doc.tags = ",".join(tags)
+        bar.move()
+    with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), "tag_count.txt"), "w", encoding="utf-8") as f:
+        for k, v in d_tag.items():
+            f.write(k+"\t" + str(v) + "\n")
+    
+
+
 if __name__ == '__main__':
+    make_tags()
     # soft_delete()
-    set_status()
+    # property_avoid()
     # property_avoid()
     # sug_init()
     # genre_grade_make()

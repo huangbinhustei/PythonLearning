@@ -7,11 +7,12 @@ import os
 from collections import defaultdict
 from multiprocessing import Pool, Manager
 from time import sleep, ctime
-from data import Docs, Keywords, Weights, db, app, cost_count
+from data import Docs, Keywords, Weights, db, app, cost_count, ProgressBar
 import math
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-num_of_titles = 289581      # = select count(DISTINCT title) from docs;
+num_of_titles = 14500      # = select count(DISTINCT title) from docs;
+bar = ProgressBar(total=14500)
 
 
 def default_weight():
@@ -51,8 +52,9 @@ def weight_calc(this_title_list):
 
     for line in this_title_list:
         title, doc_md = line[0], line[1]
-        for keyword in jieba.cut(title, cut_all=False):
+        for keyword in jieba.cut_for_search(title):
             total_key_words[keyword][1].add(doc_md)  # 权重表存入 doc_id
+        print(title)
 
     return total_key_words
 
@@ -115,8 +117,9 @@ def title_weight_count():
     all_keys = load_keywords()
     for item in all_keys:
         key_dict[item.key] = item.weight
-    for item in load_docs():
-        for keyword in jieba.cut(item.title, cut_all=False):
+    all_docs = load_docs()
+    for item in all_docs:
+        for keyword in jieba.cut_for_search(item.title):
             doc_dict[item.doc_id] += key_dict[keyword]*key_dict[keyword]
 
     for k, v in doc_dict.items():
@@ -127,6 +130,6 @@ def title_weight_count():
 if __name__ == '__main__':
     # input("不管如何，三思而后行！")
     # pass
-    title_weight_count()
-    # weight_database_init()
+    # title_weight_count()
+    weight_database_init()
 
