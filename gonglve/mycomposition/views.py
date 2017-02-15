@@ -24,16 +24,27 @@ with open(os.path.join(basedir, "config.json"), "r", encoding="utf-8") as f:
 def get_idx(id_name):
     _str = request.args.get(id_name)
     if _str is None:
-        return []
-    if "," in _str:
-        idx = [int(item) for item in _str.split(",")]
+        return -1
     else:
         try:
-            idx = [int(_str)]
+            idx = int(_str)
         except ValueError:
             logging.debug(id_name + " ID Is Not Integer")
-            idx = []
+            idx = -1
     return idx
+
+
+def docs_in_grade_genre(grade=None,genre=None):
+    if grade == None:
+        grade = get_idx("grade")
+    if genre == None:
+        genre = get_idx("genre")
+    query = Docs.query.filter(Docs.status == 0)
+    if grade and grade > 0:
+        query = query.filter(Docs.grade == grade)
+    if genre and genre > 0:
+        query = query.filter(Docs.genre == genre)
+    return query
 
 
 def get_paginate(this_list):
@@ -74,11 +85,7 @@ def time_format(a):
 @cost_count
 def page_list():
     def page_normal_list():
-        query = Docs.query.filter(Docs.status == 0)
-        if grade:
-            query = query.filter(Docs.grade == grade)
-        if genre:
-            query = query.filter(Docs.genre == genre)
+        query = docs_in_grade_genre()
         if words:
             query = query.filter(Docs.words >= words)
         return query.paginate(page_id, app.config["POST_IN_SINGLE_PAGE"], False)
@@ -89,7 +96,7 @@ def page_list():
         return query.paginate(page_id, app.config["POST_IN_SINGLE_PAGE"], False)
 
     page_id = get_page_id()
-    grade, genre, words = (request.args.get('grade'), request.args.get('genre'), request.args.get('words'))
+    words = request.args.get('words')
     title = request.args.get("title")
 
     if title:
@@ -258,22 +265,22 @@ def dashboard_edit(page_md):
 @app.route("/dashboard/list", methods=["GET", "POST"])
 @cost_count
 def dashboard_doc_list():
-    def get_by_id(idx):
-        pass
-
-    query = Docs.query
-    options = [-1, -1]  # 年级、体裁筛选的默认选项
     page_id = get_page_id()
+    options = [-1, -1]  # 年级、体裁筛选的默认选项
     if request.method == "GET":
         title = request.args.get("title")
         title = "" if title is None else title
         doc_md = ""
+        grade = get_idx("grade")
+        genre = get_idx("genre")
+        query = docs_in_grade_genre()
     else:
         doc_md = request.form["doc_md"]
         title = request.form["title"]
-    grade = get_idx("grade")
-    genre = get_idx("genre")
-
+        grade = request.form["doc_md"]
+        genre = request.form["title"]
+        query = docs_in_grade_genre(grade, genre)
+    
     entries = []
     if doc_md:
         print("if doc_md")
@@ -287,10 +294,7 @@ def dashboard_doc_list():
         entries, paginate = get_paginate(entries)
     else:
         print("else")
-        if grade != -1:
-            query = query.filter(Docs.grade == grade)
-        if genre != -1:
-            query = query.filter(Docs.genre == genre)
+        query = docs_in_grade_genre()
         options = [grade, genre]
         paginate = query.paginate(page_id, app.config["POST_IN_SINGLE_PAGE"], False)
         entries = paginate.items

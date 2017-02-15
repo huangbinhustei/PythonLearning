@@ -61,17 +61,15 @@ def search_no_rank(_query_):
 def search_washer(res_dict, washer=defaultdict(int)):
     def filter_by_grade_and_genre(_res_dict_):
         idx = set([])
-        for item in washer["grade"]:
-            if item in grade_right:
-                idx |= (Grade.query.get(item).get_docs())
-            else:
-                logging.error("type error: grade must be list made by int")
+        if washer["grade"] in grade_right:
+            idx |= (Grade.query.get(washer["grade"]).get_docs())
+        else:
+            logging.error("type error: grade must be list made by int")
         idx_genre = set([])
-        for item in washer["genre"]:
-            if item in genre_right:
-                idx_genre |= (Genre.query.get(item).get_docs())
-            else:
-                logging.error("type error: genre must be int or list")
+        if washer["genre"] in genre_right:
+            idx_genre = Genre.query.get(washer["genre"]).get_docs()
+        else:
+            logging.error("type error: genre must be int or list")
         if idx == set([]):
             idx = idx_genre
         elif idx_genre != set([]):
