@@ -20,3 +20,6 @@ gonglve/edu_gonglve
 gonglve/url.py
 gonglve/iwan/url.py
 /small_flask/new_local_novel
+gonglve/bower*
+gonglve/family*
+gonglve/bd_aip/APPID.json
