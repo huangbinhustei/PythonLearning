@@ -1,19 +1,24 @@
 import os
 from aip import AipAntiPorn
 from aip import AipFace
+from aip import AipOcr
 import time
 from PIL import Image
 from collections import defaultdict
 import json
 
 basedir = os.path.abspath(os.path.dirname(__file__))
+
+
 def get_app_info():
-    with open(os.path.join(basedir,"APPID.json"), "r") as f:
+    with open(os.path.join(basedir, "APPID.json"), "r") as f:
         return json.loads(f.read())
-mydict = get_app_info()
-aipFace = AipFace(mydict["APP_ID"], mydict["API_KEY"], mydict["SECRET_KEY"])
-aipAntiPorn = AipAntiPorn(mydict["APP_ID"], mydict["API_KEY"], mydict["SECRET_KEY"])
-root = os.path.join(basedir,"static")
+
+
+my_app_id = get_app_info()
+aipFace = AipFace(my_app_id["APP_ID"], my_app_id["API_KEY"], my_app_id["SECRET_KEY"])
+aipAntiPorn = AipAntiPorn(my_app_id["APP_ID"], my_app_id["API_KEY"], my_app_id["SECRET_KEY"])
+root = os.path.join(basedir, "static")
 
 
 def _1024_check():
@@ -31,7 +36,7 @@ def _1024_check():
                     if item["class_name"] == "正常":
                         final.append(str(item["probability"]))
                 print("\t".join(final))
-                with open(os.path.join(basedir,"res.txt"), "a") as f:
+                with open(os.path.join(basedir, "res.txt"), "a") as f:
                     f.write("\t".join(writeln) + "\n")
             else:
                 print(result)
@@ -47,8 +52,8 @@ def get_small_file_content(file_path):
     thumbnail_name = "thumb_" + os.path.basename(file_path)
     img = Image.open(file_path)
     w, h = img.size
-    a = min(500/max(w, h), 1)
-    nw, nh = int(w*a), int(h*a)
+    a = min(500 / max(w, h), 1)
+    nw, nh = int(w * a), int(h * a)
     img.thumbnail((nh, nw))
     img.save(thumbnail_name, "jpeg")
     new_path = os.path.abspath(os.path.join(file_path, os.pardir, os.pardir, thumbnail_name))
@@ -88,6 +93,24 @@ def img_group():
     group_by_result(pics)
 
 
+def ocr_detection():
+    aipOcr = AipOcr(my_app_id["APP_ID"], my_app_id["API_KEY"], my_app_id["SECRET_KEY"])
+    t_root = "/Users/baidu/Documents/百度/Git/PythonLearning/gonglve/family/static"
+    for pardir, folders, files in os.walk(t_root):
+        pics = [item for item in files if ".jpg" in item]
+        for pic in pics:
+            pic_path = os.path.join(pardir, pic)
+            result = aipOcr.general(get_file_content(pic_path))
+            if result["words_result_num"] == 0:
+                continue
+            print(pic)
+            word = ""
+            for item in result["words_result"]:
+                word += item["words"]
+            print(word)
+
+
 if __name__ == '__main__':
     # img_group()
-    _1024_check()
+    # _1024_check()
+    ocr_detection()
