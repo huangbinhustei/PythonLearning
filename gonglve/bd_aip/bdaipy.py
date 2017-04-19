@@ -5,23 +5,18 @@ from aip import AipOcr
 import time
 from PIL import Image
 from collections import defaultdict
-import json
+from apps import app_id
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 
-def get_app_info():
-    with open(os.path.join(basedir, "APPID.json"), "r") as f:
-        return json.loads(f.read())
-
-
-my_app_id = get_app_info()
-aipFace = AipFace(my_app_id["APP_ID"], my_app_id["API_KEY"], my_app_id["SECRET_KEY"])
-aipAntiPorn = AipAntiPorn(my_app_id["APP_ID"], my_app_id["API_KEY"], my_app_id["SECRET_KEY"])
+aipFace = AipFace(app_id["APP_ID"], app_id["API_KEY"], app_id["SECRET_KEY"])
+aipAntiPorn = AipAntiPorn(app_id["APP_ID"], app_id["API_KEY"], app_id["SECRET_KEY"])
 root = os.path.join(basedir, "static")
 
 
 def _1024_check():
+    res = []
     for pardir, folders, files in os.walk(root):
         pics = [item for item in files if ".jpg" in item]
         for pic in pics:
@@ -94,7 +89,7 @@ def img_group():
 
 
 def ocr_detection():
-    aipOcr = AipOcr(my_app_id["APP_ID"], my_app_id["API_KEY"], my_app_id["SECRET_KEY"])
+    aipOcr = AipOcr(app_id["APP_ID"], app_id["API_KEY"], app_id["SECRET_KEY"])
     t_root = "/Users/baidu/Documents/百度/Git/PythonLearning/gonglve/family/static"
     for pardir, folders, files in os.walk(t_root):
         pics = [item for item in files if ".jpg" in item]
@@ -112,5 +107,5 @@ def ocr_detection():
 
 if __name__ == '__main__':
     # img_group()
-    # _1024_check()
-    ocr_detection()
+    _1024_check()
+    # ocr_detection()

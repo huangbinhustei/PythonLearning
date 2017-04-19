@@ -23,3 +23,11 @@ gonglve/iwan/url.py
 gonglve/bower*
 gonglve/family*
 gonglve/bd_aip/APPID.json
+
+*.jpeg
+
+*.wav
+
+gonglve/bd_aip/apps.py
+
+*.mp3
