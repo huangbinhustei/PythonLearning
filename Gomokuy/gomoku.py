@@ -147,21 +147,15 @@ class Calc(Game):
                         break
             if len(liner[1]) + len(liner[2]) + len(liner[3]) < 5:
                 continue
-            for side in (1, 3):
-                # side = liner 的 id
+            for side in (-1, 1):
+                side = 2 + side
                 rate = 32
                 if len(liner[side]) + len(liner[2]) < 5:
                     rate = int(rate / 2)
-                # if liner[0] and liner[-1]:
-                #     # 两边都有墙，没有意义
-                #     rate = 0
-                # if liner[0] or liner[-1]:
-                #     # 一边有墙，价值减半
-                #     rate = int(rate / 2)
 
                 rate = int(rate / 2) if (liner[0] or liner[-1]) else rate
                 for cell in liner[side]:
-                    self.val[cell[0][0] * self.width + cell[0][1]] += int(rate / cell[1]) * len(liner[2])
+                    self.val[cell[0][0] * self.width + cell[0][1]] += int(rate / cell[1]) * len(liner[2]) * len(liner[2])
 
     def calculator(self):
         self.val = defaultdict(int)
