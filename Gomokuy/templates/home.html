@@ -1,0 +1,40 @@
+<!doctype html>
+
+<head>
+    <title>五子棋</title>
+    <link href="//cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+	<script src="//cdn.bootcss.com/jquery/2.1.1/jquery.min.js"></script>
+	<script src="//cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<script src="{{ url_for('static', filename='jquery.min.js') }}"></script>
+	<link href="{{ url_for('static', filename='style.css') }}" rel=stylesheet type=text/css>
+</head>
+
+<body>
+	<br>
+    <div class="container">
+    	<div class="row"><h1>五子棋<small>_第一版</small></h1></div>
+    	<br>
+    	<div class="row">
+	    	<div class="col-xs-6">
+	    		{% for line in range(game.width) %}
+		    	<div class="row">
+		    		<ul class="list-group list-inline">
+						{% for cell in range(game.width) %}
+			    			{% if game.grid[line][cell] == 1 %}
+			    				<li class="list-group-item list-group-item-success but"></li>
+							{% elif game.grid[line][cell] == 2 %}
+								<li class="list-group-item list-group-item-warning but"></li>
+							{% else %}
+								<li class="list-group-item but"><a href={{ url_for("home",loc=line * game.width + cell) }}>{{ game.val[line * game.width + cell] }}</a></li>
+							{% endif %}
+						{% endfor %}
+		    		</ul>
+
+		    	</div>
+		        {% endfor %}	
+
+	    	</div>
+			<div class="col-xs-1">哈哈</div>
+		</div>
+    </div>
+</body>

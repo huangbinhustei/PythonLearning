@@ -7,7 +7,7 @@ import os
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 app = Flask(__name__)
-app.config.update(
+app.config.change(
     SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(basedir, "offer.db"),
     SQLALCHEMY_TRACK_MODIFICATIONS=True,
 )
