@@ -108,6 +108,14 @@ class Calc(Game):
             r = " "*(4-len(a))
             return r + a
 
+        self.val = defaultdict(int)
+        for color in (B, W):
+            opponent = B if color == W else W
+            for row in range(self.width):
+                for col in range(self.width):
+                    if self.grid[row][col] == color:
+                        self.__value_calc_single_chessman(row, col, color, opponent)
+
         temp = []
         for i in range(self.width):
             temp.append([0] * self.width)
@@ -120,9 +128,10 @@ class Calc(Game):
 
     def __value_calc_single_chessman(self, row, col, color, opponent):
         for direction in range(4):
-            liner = [False, [], [], [], False]
+            liner = [False, [], [[row, col]], [], False]
             # False表示没有堵住
             for side in [-1, 1]:
+                desc = 0
                 for offset in range(1, 5):
                     new_row = row + offset * side * ROADS[direction][0]
                     new_col = col + offset * side * ROADS[direction][1]
@@ -136,9 +145,10 @@ class Calc(Game):
                         break
 
                     new_cell = self.grid[new_row][new_col]
-                    new_loc = [[new_row, new_col], pow(2, offset-1)]
+                    new_loc = [[new_row, new_col], offset - desc]
                     if new_cell == color:
-                        liner[2].append(new_loc)
+                        liner[2].append(new_loc[0])
+                        desc += 1
                     elif new_cell == 0:
                         liner[2 + side].append(new_loc)
                     elif new_cell == opponent:
@@ -150,12 +160,15 @@ class Calc(Game):
             for side in (-1, 1):
                 side = 2 + side
                 rate = 32
-                if len(liner[side]) + len(liner[2]) < 5:
+                side_length = len(liner[side]) + len(liner[2])
+                liner[side] = liner[side][:5-len(liner[2])]
+                if  side_length< 5:
                     rate = int(rate / 2)
 
                 rate = int(rate / 2) if (liner[0] or liner[-1]) else rate
                 for cell in liner[side]:
-                    self.val[cell[0][0] * self.width + cell[0][1]] += int(rate / cell[1]) * len(liner[2]) * len(liner[2])
+                    self.val[cell[0][0] * self.width + cell[0][1]] += (rate - cell[1]) * len(liner[2]) * len(liner[2])
+            print(liner)
 
     def calculator(self):
         self.val = defaultdict(int)
