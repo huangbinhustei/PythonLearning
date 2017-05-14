@@ -24,7 +24,6 @@ def home():
 
     # 电脑下一步棋开始
     game.calculator()
-    print(game)
     # 电脑下一步棋结束
     return redirect(request.referrer)
 

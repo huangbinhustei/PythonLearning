@@ -105,7 +105,7 @@ class Calc(Game):
     def __repr__(self):
         def preparing(a):
             a = str(a)
-            r = " "*(4-len(a))
+            r = " " * (4 - len(a))
             return r + a
 
         self.val = defaultdict(int)
@@ -127,62 +127,68 @@ class Calc(Game):
         return ret
 
     def __value_calc_single_chessman(self, row, col, color, opponent):
+        ret = []
         for direction in range(4):
-            liner = [False, [], [[row, col]], [], False]
-            # False表示没有堵住
-            for side in [-1, 1]:
-                desc = 0
-                for offset in range(1, 5):
+            liner = [[], [(row, col)], []]
+            for side in (-1, 1):
+                side_length = len(liner[1 + side]) + len(liner[1])
+                if side_length >= 5:
+                    continue
+                for offset in range(1, 10):
                     new_row = row + offset * side * ROADS[direction][0]
                     new_col = col + offset * side * ROADS[direction][1]
                     if new_row >= self.width or new_row < 0:
-                        liner[2 + 2 * side] = True
-                        # 墙表示堵住
                         break
                     if new_col >= self.width or new_col < 0:
-                        liner[2 + 2 * side] = True
-                        # 墙表示堵住
                         break
 
                     new_cell = self.grid[new_row][new_col]
-                    new_loc = [[new_row, new_col], offset - desc]
+                    new_loc = (new_row, new_col)
                     if new_cell == color:
-                        liner[2].append(new_loc[0])
-                        desc += 1
+                        liner[1].append(new_loc)
                     elif new_cell == 0:
-                        liner[2 + side].append(new_loc)
+                        liner[1 + side].append(new_loc)
                     elif new_cell == opponent:
-                        liner[2 + 2 * side] = True
-                        # 对方的子表示堵住
                         break
-            if len(liner[1]) + len(liner[2]) + len(liner[3]) < 5:
+            liner[1] = sorted(sorted(liner[1], key=lambda x: x[1]), key=lambda x: x[0])     # 处理liner
+            ret.append(liner)
+        return ret
+
+    def __line_to_val(self, t_lines):
+        for liner in t_lines:
+            if len(liner[0]) + len(liner[1]) + len(liner[2]) < 5:
                 continue
             for side in (-1, 1):
-                side = 2 + side
-                rate = 32
-                side_length = len(liner[side]) + len(liner[2])
-                liner[side] = liner[side][:5-len(liner[2])]
-                if  side_length< 5:
-                    rate = int(rate / 2)
-
-                rate = int(rate / 2) if (liner[0] or liner[-1]) else rate
+                side = 1 + side
+                if liner[2 - side]:
+                    # 另一边没有被堵住
+                    rat = pow(len(liner[1]), 3)
+                else:
+                    rat = pow(len(liner[1]), 2)
+                if len(liner[side]) == 1:
+                    rat /= 2
+                if len(liner[side]) + len(liner[1]) < 5:
+                    rat /= 2
+                liner[side] = liner[side][:5 - len(liner[1])]
                 for cell in liner[side]:
-                    self.val[cell[0][0] * self.width + cell[0][1]] += (rate - cell[1]) * len(liner[2]) * len(liner[2])
-            print(liner)
+                    self.val[cell[0] * self.width + cell[1]] += rat
 
     def calculator(self):
         self.val = defaultdict(int)
+        all_line = []
         for color in (B, W):
             opponent = B if color == W else W
             for row in range(self.width):
                 for col in range(self.width):
                     if self.grid[row][col] == color:
-                        self.__value_calc_single_chessman(row, col, color, opponent)
+                        result = self.__value_calc_single_chessman(row, col, color, opponent)
+                        if result in all_line:
+                            continue
+                        all_line += result
+        self.__line_to_val(all_line)
+
         temp = sorted(self.val.items(), key=lambda x: x[1], reverse=True)[0]
         temp = [int(temp[0] / self.width), int(temp[0] % self.width)]
-        if self.grid[temp[0]][temp[1]] != 0:
-            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            print(temp)
         self.going(temp)
 
 
