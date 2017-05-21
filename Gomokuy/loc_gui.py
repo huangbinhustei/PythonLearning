@@ -20,7 +20,6 @@ def home():
         if fir == "1":
             game.going((5, 5))
         return redirect(url_for("home"))
-
     if retract and retract == "1":
         # 悔棋
         game.retract()
@@ -39,7 +38,6 @@ def home():
     player = B if (game.step + 1) % 2 == 1 else W
     d = Danger(game.grid, player)
     pos = d.calc()
-
     if pos:
         game.going(pos)
     else:
@@ -51,5 +49,4 @@ def home():
 
 if __name__ == '__main__':
     game = Calc()
-    # game = Game()
     app.run(host="0.0.0.0", debug=True)
