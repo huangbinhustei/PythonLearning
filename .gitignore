@@ -1,11 +1,7 @@
-DATA
-.idea
+﻿.idea
 __pycache__
-pip.conf
-
 *.jpg
 *.gif
-/书/*.pdf
 *.db
 *.one
 *.csv
@@ -13,21 +9,8 @@ pip.conf
 *.ini
 *.txt
 
-gonglve/mycomposition/__init__.py
-gonglve/json2txt
-gonglve/iwan
-gonglve/edu_gonglve
-gonglve/url.py
-gonglve/iwan/url.py
-/small_flask/new_local_novel
-gonglve/bower*
-gonglve/family*
-gonglve/bd_aip/APPID.json
 
 *.jpeg
-
 *.wav
-
 gonglve/bd_aip/apps.py
-
 *.mp3

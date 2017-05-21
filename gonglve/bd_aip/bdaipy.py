@@ -88,21 +88,7 @@ def img_group():
     group_by_result(pics)
 
 
-def ocr_detection():
-    aipOcr = AipOcr(app_id["APP_ID"], app_id["API_KEY"], app_id["SECRET_KEY"])
-    t_root = "/Users/baidu/Documents/百度/Git/PythonLearning/gonglve/family/static"
-    for pardir, folders, files in os.walk(t_root):
-        pics = [item for item in files if ".jpg" in item]
-        for pic in pics:
-            pic_path = os.path.join(pardir, pic)
-            result = aipOcr.general(get_file_content(pic_path))
-            if result["words_result_num"] == 0:
-                continue
-            print(pic)
-            word = ""
-            for item in result["words_result"]:
-                word += item["words"]
-            print(word)
+
 
 
 if __name__ == '__main__':

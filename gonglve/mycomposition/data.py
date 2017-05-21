@@ -19,7 +19,7 @@ app.config.update(
     # SECRET_KEY="TEMP",
     # USERNAME="admin",
     # PASSWORD="admin",
-    SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(basedir, "composition.db"),
+    SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(basedir, "noty.db"),
     SQLALCHEMY_TRACK_MODIFICATIONS=True,
     POST_IN_SINGLE_PAGE=10,
 )

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from data import Docs, db, app, cost_count, Sugs
-from my_search import search_by_title
+# from my_search import search_by_title
 from flask import request, sessions, g, redirect, render_template, url_for, jsonify
 from sqlalchemy import desc, and_
 import logging
@@ -34,10 +34,10 @@ def get_idx(id_name):
     return idx
 
 
-def docs_in_grade_genre(grade=None,genre=None):
-    if grade == None:
+def docs_in_grade_genre(grade=None, genre=None):
+    if grade is None:
         grade = get_idx("grade")
-    if genre == None:
+    if genre is None:
         genre = get_idx("genre")
     query = Docs.query.filter(Docs.status == 0)
     if grade and grade > 0:
@@ -115,7 +115,7 @@ def page_list():
 
     hottest_titles = Docs.query.order_by(desc(Docs.view)).limit(20)
 
-    return render_template("page_list.html",
+    return render_template("home.html",
                            entries=entries,
                            titles=hottest_titles,
                            query_prefix=query_prefix,
@@ -204,7 +204,7 @@ def page_view(page_md):
                 recommends += list(Docs.query
                                    .filter(and_(Docs.grade == doc.grade, Docs.genre == doc.genre))
                                    .order_by(desc(Docs.view))
-                                   .limit(11-r_length))
+                                   .limit(11 - r_length))
         else:
             # 假如没有相关文档，就通过同年级同体裁的最热文档来补充
             recommends += list(Docs.query
@@ -246,7 +246,7 @@ def dashboard_edit(page_md):
     if not entry:
         return jsonify({"error": "no such md"})
     if request.method == "GET":
-        return render_template("dashboard_edit.html",
+        return render_template("new.html",
                                entry=entry,
                                genre_map=genre_map,
                                grade_map=grade_map,
@@ -280,7 +280,7 @@ def dashboard_doc_list():
         grade = request.form["doc_md"]
         genre = request.form["title"]
         query = docs_in_grade_genre(grade, genre)
-    
+
     entries = []
     if doc_md:
         print("if doc_md")
