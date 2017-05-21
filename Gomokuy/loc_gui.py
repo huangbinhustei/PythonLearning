@@ -18,7 +18,7 @@ def home():
         game.restart()
         fir = request.args.get('aifirst')
         if fir == "1":
-            game.going((5, 5))
+            game.going((7, 7))
         return redirect(url_for("home"))
     if retract and retract == "1":
         # 悔棋

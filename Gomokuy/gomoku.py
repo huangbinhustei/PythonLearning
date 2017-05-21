@@ -168,9 +168,6 @@ class Game:
                     new_cell = self.grid[new_x][new_y]
                     if new_cell == player:
                         counts += 1
-                    elif new_cell == 0:
-                        spaces += 1
-                        block[ind] = False
                     else:
                         break
             ret.append([counts, spaces, block])
