@@ -14,3 +14,4 @@ __pycache__
 *.wav
 gonglve/bd_aip/apps.py
 *.mp3
+/Raspi/config.py
