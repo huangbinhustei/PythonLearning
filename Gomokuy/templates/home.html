@@ -15,17 +15,25 @@
     	<div class="row"><h1>五子棋<small>_第一版</small></h1></div>
     	<br>
     	<div class="row">
-	    	<div class="col-xs-6">
+	    	<div class="col-xs-9">
 	    		{% for line in range(game.width) %}
 		    	<div class="row">
 		    		<ul class="list-group list-inline">
 						{% for cell in range(game.width) %}
 			    			{% if game.grid[line][cell] == 1 %}
-			    				<li class="list-group-item list-group-item-success but">1</li>
+			    				{% if [line, cell] == game.records[-1] %}
+			    					<li class="list-group-item list-group-item-success but">10</li>
+			    				{% else %}
+			    					<li class="list-group-item list-group-item-success but">1</li>
+			    				{% endif %}
 							{% elif game.grid[line][cell] == 2 %}
-								<li class="list-group-item list-group-item-warning but">2</li>
+								{% if [line, cell] == game.records[-1] %}
+			    					<li class="list-group-item list-group-item-warning but">20</li>
+			    				{% else %}
+			    					<li class="list-group-item list-group-item-warning but">2</li>
+			    				{% endif %}
 							{% else %}
-								<li class="list-group-item but"><a href={{ url_for("home",loc=line * game.width + cell) }}>{{ game.val[line * game.width + cell] }}</a></li>
+								<li class="list-group-item but"><a href={{ url_for("home",loc=line * game.width + cell) }}>0</a></li>
 							{% endif %}
 						{% endfor %}
 		    		</ul>
@@ -34,7 +42,14 @@
 		        {% endfor %}	
 
 	    	</div>
-			<div class="col-xs-1">哈哈</div>
+			<ul class="col-xs-3">
+				<li><p>电脑刚刚走了 {{ game.records[-1] }}</p></li>
+				<li><a href={{ url_for("home", retract=1)}}>悔棋</a></li>
+				{% if game.over %}
+				<li><a href={{ url_for("home", restart=1, aifirst = 1)}}> 重启游戏 & 电脑先下 </a></li>
+				<li><a href={{ url_for("home", restart=1, aifirst = 2)}}> 重启游戏 & 自己先下 </a></li>
+				{% endif %}
+			</ul>
 		</div>
     </div>
 </body>
