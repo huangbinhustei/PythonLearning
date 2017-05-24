@@ -13,38 +13,81 @@ ROADS = {
     2: (1, 1),
     3: (1, -1),
 }
+a = [
+    [0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0],
+    [0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+    [0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
 SCORE = {
     # True ：自己，False：对方
     True: {
-        "活4": 1000,
-        "冲4": 1000,
-        "活3": 10,
-        "冲3": 10,
+        "活4": 100000000,
+        "冲4": 100000000,
+        "活3": 1000000,
+        "冲3": 100000,
+        "活2": 9000,
+        "冲2": 100,
+        "活1": 1,
+        "冲1": 1,
     },
     False: {
-        "活4": 100,
-        "冲4": 100,
-        "活3": 1,
+        "活4": 10000000,
+        "冲4": 10000000,
+        "活3": 90000,
+        "冲3": 10000,
+        "活2": 1000,
+        "冲2": 10,
+        "活1": 1,
+        "冲1": 1,
     }
 }
 
 
-class Danger:
-    def __init__(self, grid, color):
-        self.grid = grid
-        self.res = dict()
-        self.width = len(grid)
-        self.color = color
-        self.opponent = B if color == W else W
+def show_line(l):
+    pr = ""
+    for box in l:
+        nb = ",".join(["-".join(map(str, cell)) for cell in box])
+        nb += " " * (20 - len(nb))
+        pr += nb
+        pr += "| "
+    print(pr[:-2])
 
-    def __value_calc_single_chessman(self, row, col, color, opponent):
-        ret = []
+
+class Situation:
+    def __init__(self, grid, me):
+        self.grid = grid
+        self.width = len(grid)
+        self.lines = {
+            True: [],
+            False: [],
+        }
+        self.me = me
+        self.values = dict()
+        '''
+        values = {
+            己方（true)：{
+                    活4：[[左空格],[连续棋子],[右空格]]，
+                    冲4: [[左空格],[连续棋子],[右空格]]，
+                },
+            对方：
+                
+        }
+        '''
+
+    def __single_chessman(self, row, col, chess):
+        you = B if chess == W else W
         for direction in range(4):
-            liner = [[], [(row, col)], []]
+            line = [[], [(row, col)], []]
             for side in (-1, 1):
-                side_length = len(liner[1 + side]) + len(liner[1])
-                if side_length >= 5:
-                    continue
+                jump = False
                 for offset in range(1, 5):
                     new_row = row + offset * side * ROADS[direction][0]
                     new_col = col + offset * side * ROADS[direction][1]
@@ -55,77 +98,76 @@ class Danger:
 
                     new_cell = self.grid[new_row][new_col]
                     new_loc = (new_row, new_col)
-                    if new_cell == color:
-                        liner[1].append(new_loc)
+                    if new_cell == chess:
+                        if jump:
+                            line[1 + side].append(new_loc)
+                        else:
+                            line[1].append(new_loc)
                     elif new_cell == 0:
-                        liner[1 + side].append(new_loc)
-                    elif new_cell == opponent:
+                        side_length = len(line[1 + side]) + len(line[1])
+                        if side_length < 5:
+                            jump = True
+                            line[1 + side].append(new_loc)
+                    elif new_cell == you:
                         break
-            liner[1] = sorted(sorted(liner[1], key=lambda x: x[1]), key=lambda x: x[0])  # 处理liner
-            liner[0] = liner[0][:5 - len(liner[1])]
-            liner[2] = liner[2][:5 - len(liner[1])]
+            line[1] = sorted(sorted(line[1], key=lambda x: x[1]), key=lambda x: x[0])  # 处理liner
+            line[0] = line[0][:5 - len(line[1])]
+            line[2] = line[2][:5 - len(line[1])]
+            if len(sum(line, [])) < 5:
+                continue
+            if line in self.lines[chess == self.me]:
+                continue
+            self.lines[chess == self.me].append(line)
 
-            if len(liner[0]) + len(liner[1]) + len(liner[2]) >= 5:
-                ret.append(liner)
-        return ret
-
-    def __calc_single_color(self, color):
-        def get_danger_area(l, length, kid):
-            if length < 2:
-                return []
-            if "活" in kid:
-                ret = l[0][:1]
-                ret += l[2][:1]
-            else:
-                ret = l[0][:5 - length]
-                ret += l[2][:5 - length]
-            return ret
-
-        all_lines = []
-        self.res[color] = defaultdict(list)
-        opponent = B if color == W else W
+    def make_line(self):
         for row in range(self.width):
             for col in range(self.width):
-                if self.grid[row][col] == color:
-                    temp = self.__value_calc_single_chessman(row, col, color, opponent)
-                    for line in temp:
-                        if line not in all_lines:
-                            all_lines.append(line)
-        for line in all_lines:
-            chang = len(line[1])
-            if line[0] and line[2]:
-                key = "活" + str(chang)
-            elif line[0] or line[1]:
-                key = "冲" + str(chang)
-            else:
-                continue
-            area = get_danger_area(line, chang, key)
-            if area:
-                self.res[color][key].append(area)
+                chess = self.grid[row][col]
+                if not chess:
+                    continue
+                self.__single_chessman(row, col, chess)
+        for sid, lines in self.lines.items():
+            print(sid)
+            list(map(show_line, lines))
 
-    def calc(self):
-        for color in (B, W):
-            self.__calc_single_color(color)
-        return self.choosing()
+    def line2value(self):
+        for sid, lines in self.lines.items():
+            self.values[sid] = defaultdict(list)
+            for line in lines:
+                chang = len(line[1])
+                if line[0] and line[2]:
+                    key = "活" + str(chang)
+                    line[0] = line[0][:1]
+                    line[2] = line[2][:1]
+                elif line[0] or line[1]:
+                    key = "冲" + str(chang)
+                    line[0] = line[0][:5 - chang]
+                    line[2] = line[2][:5 - chang]
+                else:
+                    continue
+                if line[0]:
+                    self.values[sid][key].append(line[0])
+                if line[2]:
+                    self.values[sid][key].append(line[2])
+        print(self.values)
 
     def choosing(self):
+        self.make_line()
+        self.line2value()
         status = defaultdict(int)
-        for side, sd in self.res.items():
+        for side, sd in self.values.items():
             for kid, loc_groups in sd.items():
                 for loc_group in loc_groups:
                     for loc in loc_group:
-                        if kid in SCORE[side == self.color]:
-                            status[loc[0] * self.width + loc[1]] += SCORE[side == self.color][kid]
+                        if kid in SCORE[side]:
+                            status[loc[0] * self.width + loc[1]] += SCORE[side][kid]
 
         status = sorted(status.items(), key=lambda x: x[1], reverse=True)
-        status = [(int(item[0]/self.width), int(item[0] % self.width), item[1]) for item in status]
+        status = [(int(item[0] / self.width), int(item[0] % self.width), item[1]) for item in status]
         if status:
             return status[0][:2]
         else:
             return False
-
-    def __repr__(self):
-        return self.res
 
 
 class Game:
@@ -304,44 +346,8 @@ class Calc(Game):
         temp = [int(temp[0] / self.width), int(temp[0] % self.width)]
         return temp
 
-
-def side_func_pvp():
-    game = Game()
-    while 1:
-        pos = input("x,y：")
-        game.going(pos)
-        print(game.grid)
-
-
-def side_func_pve():
-    game = Calc()
-    while not game.over:
-        if game.step % 2 == 0:
-            pos = input("x,y：")
-            if "," in pos:
-                game.going(pos)
-            else:
-                game.retract()
-                print(game)
-        else:
-            game.calculator()
-            print(game)
-
-
 if __name__ == '__main__':
-    a = [
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 1, 2, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 1, 1, 2, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
-    d = Danger(a, B)
-    d.calc()
-    print(d.res)
+    s = Situation(a, W)
+    s.make_line()
+    s.line2value()
+    print(s.choosing())
