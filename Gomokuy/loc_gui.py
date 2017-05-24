@@ -3,7 +3,7 @@
 
 
 from flask import Flask, render_template, request, redirect, url_for
-from gomoku import Calc, Game, Danger, B, W
+from gomoku import Calc, Game, B, W
 
 app = Flask(__name__)
 
@@ -35,14 +35,8 @@ def home():
     # 玩家下一步棋结束
 
     # 电脑下一步棋开始
-    player = B if (game.step + 1) % 2 == 1 else W
-    d = Danger(game.grid, player)
-    pos = d.calc()
-    if pos:
-        game.going(pos)
-    else:
-        pos = game.calculator()
-        game.going(pos)
+    pos = game.calculator()
+    game.going(pos)
     # 电脑下一步棋结束
     return redirect(request.referrer)
 
