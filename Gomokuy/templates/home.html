@@ -20,20 +20,20 @@
 				<div class="row">
 					<ul class="list-group list-inline">
 						{% for cell in range(game.width) %}
-							{% if game.grid[line][cell] == 1 %}
+							{% if game.table[line][cell] == 1 %}
 								{% if [line, cell] == game.records[-1] %}
 									<li class="list-group-item list-group-item-success but">10</li>
 								{% else %}
 									<li class="list-group-item list-group-item-success but">1</li>
 								{% endif %}
-							{% elif game.grid[line][cell] == 2 %}
+							{% elif game.table[line][cell] == 2 %}
 								{% if [line, cell] == game.records[-1] %}
 									<li class="list-group-item list-group-item-warning but">20</li>
 								{% else %}
 									<li class="list-group-item list-group-item-warning but">2</li>
 								{% endif %}
 							{% else %}
-								<li class="list-group-item but"><a href={{ url_for("home",loc=line * game.width + cell) }}>00</a></li>
+								<li class="list-group-item but"><a href={{ url_for("home",loc=line * game.width + cell) }}>{{ line }},{{ cell }}</a></li>
 							{% endif %}
 						{% endfor %}
 					</ul>
