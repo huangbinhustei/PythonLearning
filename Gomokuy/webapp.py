@@ -35,7 +35,7 @@ def home():
     # 玩家下一步棋结束
 
     # 电脑下一步棋开始
-    m_pos = game.choosing()
+    m_pos = game.analyse()
     if m_pos:
         game.going(m_pos)
     else:

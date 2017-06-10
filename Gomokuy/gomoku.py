@@ -3,9 +3,6 @@
 
 from collections import defaultdict
 from game import Game, B, W
-import copy
-from random import choice
-from functools import reduce
 
 ROADS = {0: (0, 1), 1: (1, 0), 2: (1, 1), 3: (1, -1)}
 a = [
@@ -77,7 +74,6 @@ class Situation(Game):
             ret_loc = (new_row, new_col)
             return ret_loc, ret_cell
 
-        you = B if chess == W else W
         for direction in range(4):
             line = {
                 "s": [(row, col)],
@@ -92,21 +88,22 @@ class Situation(Game):
                         break
                     else:
                         new_loc, new_cell = ret
-                    if new_cell == you:
-                        break
-                    elif new_cell == 0:
+
+                    if new_cell == 0:
                         line[side].append(new_loc)
                     elif new_cell == chess:
                         if line[side]:
                             if line[0]:
                                 break
                             else:
-                                if len(line[side]) <= 2:
+                                if len(line[side]) < 2:
                                     line[0] = line[side]
                                     line[side] = []
                                 else:
                                     break
                         line["s"].append(new_loc)
+                    else:
+                        break
             self.inside_line_merge(line, chess)
 
     def inside_line_merge(self, line, chess):
@@ -119,7 +116,8 @@ class Situation(Game):
         if line not in self.lines[chess == me]:
             self.lines[chess == me].append(line)
 
-    def inside_analyse(self):
+    def analyse(self, top_n=1):
+        status = defaultdict(int)
         self.values = dict()
         self.lines = {
             True: [],
@@ -140,19 +138,12 @@ class Situation(Game):
                     line[1] = line[1][:5 - chang]
                 else:
                     continue
-                for k in (-1, 0, 1):
-                    if line[k]:
-                        self.values[sid][key].append(line[k])
 
-    def choosing(self, top_n=1):
-        self.inside_analyse()
-        status = defaultdict(int)
-        for side, sd in self.values.items():
-            for kid, loc_groups in sd.items():
-                for loc_group in loc_groups:
-                    for loc in loc_group:
-                        if kid in SCORE[side]:
-                            status[loc] += SCORE[side][kid]
+                base_score = SCORE[sid][key] if key in SCORE[sid] else 0
+                for k in (-1, 0, 1):
+                    for loc in line[k]:
+                        base_score = base_score * 1.2 if k == 0 else base_score
+                        status[loc] += base_score
         status = sorted(status.items(), key=lambda x: x[1], reverse=True)
         status = [item[0] for item in status]
         ret = status[0] if top_n == 1 else status[:top_n]
