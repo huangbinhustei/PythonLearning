@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from conf import ROADS
 B = 1
 W = 2
 
@@ -32,37 +33,52 @@ class Game:
         else:
             raise TypeError
 
-    def _ending(self, loc, player):
-        loc_x, loc_y = loc
-        ret = []
-        for way_id, way in enumerate(((1, 0), (0, 1), (1, 1), (1, -1))):
-            counts, spaces = 1, 0
-            for ind, direct in enumerate((-1, 1)):
-                block = [True, True]
-                for offset in range(1, 5):
-                    new_x = loc_x + way[0] * direct * offset
-                    new_y = loc_y + way[1] * direct * offset
+    def inside_new_cell_loc(self, _row, _col, _direction, _side, _offset):
+        new_row = _row + _offset * _side * ROADS[_direction][0]
+        new_col = _col + _offset * _side * ROADS[_direction][1]
+        if new_row >= self.width or new_row < 0:
+            return False
+        if new_col >= self.width or new_col < 0:
+            return False
 
-                    if new_x >= self.width or new_x < 0:
+        ret_cell = self.table[new_row][new_col]
+        ret_loc = (new_row, new_col)
+        return ret_loc, ret_cell
+
+    def _ending(self, loc, player):
+        def _liner(_direction):
+            _counts, _spaces = 1, 0
+            for side in (-1, 1):
+                for offset in range(1, 9):
+                    ret = self.inside_new_cell_loc(loc[0], loc[1], _direction, side, offset)
+                    if not ret:
                         break
-                    if new_y >= self.width or new_y < 0:
-                        break
+                    else:
+                        (new_x, new_y), new_cell = ret
 
                     new_cell = self.table[new_x][new_y]
                     if new_cell == player:
-                        counts += 1
+                        _counts += 1
+                    elif new_cell == 0:
+                        _spaces += 1
+                        break
                     else:
                         break
-            ret.append([counts, spaces, block])
-        for counts, spaces, block in ret:
-            if counts <= 4:
+            return _counts, _spaces
+
+        for direction in range(4):
+            counts, spaces = _liner(direction)
+            if counts < 4:
                 continue
-            elif counts == 5:
-                self.over = True
+            elif counts == 4 and spaces == 2:
                 self.winner = player
-            else:
-                self.over = True
+            elif counts == 5:
+                self.winner = player
+            elif counts > 5:
                 self.winner = W
+            else:
+                continue
+            self.over = True
             print(f"{self.winner} WIN!")
 
     def going(self, loc):
@@ -88,6 +104,6 @@ class Game:
         if len(self.records) < 2:
             return
         for loc in [self.records.pop(), self.records.pop()]:
-            self.over = False
             print(loc)
             self.table[loc[0]][loc[1]] = 0
+        self.over = False

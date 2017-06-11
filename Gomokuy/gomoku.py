@@ -3,45 +3,8 @@
 
 from collections import defaultdict
 from game import Game, B, W
-
-ROADS = {0: (0, 1), 1: (1, 0), 2: (1, 1), 3: (1, -1)}
-a = [
-    [0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0],   # 0
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],   # 1
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],   # 2
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],   # 3
-    [0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0],   # 4
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],   # 5
-    [0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0],   # 6
-    [0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],   # 7
-    [0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],   # 8
-    [0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],   # 9
-    [0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],   # 10
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]   # 11
-#    0  1  2  3  4  5  6  7  8  9  10 11
-SCORE = {
-    # True ：自己，False：对方
-    True: {
-        "活4": 100000000,
-        "冲4": 100000000,
-        "活3": 1000000,
-        "冲3": 100000,
-        "活2": 9000,
-        "冲2": 100,
-        "活1": 1,
-        "冲1": 1,
-    },
-    False: {
-        "活4": 10000000,
-        "冲4": 10000000,
-        "活3": 90000,
-        "冲3": 10000,
-        "活2": 1000,
-        "冲2": 10,
-        "活1": 1,
-        "冲1": 1,
-    }
-}
+from conf import ROADS, a, SCORE
+from random import choice
 
 
 class Situation(Game):
@@ -62,18 +25,6 @@ class Situation(Game):
                 self.inside_make_line_for_single_chessman(row, col, chess)
 
     def inside_make_line_for_single_chessman(self, row, col, chess):
-        def new_cell_loc(_row, _col, _direction, _side, _offset):
-            new_row = _row + _offset * _side * ROADS[_direction][0]
-            new_col = _col + _offset * _side * ROADS[_direction][1]
-            if new_row >= self.width or new_row < 0:
-                return False
-            if new_col >= self.width or new_col < 0:
-                return False
-
-            ret_cell = self.table[new_row][new_col]
-            ret_loc = (new_row, new_col)
-            return ret_loc, ret_cell
-
         for direction in range(4):
             line = {
                 "s": [(row, col)],
@@ -83,7 +34,7 @@ class Situation(Game):
             }
             for side in (-1, 1):
                 for offset in range(1, 9):
-                    ret = new_cell_loc(row, col, direction, side, offset)
+                    ret = self.inside_new_cell_loc(row, col, direction, side, offset)
                     if not ret:
                         break
                     else:
@@ -127,7 +78,7 @@ class Situation(Game):
         for sid, lines in self.lines.items():
             self.values[sid] = defaultdict(list)
             for line in lines:
-                chang = len(line["s"])
+                chang = 5 - len(line[0]) if len(line["s"]) + len(line[0]) > 5 else len(line["s"])
                 if line[-1] and line[1]:
                     key = "活" + str(chang)
                     line[-1] = line[-1][:1]
@@ -142,11 +93,19 @@ class Situation(Game):
                 base_score = SCORE[sid][key] if key in SCORE[sid] else 0
                 for k in (-1, 0, 1):
                     for loc in line[k]:
-                        base_score = base_score * 1.2 if k == 0 else base_score
+                        base_score = base_score * 1.25 if k == 0 else base_score
                         status[loc] += base_score
-        status = sorted(status.items(), key=lambda x: x[1], reverse=True)
-        status = [item[0] for item in status]
-        ret = status[0] if top_n == 1 else status[:top_n]
+
+        if top_n == 1:
+            temp = defaultdict(list)
+            for loc, score in status.items():
+                temp[score].append(loc)
+            best = max(temp.keys())
+            ret = choice(temp[best])
+        else:
+            status = sorted(status.items(), key=lambda x: x[1], reverse=True)
+            status = [item[0] for item in status]
+            ret = status[:top_n]
         return ret
 
 
