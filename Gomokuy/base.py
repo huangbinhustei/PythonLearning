@@ -6,12 +6,11 @@ B = 1
 W = 2
 
 
-class Game:
+class BaseGame:
     def __init__(self):
         self.over = False
         self.winner = ""
         self.width = 15
-        self.forbidden = False
         self.table = []
         for i in range(self.width):
             self.table.append([0] * self.width)
@@ -95,10 +94,20 @@ class Game:
             return
         self.step += 1
         player = B if self.step % 2 == 1 else W
-        # print(f"{player}: {loc}")
+        print(f"  go:\t{player}: {loc}")
         self.table[loc_x][loc_y] = player
         self.records.append(list(loc))
         self._ending(loc, player)
+
+    def ungoing(self):
+        loc = self.records.pop()
+        player = B if self.step % 2 == 1 else W
+        print(f"ungo\t{player}: {loc}")
+        self.table[loc[0]][loc[1]] = 0
+        self.over = False
+        self.winner = ""
+        self.step -= 1
+        return loc
 
     def retract(self):
         if len(self.records) < 2:
@@ -106,4 +115,7 @@ class Game:
         for loc in [self.records.pop(), self.records.pop()]:
             print(loc)
             self.table[loc[0]][loc[1]] = 0
+            self.step -= 2
         self.over = False
+
+

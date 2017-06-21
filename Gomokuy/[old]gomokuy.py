@@ -2,14 +2,14 @@
 # -*- coding: utf-8 -*-
 
 from collections import defaultdict
-from game import Game, B, W
-from conf import ROADS, a, SCORE
+from base import BaseGame, B, W
+from conf import ROADS, a, SCORE, cost_count
 from random import choice
 
 
-class Situation(Game):
+class Gomokuy(BaseGame):
     def __init__(self):
-        Game.__init__(self)
+        BaseGame.__init__(self)
         self.values = dict()
         self.lines = {
             True: [],
@@ -67,6 +67,7 @@ class Situation(Game):
         if line not in self.lines[chess == me]:
             self.lines[chess == me].append(line)
 
+    @cost_count
     def analyse(self, top_n=1):
         status = defaultdict(int)
         self.values = dict()
@@ -93,23 +94,21 @@ class Situation(Game):
                 base_score = SCORE[sid][key] if key in SCORE[sid] else 0
                 for k in (-1, 0, 1):
                     for loc in line[k]:
-                        base_score = base_score * 1.25 if k == 0 else base_score
-                        status[loc] += base_score
+                        rate = 2 if k == 0 else 1
+                        status[loc] += base_score * rate
 
-        if top_n == 1:
-            temp = defaultdict(list)
-            for loc, score in status.items():
-                temp[score].append(loc)
-            best = max(temp.keys())
-            ret = choice(temp[best])
-        else:
-            status = sorted(status.items(), key=lambda x: x[1], reverse=True)
-            status = [item[0] for item in status]
-            ret = status[:top_n]
+        temp = defaultdict(list)
+        for loc, score in status.items():
+            new_score = int(int(str(score*10)[:2])*pow(10,len(str(score))-2))
+            temp[new_score].append(loc)
+        best_score = max(temp.keys())
+        single = choice(temp[best_score])
+        mult = (temp[best_score], len(temp[best_score]) * best_score)
+        ret = single if top_n == 1 else mult
         return ret
 
 
 if __name__ == '__main__':
-    g = Situation()
+    g = Gomokuy()
     g.parse(a)
     g.choosing(top_n=3)

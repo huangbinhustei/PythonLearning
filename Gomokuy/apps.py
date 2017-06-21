@@ -3,9 +3,13 @@
 
 
 from flask import Flask, render_template, request, redirect, url_for
-from situation import Situation
+from gomokuy import Gomokuy
+import logging
+
 
 app = Flask(__name__)
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
 
 
 @app.route("/")
@@ -14,7 +18,7 @@ def home():
     retract = request.args.get('retract')
     restart = request.args.get('restart')
     if restart:
-        # 重启游戏
+        print("重启游戏")
         game.restart()
         fir = request.args.get('aifirst')
         if fir == "1":
@@ -35,19 +39,15 @@ def home():
     # 玩家下一步棋结束
 
     # 电脑下一步棋开始
+    game.ttttt()
     m_pos = game.analyse()
-    if m_pos:
-        game.going(m_pos)
-    else:
-        print("!!!!!!!!!!!!!!!!!")
-
-    # pos = d.choosing()
-    # game.going(pos)
+    game.going(m_pos)
 
     # 电脑下一步棋结束
     return redirect(request.referrer)
 
 
 if __name__ == '__main__':
-    game = Situation()
+    print("游戏开始")
+    game = Gomokuy()
     app.run(host="0.0.0.0", debug=True)
