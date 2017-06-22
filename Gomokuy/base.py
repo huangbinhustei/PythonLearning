@@ -65,20 +65,33 @@ class BaseGame:
                         break
             return _counts, _spaces
 
+        def win(man, info=""):
+            self.winner = man
+            self.over = True
+            if info:
+                print(f"{self.records}\t{self.winner}{info} WIN!")
+
+        check_list = [0, 0]
         for direction in range(4):
             counts, spaces = _liner(direction)
-            if counts < 4:
-                continue
-            elif counts == 4 and spaces == 2:
-                self.winner = player
-            elif counts == 5:
-                self.winner = player
-            elif counts > 5:
-                self.winner = W
-            else:
-                continue
-            self.over = True
-            print(f"{self.winner} WIN!")
+            if counts == 5:
+                win(player, info="五子棋胜")
+                break
+            if counts == 4 and spaces == 2:
+                win(player, info="四连胜")
+                break
+            if counts > 5:
+                win(W, info="长连禁手胜利")
+                break
+            if counts == 4 and spaces == 1:
+                check_list[0] += 1
+            if counts == 3 and spaces == 2:
+                check_list[1] += 1
+
+        if check_list == [1, 1]:
+            win(player, info="四三胜")
+        elif max(check_list) >= 2:
+            win(W, info="禁手胜")
 
     def going(self, loc):
         if isinstance(loc, str):
@@ -94,20 +107,19 @@ class BaseGame:
             return
         self.step += 1
         player = B if self.step % 2 == 1 else W
-        print(f"  go:\t{player}: {loc}")
+        # print(f"  go:\t{player}: {loc}")
         self.table[loc_x][loc_y] = player
-        self.records.append(list(loc))
+        self.records.append(loc)
         self._ending(loc, player)
 
     def ungoing(self):
         loc = self.records.pop()
         player = B if self.step % 2 == 1 else W
-        print(f"ungo\t{player}: {loc}")
+        # print(f"ungo:\t{player}: {loc}")
         self.table[loc[0]][loc[1]] = 0
         self.over = False
         self.winner = ""
         self.step -= 1
-        return loc
 
     def retract(self):
         if len(self.records) < 2:

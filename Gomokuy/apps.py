@@ -39,7 +39,7 @@ def home():
     # 玩家下一步棋结束
 
     # 电脑下一步棋开始
-    game.ttttt()
+    game.mul()
     m_pos = game.analyse()
     game.going(m_pos)
 

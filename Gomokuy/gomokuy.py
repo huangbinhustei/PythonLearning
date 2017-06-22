@@ -71,8 +71,7 @@ class Gomokuy(BaseGame):
         self.lines[chess == me].append(line)
 
     # @cost_count
-    def analyse(self, top_n=1):
-        status = defaultdict(int)
+    def analyse(self, single_step=True):
         self.values = dict()
         self.lines = {
             True: [],
@@ -80,7 +79,7 @@ class Gomokuy(BaseGame):
         }
         self.inside_make_line()
         for sid, lines in self.lines.items():
-            self.values[sid] = defaultdict(list)
+            status = defaultdict(int)
             for line in lines:
                 chang = 5 - len(line[0]) if len(line["s"]) + len(line[0]) > 5 else len(line["s"])
                 if line[-1] and line[1]:
@@ -98,69 +97,67 @@ class Gomokuy(BaseGame):
                 for k in (-1, 0, 1):
                     for loc in line[k]:
                         status[loc] += base_score
+            temp = defaultdict(list)
+            for loc, score in status.items():
+                new_score = int(int(str(score * 10)[:2]) * pow(10, len(str(score)) - 2))
+                temp[new_score].append(loc)
+            self.values[sid] = temp
 
-        temp = defaultdict(list)
-        for loc, score in status.items():
-            new_score = int(int(str(score*10)[:2])*pow(10, len(str(score))-2))
-            temp[new_score].append(loc)
-        best_score = max(temp.keys())
-        single = choice(temp[best_score])
-        mult = (temp[best_score], len(temp[best_score]) * best_score)
-        ret = single if top_n == 1 else mult
+        if max(self.values[True].keys()) >= max(self.values[False].keys()):
+            # 如果己方数字更大，那么优先进攻
+
+            m = max(self.values[False].keys())
+            key_group = [k for k in self.values[True].keys() if k >= m]
+            # 进攻范围是只要攻击力大于对方的就行
+
+            best_pos_group = [self.values[True][k] for k in key_group]
+            best_pos_group = sum(best_pos_group, [])
+        else:
+            # 防守
+            best_score = max(self.values[False].keys())
+            best_pos_group = self.values[False][best_score]
+
+        single = choice(best_pos_group)
+        mul = best_pos_group
+        ret = single if single_step == 1 else mul
         return ret
 
-    def _temp(self, me, deeps):
-        poss = self.analyse(top_n=2)[0]
-        # print(f"deeps:{deeps}\t{len(poss)}")
-        result = [0] * len(poss)
-        for ind, pos in enumerate(poss):
-            self.going(pos)
-            if not self.winner:
-                if deeps == 0:
-                    result[ind] = 0
-                else:
-                    result[ind] = self._temp(me, deeps - 1)
-            elif self.winner == me:
-                result[ind] = 1
-            else:
-                result[ind] = -1
-            self.ungoing()
-
-        if deeps == 3:
-            # print(f"result is {result}")
-            return result
-        else:
-            return sum(result)/len(result)
-
     def temp(self, me, deeps):
+        def logging(_pos, _deeps):
+            if _deeps == DEEPS:
+                print(f"\nThe first step is {_pos}")
+
         if not self.winner:
             if deeps == 0:
                 return 0
             else:
-                poss = self.analyse(top_n=2)[0]
+                poss = self.analyse(single_step=False)
                 result = [0] * len(poss)
                 for ind, pos in enumerate(poss):
+                    logging(pos, deeps)
                     self.going(pos)
-                    # print(f"record going:{self.records}")
                     result[ind] = self.temp(me, deeps - 1)
                     self.ungoing()
-                    # print(f"record ungoing:{self.records}")
-                if deeps == 5:
+                if deeps == DEEPS:
                     print(poss)
                     return result
+                elif deeps % 2 == 0:
+                    return max(result)
                 else:
-                    return sum(result) / len(result)
+                    return min(result)
         elif self.winner == me:
             return 1
         else:
             return -1
 
-    def ttttt(self):
+    def mul(self):
         me = B if (self.step + 1) % 2 == 1 else W
-        print(self.temp(me, 5))
+        print(self.temp(me, DEEPS))
 
 
 if __name__ == '__main__':
+    DEEPS = 6
     g = Gomokuy()
     g.parse(a)
-    g.ttttt()
+    g.mul()
+    # print(g.analyse(single_step=False))
