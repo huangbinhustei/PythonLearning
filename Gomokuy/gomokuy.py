@@ -51,7 +51,7 @@ class Gomokuy(BaseGame):
                         if line[0]:
                             break
                         else:
-                            if len(line[side]) < 2:
+                            if len(line[side]) <= 2:
                                 line[0] = line[side]
                                 line[side] = []
                             else:
@@ -84,42 +84,42 @@ class Gomokuy(BaseGame):
                 chang = 5 - len(line[0]) if len(line["s"]) + len(line[0]) > 5 else len(line["s"])
                 if line[-1] and line[1]:
                     key = "活" + str(chang)
-                    line[-1] = line[-1][:1]
-                    line[1] = line[1][:1]
+                    line[-1] = line[-1][:4 - chang]
+                    line[1] = line[1][:4 - chang]
                 elif line[0] or line[1] or line[-1]:
                     key = "冲" + str(chang)
-                    line[-1] = line[-1][:5 - chang]
-                    line[1] = line[1][:5 - chang]
+                    line[-1] = line[-1][:max(0, 5 - chang - len(line[0]))]
+                    line[1] = line[1][:max(0, 5 - chang - len(line[0]))]
                 else:
                     continue
 
-                base_score = SCORE[sid][key] if key in SCORE[sid] else 0
+                base_score = SCORE[key] if key in SCORE else 0
                 for k in (-1, 0, 1):
                     for loc in line[k]:
-                        status[loc] += base_score
+                        status[loc] = max(base_score, status[loc])
             temp = defaultdict(list)
             for loc, score in status.items():
                 new_score = int(int(str(score * 10)[:2]) * pow(10, len(str(score)) - 2))
                 temp[new_score].append(loc)
             self.values[sid] = temp
 
-        if max(self.values[True].keys()) >= max(self.values[False].keys()):
+        opponent_chance = max(self.values[False].keys())
+        if self.values[True].keys() and max(self.values[True].keys()) >= opponent_chance:
             # 如果己方数字更大，那么优先进攻
 
-            m = max(self.values[False].keys())
-            key_group = [k for k in self.values[True].keys() if k >= m]
+            key_group = [k for k in self.values[True].keys() if k >= opponent_chance]
             # 进攻范围是只要攻击力大于对方的就行
 
             best_pos_group = [self.values[True][k] for k in key_group]
             best_pos_group = sum(best_pos_group, [])
         else:
             # 防守
-            best_score = max(self.values[False].keys())
+            best_score = opponent_chance
             best_pos_group = self.values[False][best_score]
 
         single = choice(best_pos_group)
         mul = best_pos_group
-        ret = single if single_step == 1 else mul
+        ret = single if single_step else mul
         return ret
 
     def temp(self, me, deeps):
@@ -129,6 +129,7 @@ class Gomokuy(BaseGame):
 
         if not self.winner:
             if deeps == 0:
+                # print(self.records)
                 return 0
             else:
                 poss = self.analyse(single_step=False)
@@ -150,13 +151,14 @@ class Gomokuy(BaseGame):
         else:
             return -1
 
+    @cost_count
     def mul(self):
         me = B if (self.step + 1) % 2 == 1 else W
         print(self.temp(me, DEEPS))
 
 
 if __name__ == '__main__':
-    DEEPS = 6
+    DEEPS = 4
     g = Gomokuy()
     g.parse(a)
     g.mul()
