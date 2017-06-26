@@ -72,6 +72,12 @@ class Gomokuy(BaseGame):
 
     # @cost_count
     def analyse(self, single_step=True):
+        def make_pos_group(key_group):
+            key_group = set([SCORE[k] for k in key_group])
+            attack = sum([self_chance[k] for k in key_group], [])
+            defence = sum([opponent_chance[k] for k in key_group], [])
+            return attack if attack else defence
+
         self.values = dict()
         self.lines = {
             True: [],
@@ -84,12 +90,25 @@ class Gomokuy(BaseGame):
                 chang = 5 - len(line[0]) if len(line["s"]) + len(line[0]) > 5 else len(line["s"])
                 if line[-1] and line[1]:
                     key = "活" + str(chang)
-                    line[-1] = line[-1][:4 - chang]
-                    line[1] = line[1][:4 - chang]
+                    if not line[0]:
+                        r = {1: 1, 2: 2, 3: 1, 4: 1}[chang]
+                        line[-1] = line[-1][:r]
+                        line[1] = line[1][:r]
+                    else:
+                        # 进攻和防守的区域是不一样的。
+                        r = {1: 1, 2: 1, 3: 0, 4: 0}[chang] if sid else {1: 1, 2: 1, 3: 1, 4: 0}[chang]
+                        line[-1] = line[-1][:r]
+                        line[1] = line[1][:r]
                 elif line[0] or line[1] or line[-1]:
                     key = "冲" + str(chang)
-                    line[-1] = line[-1][:max(0, 5 - chang - len(line[0]))]
-                    line[1] = line[1][:max(0, 5 - chang - len(line[0]))]
+                    if not line[0]:
+                        r = {1: 1, 2: 3, 3: 2, 4: 1}[chang]
+                        line[-1] = line[-1][:r]
+                        line[1] = line[1][:r]
+                    else:
+                        r = {1: 1, 2: 2, 3: 1, 4: 0}[chang]
+                        line[-1] = line[-1][:r]
+                        line[1] = line[1][:r]
                 else:
                     continue
 
@@ -99,24 +118,25 @@ class Gomokuy(BaseGame):
                         status[loc] = max(base_score, status[loc])
             temp = defaultdict(list)
             for loc, score in status.items():
-                new_score = int(int(str(score * 10)[:2]) * pow(10, len(str(score)) - 2))
-                temp[new_score].append(loc)
+                temp[score].append(loc)
             self.values[sid] = temp
 
-        opponent_chance = max(self.values[False].keys())
-        if self.values[True].keys() and max(self.values[True].keys()) >= opponent_chance:
-            # 如果己方数字更大，那么优先进攻
-
-            key_group = [k for k in self.values[True].keys() if k >= opponent_chance]
-            # 进攻范围是只要攻击力大于对方的就行
-
-            best_pos_group = [self.values[True][k] for k in key_group]
-            best_pos_group = sum(best_pos_group, [])
+        self_chance = self.values[True]
+        opponent_chance = self.values[False]
+        if SCORE["冲4"] in self_chance:
+            best_pos_group = self_chance[SCORE["冲4"]]
+        elif SCORE["冲4"] in opponent_chance:
+            best_pos_group = opponent_chance[SCORE["冲4"]]
+        elif SCORE["活3"] in self_chance:
+            best_pos_group = self_chance[SCORE["活3"]]
+        elif SCORE["活3"] in opponent_chance:
+            best_pos_group = self_chance[SCORE["冲3"]]
+            best_pos_group += opponent_chance[SCORE["活3"]]
         else:
-            # 防守
-            best_score = opponent_chance
-            best_pos_group = self.values[False][best_score]
+            temp_1 = make_pos_group(["活2", "冲3"])
+            best_pos_group = temp_1 if temp_1 else make_pos_group(["冲2", "活1", "冲1"])
 
+        best_pos_group = list(set(best_pos_group))
         single = choice(best_pos_group)
         mul = best_pos_group
         ret = single if single_step else mul
@@ -129,7 +149,6 @@ class Gomokuy(BaseGame):
 
         if not self.winner:
             if deeps == 0:
-                # print(self.records)
                 return 0
             else:
                 poss = self.analyse(single_step=False)
@@ -137,10 +156,20 @@ class Gomokuy(BaseGame):
                 for ind, pos in enumerate(poss):
                     logging(pos, deeps)
                     self.going(pos)
-                    result[ind] = self.temp(me, deeps - 1)
+                    temp_score = self.temp(me, deeps - 1)
+                    result[ind] = temp_score
                     self.ungoing()
+                    next_player = B if (self.step + 1) % 2 == 1 else W
+                    if temp_score == 1 and next_player == me:
+                        # 轮到自己，且某一步可以自己赢
+                        break
+                    elif temp_score == -1 and next_player != me:
+                        # 轮到对方走，且某一步可以对方赢
+                        # 这里剪枝有问题，禁手不算，并且禁手明明是黑棋自己走出的，不应该出现剪刀
+                        break
                 if deeps == DEEPS:
                     print(poss)
+                    print(max(result))
                     return result
                 elif deeps % 2 == 0:
                     return max(result)
@@ -158,8 +187,9 @@ class Gomokuy(BaseGame):
 
 
 if __name__ == '__main__':
-    DEEPS = 4
+    DEEPS = 5
     g = Gomokuy()
     g.parse(a)
     g.mul()
     # print(g.analyse(single_step=False))
+    # print(g._ending((7, 3), B))

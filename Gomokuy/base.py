@@ -45,49 +45,65 @@ class BaseGame:
         return ret_loc, ret_cell
 
     def _ending(self, loc, player):
-        def _liner(_direction):
-            _counts, _spaces = 1, 0
-            for side in (-1, 1):
-                for offset in range(1, 9):
-                    ret = self.inside_new_cell_loc(loc[0], loc[1], _direction, side, offset)
-                    if not ret:
-                        break
-                    else:
-                        (new_x, new_y), new_cell = ret
-
-                    new_cell = self.table[new_x][new_y]
-                    if new_cell == player:
-                        _counts += 1
-                    elif new_cell == 0:
-                        _spaces += 1
-                        break
-                    else:
-                        break
-            return _counts, _spaces
-
         def win(man, info=""):
             self.winner = man
             self.over = True
-            if info:
+            if info and man == B:
                 print(f"{self.records}\t{self.winner}{info} WIN!")
 
         check_list = [0, 0]
         for direction in range(4):
-            counts, spaces = _liner(direction)
-            if counts == 5:
+            line = {
+                "s": [(loc[0], loc[1])],
+                0: [],  # 中间的缝隙
+                -1: [],  # 某一边的空
+                1: [],  # 另一边的空
+            }
+            for side in (-1, 1):
+                for offset in range(1, 9):
+                    ret = self.inside_new_cell_loc(loc[0], loc[1], direction, side, offset)
+                    if not ret:
+                        break
+                    else:
+                        new_loc, new_cell = ret
+
+                    if new_cell == 0:
+                        line[side].append(new_loc)
+                    elif new_cell == player:
+                        if line[side]:
+                            if line[0]:
+                                break
+                            else:
+                                if len(line[side]) <= 2:
+                                    line[0] = line[side]
+                                    line[side] = []
+                                else:
+                                    break
+                        line["s"].append(new_loc)
+                    else:
+                        break
+
+            counts = len(line["s"])
+            if line[-1] and line[1]:
+                spaces = 2
+            elif line[0] or line[1] or line[-1]:
+                spaces = 1
+            else:
+                spaces = 0
+
+            if counts == 5 and not line[0]:
                 win(player, info="五子棋胜")
                 break
-            if counts == 4 and spaces == 2:
+            if counts == 4 and spaces == 2 and not line[0]:
                 win(player, info="四连胜")
                 break
-            if counts > 5:
+            if counts > 5 and not line[0]:
                 win(W, info="长连禁手胜利")
                 break
             if counts == 4 and spaces == 1:
                 check_list[0] += 1
             if counts == 3 and spaces == 2:
                 check_list[1] += 1
-
         if check_list == [1, 1]:
             win(player, info="四三胜")
         elif max(check_list) >= 2:
