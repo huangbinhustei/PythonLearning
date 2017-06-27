@@ -5,6 +5,8 @@ from collections import defaultdict
 from base import BaseGame, B, W
 from conf import a, SCORE, cost_count
 from random import choice
+from functools import reduce
+from collections import Counter
 
 
 class Gomokuy(BaseGame):
@@ -68,11 +70,31 @@ class Gomokuy(BaseGame):
 
     # @cost_count
     def analyse(self, single_step=True):
-        def make_pos_group(key_group):
-            key_group = set([k for k in key_group])
-            attack = sum([self_chance[k] for k in key_group], [])
-            defence = sum([opponent_chance[k] for k in key_group], [])
-            return attack if attack else defence
+        def make_pos_group():
+            me = B if (self.step + 1) % 2 == 1 else W
+            my_lines_three = [sum([line[0], line[1], line[-1]],[]) for line in self_chance["活2"]]
+            my_lines_four = [sum([line[0], line[1], line[-1]],[]) for line in self_chance["冲3"]]
+            your_lines_three = [sum([line[0], line[1], line[-1]],[]) for line in opponent_chance["活2"]]
+            your_lines_four = [sum([line[0], line[1], line[-1]],[]) for line in opponent_chance["冲3"]]
+
+            my_33 = [item[0] for item in Counter(sum(my_lines_three, [])).items() if item[1] > 1]
+            my_44 = [item[0] for item in Counter(sum(my_lines_four, [])).items() if item[1] > 1]
+            my_43 = [item[0] for item in Counter(list(set(sum(my_lines_four, []))) + list(set(sum(my_lines_three, [])))).items() if item[1] > 1]
+
+            if me == B:
+                attack = [item for item in my_43 if item not in my_44 + my_33]
+            else:
+                temp = my_44 + my_43
+                attack = temp if temp else my_33
+
+            if attack:
+                return attack
+            else:
+                your_33 = [item[0] for item in Counter(sum(your_lines_three, [])).items() if item[1] > 1]
+                your_44 = [item[0] for item in Counter(sum(your_lines_four, [])).items() if item[1] > 1]
+                your_43 = [item[0] for item in Counter(list(set(sum(your_lines_four, []))) + list(set(sum(your_lines_three, [])))).items() if item[1] > 1]
+                defence = your_33 +  your_44 + your_43 if me == B else [item for item in your_43 if item not in your_44 + your_33]
+                return defence
 
         self.values = {
             True: defaultdict(list),
@@ -84,8 +106,7 @@ class Gomokuy(BaseGame):
         }
         self.inside_make_line()
         self.inside_line_grouping()
-
-        me = B if (self.step + 1) % 2 == 1 else W
+        
         self_chance = self.values[True]
         opponent_chance = self.values[False]
         if "冲4" in self_chance:
@@ -98,12 +119,17 @@ class Gomokuy(BaseGame):
             best_lines = self_chance["冲3"]
             best_lines += opponent_chance["活3"]
         else:
-            temp_1 = make_pos_group(["活2", "冲3"])
-            # 这里寻找交点，有机会赢
-            best_lines = temp_1 if temp_1 else make_pos_group(["冲2", "活1", "冲1"])
-
-        best_pos_group = sum([d[0] + d[1] + d[-1] for d in best_lines], [])
-        best_pos_group = list(set(best_pos_group))
+            best_lines = False
+        if best_lines:
+            best_pos_group = sum([d[0] + d[1] + d[-1] for d in best_lines], [])
+            best_pos_group = list(set(best_pos_group))
+        else:
+            best_pos_group = make_pos_group()
+            if not best_pos_group:
+                # 从["冲2", "活1", "冲1"]中选择
+                best_pos_group = [sum([line[0], line[1], line[-1]],[]) for line in self_chance["冲2"]] + [sum([line[0], line[1], line[-1]],[]) for line in self_chance["冲1"]] + [sum([line[0], line[1], line[-1]],[]) for line in self_chance["活1"]] + [sum([line[0], line[1], line[-1]],[]) for line in opponent_chance["冲2"]] + [sum([line[0], line[1], line[-1]],[]) for line in opponent_chance["冲1"]] + [sum([line[0], line[1], line[-1]],[]) for line in opponent_chance["活1"]]
+                best_pos_group = sum(best_pos_group, [])
+                
         single = choice(best_pos_group)
         mul = best_pos_group
         ret = single if single_step else mul
@@ -159,6 +185,6 @@ if __name__ == '__main__':
     DEEPS = 9
     g = Gomokuy()
     g.parse(a)
-    g.mul()
-    # print(g.analyse(single_step=False))
+    # g.mul()
+    print(g.analyse(single_step=False))
     # print(g._ending((7, 3), B))
