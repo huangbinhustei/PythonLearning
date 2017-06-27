@@ -77,7 +77,7 @@ class BaseGame:
         def win(man, info=""):
             self.winner = man
             self.over = True
-            print(f"{self.winner}{info} WIN!")
+            print(f"{self.records}\t{self.winner}{info} WIN!")
 
         check_list = [0, 0]
         for direction in range(4):
@@ -106,7 +106,7 @@ class BaseGame:
             if counts > 5 and not line[0]:
                 win(W, info="长连禁手胜")
                 break
-            if counts == 4 and spaces == 1:
+            if counts == 4:
                 self.check += [line["s"]]
                 check_list[0] += 1
             if counts == 3 and spaces == 2 and len(line[0]) <= 1:
