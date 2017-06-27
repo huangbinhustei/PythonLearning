@@ -16,6 +16,7 @@ class BaseGame:
             self.table.append([0] * self.width)
         self.records = []
         self.step = 0
+        self.check = []
 
     def restart(self):
         self.__init__()
@@ -44,12 +45,39 @@ class BaseGame:
         ret_loc = (new_row, new_col)
         return ret_loc, ret_cell
 
+    def inside_make_line_for_single(self, row, col, chess, direction, line):
+        for side in (-1, 1):
+            for offset in range(1, 9):
+                ret = self.inside_new_cell_loc(row, col, direction, side, offset)
+                if not ret:
+                    break
+                else:
+                    new_loc, new_cell = ret
+
+                if new_cell == 0:
+                    line[side].append(new_loc)
+                elif new_cell == chess:
+                    if line[side]:
+                        if line[0]:
+                            break
+                        else:
+                            if len(line[side]) <= 2:
+                                line[0] = line[side]
+                                line[side] = []
+                            else:
+                                break
+                    line["s"].append(new_loc)
+                else:
+                    break
+        return line
+
     def _ending(self, loc, player):
+        self.check = []
+
         def win(man, info=""):
             self.winner = man
             self.over = True
-            if info and man == B:
-                print(f"{self.records}\t{self.winner}{info} WIN!")
+            print(f"{self.winner}{info} WIN!")
 
         check_list = [0, 0]
         for direction in range(4):
@@ -59,29 +87,7 @@ class BaseGame:
                 -1: [],  # 某一边的空
                 1: [],  # 另一边的空
             }
-            for side in (-1, 1):
-                for offset in range(1, 9):
-                    ret = self.inside_new_cell_loc(loc[0], loc[1], direction, side, offset)
-                    if not ret:
-                        break
-                    else:
-                        new_loc, new_cell = ret
-
-                    if new_cell == 0:
-                        line[side].append(new_loc)
-                    elif new_cell == player:
-                        if line[side]:
-                            if line[0]:
-                                break
-                            else:
-                                if len(line[side]) <= 2:
-                                    line[0] = line[side]
-                                    line[side] = []
-                                else:
-                                    break
-                        line["s"].append(new_loc)
-                    else:
-                        break
+            line = self.inside_make_line_for_single(loc[0], loc[1], player, direction, line)
 
             counts = len(line["s"])
             if line[-1] and line[1]:
@@ -98,12 +104,15 @@ class BaseGame:
                 win(player, info="四连胜")
                 break
             if counts > 5 and not line[0]:
-                win(W, info="长连禁手胜利")
+                win(W, info="长连禁手胜")
                 break
             if counts == 4 and spaces == 1:
+                self.check += [line["s"]]
                 check_list[0] += 1
-            if counts == 3 and spaces == 2:
+            if counts == 3 and spaces == 2 and len(line[0]) <= 1:
+                self.check += [line["s"]]
                 check_list[1] += 1
+        self.check = sum(self.check, [])
         if check_list == [1, 1]:
             win(player, info="四三胜")
         elif max(check_list) >= 2:

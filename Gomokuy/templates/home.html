@@ -22,15 +22,31 @@
 						{% for cell in range(game.width) %}
 							{% if game.table[line][cell] == 1 %}
 								{% if [line, cell] == game.records[-1] %}
-									<li class="list-group-item list-group-item-success but">10</li>
+									{% if (line, cell) in game.check %}
+										<li class="list-group-item list-group-item-success but" style="color: #FF0000">10</li>
+									{% else %}
+										<li class="list-group-item list-group-item-success but">10</li>
+									{% endif %}
 								{% else %}
-									<li class="list-group-item list-group-item-success but">1</li>
+									{% if (line, cell) in game.check %}
+										<li class="list-group-item list-group-item-success but" style="color: #FF0000">1</li>
+									{% else %}
+										<li class="list-group-item list-group-item-success but">1</li>
+									{% endif %}
 								{% endif %}
 							{% elif game.table[line][cell] == 2 %}
 								{% if [line, cell] == game.records[-1] %}
-									<li class="list-group-item list-group-item-warning but">20</li>
+									{% if (line, cell) in game.check %}
+										<li class="list-group-item list-group-item-warning but" style="color: #FF0000">20</li>
+									{% else %}
+										<li class="list-group-item list-group-item-warning but">20</li>
+									{% endif %}
 								{% else %}
-									<li class="list-group-item list-group-item-warning but">2</li>
+									{% if (line, cell) in game.check %}
+										<li class="list-group-item list-group-item-warning but" style="color: #FF0000">2</li>
+									{% else %}
+										<li class="list-group-item list-group-item-warning but">2</li>
+									{% endif %}
 								{% endif %}
 							{% else %}
 								<li class="list-group-item but"><a href={{ url_for("home",loc=line * game.width + cell) }}>{{ line }},{{ cell }}</a></li>
