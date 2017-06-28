@@ -186,14 +186,13 @@ class Gomokuy(BaseGame):
                     poss = self.analyse(single_step=False)
                     if not poss:
                         return False
-                    # if len(poss) == 1:
-                    #     return 0, poss[0]
                     result = [0] * len(poss)
                     next_player = B if (self.step + 1) % 2 == 1 else W
                     for ind, pos in enumerate(poss):
                         logging(pos, deeps)
                         self.going(pos)
-                        temp_score = win_or_lose(deeps - 1)
+                        new_deeps = deeps - 1 if len(poss) > 1 else 0
+                        temp_score = win_or_lose(new_deeps)
                         result[ind] = temp_score
                         self.fallback()
                         if temp_score == 1 and next_player == me:
