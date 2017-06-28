@@ -198,10 +198,10 @@ class Gomokuy(BaseGame):
                         temp_score = win_or_lose(new_deeps)
                         result[ind] = temp_score
                         self.fallback()
-                        if temp_score == 1 and next_player == me:
+                        if temp_score == 9999999 and next_player == me:
                             # 轮到自己，且某一步可以自己赢
                             break
-                        elif temp_score == -1 and next_player != me:
+                        elif temp_score == -9999999 and next_player != me:
                             # 轮到对方走，且某一步可以对方赢
                             break
                     if deeps == DEEPS:

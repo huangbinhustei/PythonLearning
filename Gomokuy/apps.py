@@ -25,7 +25,7 @@ def home():
         return redirect(url_for("home"))
     if retract and retract == "1":
         # 悔棋
-        game.retract()
+        game.fallback(counts=2)
         return redirect(url_for("home"))
 
     if not loc:

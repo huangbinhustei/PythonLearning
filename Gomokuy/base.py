@@ -136,17 +136,11 @@ class BaseGame:
         self.records.append(loc)
         self.ending(loc, player)
 
-    def fallback(self):
-        loc = self.records.pop()
-        self.table[loc[0]][loc[1]] = 0
-        self.winner = ""
-        self.step -= 1
-
-    def retract(self):
-        if len(self.records) < 2:
+    def fallback(self, counts=1):
+        if len(self.records) < counts:
             return
-        for loc in [self.records.pop(), self.records.pop()]:
-            print(loc)
+        for i in range(counts):
+            loc = self.records.pop()
             self.table[loc[0]][loc[1]] = 0
-            self.step -= 2
         self.winner = ""
+        self.step -= counts
