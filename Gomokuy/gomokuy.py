@@ -58,31 +58,34 @@ class Gomokuy(BaseGame):
                     r = range_att if sid else range_def
                     line[-1] = line[-1][:r]
                     line[1] = line[1][:r]
+                    format_line = line[-1] + line[0] + line[1]
 
                 elif line[0] or line[1] or line[-1]:
                     key = "冲" + str(len(line["s"]))
                     r = 5 - chang
                     line[-1] = line[-1][:r]
                     line[1] = line[1][:r]
+                    format_line = line[-1] + line[0] + line[1]
                 else:
                     continue
-                self.values[sid][key].append(line)
+                self.values[sid][key].append(format_line)
 
     # @cost_count
     def analyse(self, single_step=True):
         def make_pos_group():
             me = B if (self.step + 1) % 2 == 1 else W
 
-            my_lines_three = [sum([line[0], line[1], line[-1]], []) for line in self_chance["活2"]]
-            my_lines_four = [sum([line[0], line[1], line[-1]], []) for line in self_chance["冲3"]]
-            your_live_three = [sum([line[0], line[1], line[-1]], []) for line in opponent_chance["活3"]]
-            your_lines_three = [sum([line[0], line[1], line[-1]], []) for line in opponent_chance["活2"]]
-            your_lines_four = [sum([line[0], line[1], line[-1]], []) for line in opponent_chance["冲3"]]
+            my_lines_three = sum(self_chance["活2"], [])
+            my_lines_four = sum(self_chance["冲3"], [])
 
-            my_33 = [item[0] for item in Counter(sum(my_lines_three, [])).items() if item[1] > 1]
-            my_44 = [item[0] for item in Counter(sum(my_lines_four, [])).items() if item[1] > 1]
+            your_live_three = sum(opponent_chance["活3"], [])
+            your_lines_three = sum(opponent_chance["活2"], [])
+            your_lines_four = sum(opponent_chance["冲3"], [])
+
+            my_33 = [item[0] for item in Counter(my_lines_three).items() if item[1] > 1]
+            my_44 = [item[0] for item in Counter(my_lines_four).items() if item[1] > 1]
             my_43 = [item[0] for item in
-                     Counter(list(set(sum(my_lines_four, []))) + list(set(sum(my_lines_three, [])))).items() if
+                     Counter(list(set(my_lines_four)) + list(set(my_lines_three))).items() if
                      item[1] > 1]
 
             if me == B:
@@ -94,10 +97,10 @@ class Gomokuy(BaseGame):
                 else:
                     if your_live_three:
                         # 如果没有43， 对方有活3，只能防守
-                        return sum(your_live_three, [])
+                        return your_live_three
                     else:
                         # 正常进攻
-                        attack = sum(my_lines_four + my_lines_three, [])
+                        attack = my_lines_four + my_lines_three
                         if attack:
                             return attack
             else:
@@ -109,23 +112,23 @@ class Gomokuy(BaseGame):
                 else:
                     if your_live_three:
                         # 如果没有43, 43， 对方有活3，只能防守
-                        return sum(your_live_three, [])
+                        return your_live_three
                     else:
                         # 如果对方没有活3，自己有33就进攻，没有33就正常进攻
-                        attack = my_33 if my_33 else sum(my_lines_four + my_lines_three, [])
+                        attack = my_33 if my_33 else my_lines_four + my_lines_three
                         if attack:
                             return attack
 
             # 假如没有进攻，就被迫开始防守
-            your_33 = [item[0] for item in Counter(sum(your_lines_three, [])).items() if item[1] > 1]
-            your_44 = [item[0] for item in Counter(sum(your_lines_four, [])).items() if item[1] > 1]
+            your_33 = [item[0] for item in Counter(your_lines_three).items() if item[1] > 1]
+            your_44 = [item[0] for item in Counter(your_lines_four).items() if item[1] > 1]
             your_43 = [item[0] for item in
-                       Counter(list(set(sum(your_lines_four, []))) + list(set(sum(your_lines_three, [])))).items()
+                       Counter(list(set(your_lines_four)) + list(set(your_lines_three))).items()
                        if item[1] > 1]
             defence = your_33 + your_44 + your_43 if me == B else [item for item in your_43 if
                                                                    item not in your_44 + your_33]
             if not defence:
-                defence = sum(your_lines_three + your_lines_four, [])
+                defence = your_lines_three + your_lines_four
             return defence
 
         self.values = {
@@ -140,7 +143,6 @@ class Gomokuy(BaseGame):
         self.inside_line_grouping()
 
         self_chance = self.values[True]
-        # print(self_chance)
         opponent_chance = self.values[False]
         if "冲4" in self_chance or "活4" in self_chance:
             best_lines = self_chance["冲4"] + self_chance["活4"]
@@ -151,18 +153,13 @@ class Gomokuy(BaseGame):
         else:
             best_lines = False
         if best_lines:
-            best_pos_group = sum([d[0] + d[1] + d[-1] for d in best_lines], [])
+            best_pos_group = sum(best_lines, [])
             best_pos_group = list(set(best_pos_group))
         else:
             best_pos_group = make_pos_group()
             if not best_pos_group:
                 # 从["冲2", "活1", "冲1"]中选择
-                best_pos_group = [sum([line[0], line[1], line[-1]], []) for line in self_chance["冲2"]] + [
-                    sum([line[0], line[1], line[-1]], []) for line in self_chance["冲1"]] + [
-                                     sum([line[0], line[1], line[-1]], []) for line in self_chance["活1"]] + [
-                                     sum([line[0], line[1], line[-1]], []) for line in opponent_chance["冲2"]] + [
-                                     sum([line[0], line[1], line[-1]], []) for line in opponent_chance["冲1"]] + [
-                                     sum([line[0], line[1], line[-1]], []) for line in opponent_chance["活1"]]
+                best_pos_group = sum(self_chance["冲2"], []) + sum(self_chance["冲1"], []) + sum(self_chance["活1"], []) + sum(opponent_chance["冲2"], []) + sum(opponent_chance["冲1"], []) + sum(opponent_chance["活1"], [])
                 best_pos_group = sum(best_pos_group, [])
 
         single = choice(best_pos_group)
@@ -194,9 +191,7 @@ class Gomokuy(BaseGame):
                         break
                     elif temp_score == -1 and next_player != me:
                         # 轮到对方走，且某一步可以对方赢
-                        # 这里剪枝有问题，禁手不算，并且禁手明明是黑棋自己走出的，不应该出现剪刀
-                        pass
-                        # break
+                        break
                 if deeps == DEEPS:
                     print(poss)
                     return result

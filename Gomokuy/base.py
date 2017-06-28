@@ -106,7 +106,7 @@ class BaseGame:
             if counts > 5 and not line[0]:
                 win(W, info="长连禁手胜")
                 break
-            if counts == 4:
+            if counts == 4 and spaces:
                 self.check += [line["s"]]
                 check_list[0] += 1
             if counts == 3 and spaces == 2 and len(line[0]) <= 1:
