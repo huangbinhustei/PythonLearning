@@ -71,8 +71,8 @@ def cost_count(func):
         time_cost = int((time.time()-a) * 1000)
         if time_cost > 0:
             print("Func(" + str(func.__name__) + ")\tcost: " + str(time_cost) + " ms")
-        else:
-            time_cost = int((time.time()-a) * 1000000)
-            print("Func(" + str(func.__name__) + ")\tcost: " + str(time_cost) + " μs")
+        # else:
+        #     time_cost = int((time.time()-a) * 1000000)
+        #     print("Func(" + str(func.__name__) + ")\tcost: " + str(time_cost) + " μs")
         return ret
     return costing

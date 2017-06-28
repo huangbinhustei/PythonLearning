@@ -21,31 +21,31 @@
 					<ul class="list-group list-inline">
 						{% for cell in range(game.width) %}
 							{% if game.table[line][cell] == 1 %}
-								{% if [line, cell] == game.records[-1] %}
+								{% if (line, cell) == game.records[-1] %}
 									{% if (line, cell) in game.check %}
-										<li class="list-group-item list-group-item-success but" style="color: #FF0000">10</li>
+										<li class="list-group-item list-group-item-success but" style="color: #FF0000">New</li>
 									{% else %}
-										<li class="list-group-item list-group-item-success but">10</li>
+										<li class="list-group-item list-group-item-success but">New</li>
 									{% endif %}
 								{% else %}
 									{% if (line, cell) in game.check %}
-										<li class="list-group-item list-group-item-success but" style="color: #FF0000">1</li>
+										<li class="list-group-item list-group-item-success but" style="color: #FF0000">·</li>
 									{% else %}
-										<li class="list-group-item list-group-item-success but">1</li>
+										<li class="list-group-item list-group-item-success but">·</li>
 									{% endif %}
 								{% endif %}
 							{% elif game.table[line][cell] == 2 %}
-								{% if [line, cell] == game.records[-1] %}
+								{% if (line, cell) == game.records[-1] %}
 									{% if (line, cell) in game.check %}
-										<li class="list-group-item list-group-item-warning but" style="color: #FF0000">20</li>
+										<li class="list-group-item list-group-item-warning but" style="color: #FF0000">New</li>
 									{% else %}
-										<li class="list-group-item list-group-item-warning but">20</li>
+										<li class="list-group-item list-group-item-warning but">New</li>
 									{% endif %}
 								{% else %}
 									{% if (line, cell) in game.check %}
-										<li class="list-group-item list-group-item-warning but" style="color: #FF0000">2</li>
+										<li class="list-group-item list-group-item-warning but" style="color: #FF0000">·</li>
 									{% else %}
-										<li class="list-group-item list-group-item-warning but">2</li>
+										<li class="list-group-item list-group-item-warning but">·</li>
 									{% endif %}
 								{% endif %}
 							{% else %}
