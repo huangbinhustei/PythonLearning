@@ -5,7 +5,6 @@ from collections import defaultdict
 from base import BaseGame, B, W
 from conf import a, SCORE, cost_count
 from random import choice
-from functools import reduce
 from collections import Counter
 
 
@@ -34,7 +33,7 @@ class Gomokuy(BaseGame):
                         -1: [],  # 某一边的空
                         1: [],  # 另一边的空
                     }
-                    line = self.inside_make_line_for_single(row, col, chess, direction, line)
+                    line = self.base_linear(row, col, chess, direction, line)
                     self.inside_line_filter(line, chess)
                     checked |= set(line["s"])
 
@@ -48,11 +47,13 @@ class Gomokuy(BaseGame):
         for sid, lines in self.lines.items():
             for line in lines:
                 chang = min(5, len(line["s"] + line[0]))
+                t = len(line["s"]) 
+                t = "5" if t >= 5 else str(t)
                 if line[-1] and line[1]:
                     if len(line[0]) <= 1:
-                        key = "活" + str(len(line["s"]))
+                        key = "活" + t
                     else:
-                        key = "冲" + str(len(line["s"]))
+                        key = "冲" + t
                     range_att = max(0, 4 - chang)
                     range_def = 1 if chang < 5 else 0
                     r = range_att if sid else range_def
@@ -61,7 +62,7 @@ class Gomokuy(BaseGame):
                     format_line = line[-1] + line[0] + line[1]
 
                 elif line[0] or line[1] or line[-1]:
-                    key = "冲" + str(len(line["s"]))
+                    key = "冲" + t
                     r = 5 - chang
                     line[-1] = line[-1][:r]
                     line[1] = line[1][:r]
@@ -73,8 +74,6 @@ class Gomokuy(BaseGame):
     # @cost_count
     def analyse(self, single_step=True):
         def make_pos_group():
-            me = B if (self.step + 1) % 2 == 1 else W
-
             my_lines_three = sum(self_chance["活2"], [])
             my_lines_four = sum(self_chance["冲3"], [])
 
@@ -131,6 +130,7 @@ class Gomokuy(BaseGame):
                 defence = your_lines_three + your_lines_four
             return defence
 
+        me = B if (self.step + 1) % 2 == 1 else W
         self.values = {
             True: defaultdict(list),
             False: defaultdict(list),
@@ -145,7 +145,10 @@ class Gomokuy(BaseGame):
         self_chance = self.values[True]
         opponent_chance = self.values[False]
         if "冲4" in self_chance or "活4" in self_chance:
-            best_lines = self_chance["冲4"] + self_chance["活4"]
+            if me == B:
+                best_lines = self_chance["冲4"] + self_chance["活4"]
+            else:
+                best_lines = self_chance["冲4"] + self_chance["活4"] + self_chance["冲5"] + self_chance["活5"]
         elif "冲4" in opponent_chance or "活4" in opponent_chance:
             best_lines = opponent_chance["冲4"] + opponent_chance["活4"]
         elif "活3" in self_chance:
@@ -159,61 +162,69 @@ class Gomokuy(BaseGame):
             best_pos_group = make_pos_group()
             if not best_pos_group:
                 # 从["冲2", "活1", "冲1"]中选择
-                best_pos_group = sum(self_chance["冲2"], []) + sum(self_chance["冲1"], []) + sum(self_chance["活1"], []) + sum(opponent_chance["冲2"], []) + sum(opponent_chance["冲1"], []) + sum(opponent_chance["活1"], [])
-                best_pos_group = sum(best_pos_group, [])
+                temp = [self_chance[k] for k in ["冲2", "冲1", "活1"]] + [opponent_chance[k] for k in ["冲2", "冲1", "活1"]]
+                best_pos_group = list(set(sum(sum(temp, []), [])))
 
         single = choice(best_pos_group)
         mul = best_pos_group
         ret = single if single_step else mul
         return ret
 
-    def temp(self, me, deeps):
+    @cost_count
+    def min_max_search(self, DEEPS=5):
         def logging(_pos, _deeps):
             if _deeps == DEEPS:
-                print(f"\nThe first step is {_pos}")
+                print(f"The first step is {_pos}")
 
-        if not self.winner:
-            if deeps == 0:
-                print(self.records)
-                return 0
-            else:
-                poss = self.analyse(single_step=False)
-                result = [0] * len(poss)
-                for ind, pos in enumerate(poss):
-                    logging(pos, deeps)
-                    self.going(pos)
-                    temp_score = self.temp(me, deeps - 1)
-                    result[ind] = temp_score
-                    self.ungoing()
-                    next_player = B if (self.step + 1) % 2 == 1 else W
-                    if temp_score == 1 and next_player == me:
-                        # 轮到自己，且某一步可以自己赢
-                        break
-                    elif temp_score == -1 and next_player != me:
-                        # 轮到对方走，且某一步可以对方赢
-                        break
-                if deeps == DEEPS:
-                    print(poss)
-                    return result
-                elif deeps % 2 == 0:
-                    return max(result)
+        def win_or_lose(deeps):
+            if not self.winner:
+                if deeps == 0:
+                    my_score = sum([SCORE[key] * len(v) for (key, v) in self.values[True].items()])
+                    your_score = sum([SCORE[key] * len(v) for (key, v) in self.values[False].items()])
+                    return my_score - your_score
                 else:
-                    return min(result)
-        elif self.winner == me:
-            return 1
-        else:
-            return -1
+                    poss = self.analyse(single_step=False)
+                    if not poss:
+                        return False
+                    # if len(poss) == 1:
+                    #     return 0, poss[0]
+                    result = [0] * len(poss)
+                    next_player = B if (self.step + 1) % 2 == 1 else W
+                    for ind, pos in enumerate(poss):
+                        logging(pos, deeps)
+                        self.going(pos)
+                        temp_score = win_or_lose(deeps - 1)
+                        result[ind] = temp_score
+                        self.fallback()
+                        if temp_score == 1 and next_player == me:
+                            # 轮到自己，且某一步可以自己赢
+                            break
+                        elif temp_score == -1 and next_player != me:
+                            # 轮到对方走，且某一步可以对方赢
+                            break
+                    if deeps == DEEPS:
+                        return result, poss
+                    elif next_player == me:
+                        return max(result)
+                    else:
+                        return min(result)
+            elif self.winner == me:
+                return 1000000
+            else:
+                return -1000000
 
-    @cost_count
-    def mul(self):
-        me = B if (self.step + 1) % 2 == 1 else W
-        print(self.temp(me, DEEPS))
+        if self.winner:
+            return False
+        me = B if (self.step + 1) % 2 == 1 else W 
+        fin_result, fin_poss = win_or_lose(DEEPS)
+        print(f"result=\t{fin_result}\nposs=\t{fin_poss}")
+        print(f"best=\t{fin_poss[fin_result.index(max(fin_result))]}")
+        return fin_poss[fin_result.index(max(fin_result))]
 
 
 if __name__ == '__main__':
-    DEEPS = 8
     g = Gomokuy()
     g.parse(a)
-    g.mul()
+    g.min_max_search(DEEPS=5)
     # print(g.analyse(single_step=False))
     # print(g._ending((7, 3), B))

@@ -8,7 +8,6 @@ W = 2
 
 class BaseGame:
     def __init__(self):
-        self.over = False
         self.winner = ""
         self.width = 15
         self.table = []
@@ -33,7 +32,7 @@ class BaseGame:
         else:
             raise TypeError
 
-    def inside_new_cell_loc(self, _row, _col, _direction, _side, _offset):
+    def base_effect_loc(self, _row, _col, _direction, _side, _offset):
         new_row = _row + _offset * _side * ROADS[_direction][0]
         new_col = _col + _offset * _side * ROADS[_direction][1]
         if new_row >= self.width or new_row < 0:
@@ -45,10 +44,10 @@ class BaseGame:
         ret_loc = (new_row, new_col)
         return ret_loc, ret_cell
 
-    def inside_make_line_for_single(self, row, col, chess, direction, line):
+    def base_linear(self, row, col, chess, direction, line):
         for side in (-1, 1):
             for offset in range(1, 9):
-                ret = self.inside_new_cell_loc(row, col, direction, side, offset)
+                ret = self.base_effect_loc(row, col, direction, side, offset)
                 if not ret:
                     break
                 else:
@@ -71,15 +70,14 @@ class BaseGame:
                     break
         return line
 
-    def _ending(self, loc, player):
+    def ending(self, loc, player):
         self.check = []
 
         def win(man, info=""):
             self.winner = man
-            self.over = True
-            print(f"{self.records}\t{self.winner}{info} WIN!")
+            # print(f"{self.records}\t{self.winner}{info} WIN!")
 
-        check_list = [0, 0]
+        four_three_check = [0, 0]
         for direction in range(4):
             line = {
                 "s": [(loc[0], loc[1])],
@@ -87,7 +85,7 @@ class BaseGame:
                 -1: [],  # 某一边的空
                 1: [],  # 另一边的空
             }
-            line = self.inside_make_line_for_single(loc[0], loc[1], player, direction, line)
+            line = self.base_linear(loc[0], loc[1], player, direction, line)
 
             counts = len(line["s"])
             if line[-1] and line[1]:
@@ -98,6 +96,7 @@ class BaseGame:
                 spaces = 0
 
             if counts == 5 and not line[0]:
+                # counts == 5 但 有line[0] 怎么办？理论上算线的时候就要干掉啊。
                 win(player, info="五子棋胜")
                 break
             if counts == 4 and spaces == 2 and not line[0]:
@@ -108,20 +107,20 @@ class BaseGame:
                 break
             if counts == 4 and spaces:
                 self.check += [line["s"]]
-                check_list[0] += 1
+                four_three_check[0] += 1
             if counts == 3 and spaces == 2 and len(line[0]) <= 1:
                 self.check += [line["s"]]
-                check_list[1] += 1
+                four_three_check[1] += 1
         self.check = sum(self.check, [])
-        if check_list == [1, 1]:
+        if four_three_check == [1, 1]:
             win(player, info="四三胜")
-        elif max(check_list) >= 2:
+        elif max(four_three_check) >= 2:
             win(W, info="禁手胜")
 
     def going(self, loc):
         if isinstance(loc, str):
             loc = list(map(int, loc.split(",")))
-        if self.over:
+        if self.winner:
             return
         loc_x, loc_y = loc
         if max(loc) >= self.width or min(loc) < 0:
@@ -135,14 +134,11 @@ class BaseGame:
         # print(f"  go:\t{player}: {loc}")
         self.table[loc_x][loc_y] = player
         self.records.append(loc)
-        self._ending(loc, player)
+        self.ending(loc, player)
 
-    def ungoing(self):
+    def fallback(self):
         loc = self.records.pop()
-        player = B if self.step % 2 == 1 else W
-        # print(f"ungo:\t{player}: {loc}")
         self.table[loc[0]][loc[1]] = 0
-        self.over = False
         self.winner = ""
         self.step -= 1
 
@@ -153,6 +149,4 @@ class BaseGame:
             print(loc)
             self.table[loc[0]][loc[1]] = 0
             self.step -= 2
-        self.over = False
-
-
+        self.winner = ""

@@ -15,8 +15,7 @@ log.setLevel(logging.ERROR)
 @app.route("/")
 def home():
     loc = request.args.get('loc')
-    retract = request.args.get('retract')
-    restart = request.args.get('restart')
+    retract, restart= request.args.get('retract'), request.args.get('restart')
     if restart:
         print("重启游戏")
         game.restart()
@@ -39,8 +38,15 @@ def home():
     # 玩家下一步棋结束
 
     # 电脑下一步棋开始
-    m_pos = game.analyse()
-    game.going(m_pos)
+    # m_pos = game.analyse()
+    if len(game.records) <= 8:
+        m_pos = game.min_max_search(DEEPS=2)
+    elif len(game.records) <= 20:
+        m_pos = game.min_max_search(DEEPS=4)
+    else:
+        m_pos = game.min_max_search(DEEPS=8)
+    if m_pos:
+        game.going(m_pos)
 
     # 电脑下一步棋结束
     return redirect(request.referrer)
