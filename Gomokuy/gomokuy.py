@@ -191,7 +191,10 @@ class Gomokuy(BaseGame):
                     for ind, pos in enumerate(poss):
                         logging(pos, deeps)
                         self.going(pos)
-                        new_deeps = deeps - 1 if len(poss) > 1 else 0
+                        if deeps == DEEPS:
+                            new_deeps = deeps - 1 if len(poss) > 1 else 0
+                        else:
+                            new_deeps = deeps - 1
                         temp_score = win_or_lose(new_deeps)
                         result[ind] = temp_score
                         self.fallback()
@@ -208,9 +211,9 @@ class Gomokuy(BaseGame):
                     else:
                         return min(result)
             elif self.winner == me:
-                return 1000000
+                return 9999999
             else:
-                return -1000000
+                return -9999999
 
         if self.winner:
             return False
