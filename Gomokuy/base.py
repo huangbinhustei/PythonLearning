@@ -16,6 +16,11 @@ class BaseGame:
         self.records = []
         self.step = 0
         self.check = []
+        self.overdue_chess = []
+        self.fresh_lines = {
+            True: [],
+            False: [],
+        }
 
     def restart(self):
         self.__init__()
@@ -44,7 +49,13 @@ class BaseGame:
         ret_loc = (new_row, new_col)
         return ret_loc, ret_cell
 
-    def base_linear(self, row, col, chess, direction, line):
+    def base_linear(self, row, col, chess, direction, radio=False):
+        line = {
+            "s": [(row, col)],
+            0: [],  # 中间的缝隙
+            -1: [],  # 某一边的空
+            1: [],  # 另一边的空
+        }
         for side in (-1, 1):
             for offset in range(1, 9):
                 ret = self.base_effect_loc(row, col, direction, side, offset)
@@ -67,25 +78,29 @@ class BaseGame:
                                 break
                     line["s"].append(new_loc)
                 else:
+                    if radio:
+                        self.overdue_chess.append([new_loc, direction])
                     break
         return line
 
     def ending(self, loc, player):
         self.check = []
+        self.overdue_chess = []
+        self.fresh_lines = {
+            True: [],
+            False: [],
+        }
+        four_three_check = [0, 0]
 
         def win(man, info=""):
             self.winner = man
-            # print(f"{self.records}\t{self.winner}{info} WIN!")
+            print(f"{self.records}\t{self.winner}{info} WIN!")
 
-        four_three_check = [0, 0]
         for direction in range(4):
-            line = {
-                "s": [(loc[0], loc[1])],
-                0: [],  # 中间的缝隙
-                -1: [],  # 某一边的空
-                1: [],  # 另一边的空
-            }
-            line = self.base_linear(loc[0], loc[1], player, direction, line)
+            line = self.base_linear(loc[0], loc[1], player, direction, radio=True)
+
+            if len(line["s"]) + len(line[-1]) + len(line[0]) + len(line[1]) >= 5:
+                self.fresh_lines[True].append(line)
 
             counts = len(line["s"])
             if line[-1] and line[1]:
@@ -105,7 +120,7 @@ class BaseGame:
             if counts > 5 and not line[0]:
                 win(W, info="长连禁手胜")
                 break
-            if counts == 4 and spaces:
+            if counts == 4 and spaces and len(line[0]) <= 1:
                 self.check += [line["s"]]
                 four_three_check[0] += 1
             if counts == 3 and spaces == 2 and len(line[0]) <= 1:

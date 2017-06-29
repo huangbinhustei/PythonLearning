@@ -11,7 +11,10 @@ from collections import Counter
 class Gomokuy(BaseGame):
     def __init__(self):
         BaseGame.__init__(self)
-        self.values = dict()
+        self.values = {
+            True: defaultdict(list),
+            False: defaultdict(list),
+        }
         self.lines = {
             True: [],
             False: [],
@@ -27,27 +30,30 @@ class Gomokuy(BaseGame):
                         continue
                     if (row, col) in checked:
                         continue
-                    line = {
-                        "s": [(row, col)],
-                        0: [],  # 中间的缝隙
-                        -1: [],  # 某一边的空
-                        1: [],  # 另一边的空
-                    }
-                    line = self.base_linear(row, col, chess, direction, line)
-                    self.inside_line_filter(line, chess)
+                    line = self.base_linear(row, col, chess, direction)
                     checked |= set(line["s"])
+                    me = B if (self.step + 1) % 2 == 1 else W
+                    if len(line["s"]) + len(line[-1]) + len(line[0]) + len(line[1]) < 5:
+                        continue
+                    self.lines[chess == me].append(line)
 
-    def inside_line_filter(self, line, chess):
-        me = B if (self.step + 1) % 2 == 1 else W
-        if len(line["s"]) + len(line[-1]) + len(line[0]) + len(line[1]) < 5:
+    def inside_make_line_refresh(self):
+        if not self.overdue_chess:
             return
-        self.lines[chess == me].append(line)
+        for loc, direction in self.overdue_chess:
+            row, col = loc
+            chess = self.table[row][col]
+            line = self.base_linear(row, col, chess, direction)
+            if len(line["s"]) + len(line[-1]) + len(line[0]) + len(line[1]) < 5:
+                continue
+            self.fresh_lines[False].append(line)
 
-    def inside_line_grouping(self):
-        for sid, lines in self.lines.items():
+    def inside_line_grouping(self, init_all=True):
+        all_lines = self.lines if init_all else self.fresh_lines
+        for sid, lines in all_lines.items():
             for line in lines:
                 chang = min(5, len(line["s"] + line[0]))
-                t = len(line["s"]) 
+                t = len(line["s"])
                 t = "5" if t >= 5 else str(t)
                 if line[-1] and line[1]:
                     if len(line[0]) <= 1:
@@ -72,7 +78,20 @@ class Gomokuy(BaseGame):
                 self.values[sid][key].append(format_line)
 
     # @cost_count
-    def analyse(self, single_step=True):
+    def analyse(self):
+        def refresh_lines():
+            # 首先删除旧线条
+            if self.records:
+                last = self.records[-1]
+                for sid, d in self.values.items():
+                    for k, lines in d.items():
+                        new_lines = [line for line in lines if last not in line]
+                        self.values[not sid][k] = new_lines
+
+            # 新增新线条：
+                self.inside_make_line_refresh()
+                self.inside_line_grouping(init_all=False)
+
         def make_pos_group():
             my_lines_three = sum(self_chance["活2"], [])
             my_lines_four = sum(self_chance["冲3"], [])
@@ -131,16 +150,8 @@ class Gomokuy(BaseGame):
             return defence
 
         me = B if (self.step + 1) % 2 == 1 else W
-        self.values = {
-            True: defaultdict(list),
-            False: defaultdict(list),
-        }
-        self.lines = {
-            True: [],
-            False: [],
-        }
-        self.inside_make_line()
-        self.inside_line_grouping()
+
+        refresh_lines()
 
         self_chance = self.values[True]
         opponent_chance = self.values[False]
@@ -165,12 +176,9 @@ class Gomokuy(BaseGame):
                 temp = [self_chance[k] for k in ["冲2", "冲1", "活1"]] + [opponent_chance[k] for k in ["冲2", "冲1", "活1"]]
                 best_pos_group = list(set(sum(sum(temp, []), [])))
 
-        single = choice(best_pos_group)
         mul = best_pos_group
-        ret = single if single_step else mul
-        return ret
+        return mul
 
-    @cost_count
     def min_max_search(self, DEEPS=5):
         def logging(_pos, _deeps):
             if _deeps == DEEPS:
@@ -183,13 +191,13 @@ class Gomokuy(BaseGame):
                     your_score = sum([SCORE[key] * len(v) for (key, v) in self.values[False].items()])
                     return my_score - your_score
                 else:
-                    poss = self.analyse(single_step=False)
+                    poss = self.analyse()
                     if not poss:
                         return False
                     result = [0] * len(poss)
                     next_player = B if (self.step + 1) % 2 == 1 else W
                     for ind, pos in enumerate(poss):
-                        logging(pos, deeps)
+                        # logging(pos, deeps)
                         self.going(pos)
                         if deeps == DEEPS:
                             new_deeps = deeps - 1 if len(poss) > 1 else 0
@@ -217,6 +225,16 @@ class Gomokuy(BaseGame):
 
         if self.winner:
             return False
+        self.values = {
+            True: defaultdict(list),
+            False: defaultdict(list),
+        }
+        self.lines = {
+            True: [],
+            False: [],
+        }
+        self.inside_make_line()
+        self.inside_line_grouping()
         me = B if (self.step + 1) % 2 == 1 else W 
         fin_result, fin_poss = win_or_lose(DEEPS)
         print(f"result=\t{fin_result}\nposs=\t{fin_poss}")
@@ -224,9 +242,12 @@ class Gomokuy(BaseGame):
         return fin_poss[fin_result.index(max(fin_result))]
 
 
-if __name__ == '__main__':
+@cost_count
+def bag():
     g = Gomokuy()
     g.parse(a)
-    g.min_max_search(DEEPS=5)
-    # print(g.analyse(single_step=False))
-    # print(g._ending((7, 3), B))
+    g.min_max_search(DEEPS=10)
+    # print(g.analyse()
+
+if __name__ == '__main__':
+    bag()
