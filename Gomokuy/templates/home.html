@@ -31,7 +31,7 @@
 									{% if (line, cell) in game.check %}
 										<li class="list-group-item list-group-item-success but" style="color: #FF0000">·</li>
 									{% else %}
-										<li class="list-group-item list-group-item-success but">·</li>
+										<li class="list-group-item list-group-item-success but successa">·</li>
 									{% endif %}
 								{% endif %}
 							{% elif game.table[line][cell] == 2 %}
@@ -45,7 +45,7 @@
 									{% if (line, cell) in game.check %}
 										<li class="list-group-item list-group-item-warning but" style="color: #FF0000">·</li>
 									{% else %}
-										<li class="list-group-item list-group-item-warning but">·</li>
+										<li class="list-group-item list-group-item-warning but warninga">·</li>
 									{% endif %}
 								{% endif %}
 							{% else %}

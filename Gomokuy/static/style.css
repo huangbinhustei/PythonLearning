@@ -9,3 +9,19 @@
   height: 36px;
   width: 36px;
 }
+
+.list-group-item-success {
+	background-color: #333;
+}
+
+.list-group-item-warning {
+	background-color: #ccc;
+}
+
+.warninga {
+	color: #ccc;
+}
+
+.successa {
+	color: #333;
+}
