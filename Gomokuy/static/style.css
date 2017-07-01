@@ -1,7 +1,7 @@
 .but {
-  height: 6%;
-  width: 6%;
-  border: 1px solid #CCC;
+  height: 40px;
+  width: 40px;
+  /*border: 1px solid #CCC;*/
   text-align:center;
 }
 
@@ -20,8 +20,10 @@
 
 .warninga {
 	color: #ccc;
+	border: 0;
 }
 
 .successa {
 	color: #333;
+	border: 0;
 }

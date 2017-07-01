@@ -2,11 +2,13 @@
 # -*- coding: utf-8 -*-
 
 from collections import defaultdict
-from base import BaseGame, B, W, cost_count
-from conf import a
 from collections import Counter
+import logging
+from base import BaseGame, B, W, cost_count, PRINTING
+from conf import a
 
-
+ROADS = {0: (0, 1), 1: (1, 0), 2: (1, 1), 3: (1, -1)}
+logger = logging.getLogger('Gomoku')
 SCORE = {
     "活5": 100000,
     "活4": 100000,
@@ -22,8 +24,8 @@ SCORE = {
 
 
 class Gomokuy(BaseGame):
-    def __init__(self):
-        BaseGame.__init__(self)
+    def __init__(self, role=W, restart=False):
+        BaseGame.__init__(self, role=role, restart=restart)
         self.values = {
             B: defaultdict(list),
             W: defaultdict(list),
@@ -32,8 +34,117 @@ class Gomokuy(BaseGame):
             B: [],
             W: [],
         }
+        self.overdue_chess = []
+        self.fresh_lines = {
+            B: [],
+            W: [],
+        }
+
+    def base_linear(self, row, col, chess, direction, radio=False):
+        def effect_area(_side, _offset):
+            new_row = row + _offset * _side * ROADS[direction][0]
+            new_col = col + _offset * _side * ROADS[direction][1]
+            if new_row >= self.width or new_row < 0:
+                return False
+            if new_col >= self.width or new_col < 0:
+                return False
+
+            ret_cell = self.table[new_row][new_col]
+            ret_loc = (new_row, new_col)
+            return ret_loc, ret_cell
+
+        line = {
+            "s": [(row, col)],
+            0: [],  # 中间的缝隙
+            -1: [],  # 某一边的空
+            1: [],  # 另一边的空
+        }
+        for side in (-1, 1):
+            for offset in range(1, 9):
+                ret = effect_area(side, offset)
+                if not ret:
+                    break
+                else:
+                    new_loc, new_cell = ret
+
+                if new_cell == 0:
+                    line[side].append(new_loc)
+                elif new_cell == chess:
+                    if line[side]:
+                        if line[0]:
+                            break
+                        else:
+                            if len(line[side]) <= 2:
+                                line[0] = line[side]
+                                line[side] = []
+                            else:
+                                break
+                    line["s"].append(new_loc)
+                else:
+                    if radio:
+                        self.overdue_chess.append([new_loc, direction])
+                    break
+        return line
+
+    def __ending(self, loc, player, show=True):
+        def make_fresh_line():
+            self.overdue_chess = []
+            self.fresh_lines = {
+                B: [],
+                W: [],
+            }
+
+            for direction in range(4):
+                line = self.base_linear(loc[0], loc[1], player, direction, radio=True)
+                if len(line["s"]) + len(line[-1]) + len(line[0]) + len(line[1]) >= 5:
+                    self.fresh_lines[player].append(line)
+
+        def checking_or_ending():
+            self.check = []
+            four_three_check = [0, 0]
+            for line in self.fresh_lines[player]:
+                counts = len(line["s"])
+                if line[-1] and line[1]:
+                    spaces = 2
+                elif line[0] or line[1] or line[-1]:
+                    spaces = 1
+                else:
+                    spaces = 0
+
+                if counts == 5 and not line[0]:
+                    self.win(player, info="五子棋胜", show=show)
+                    break
+                if counts == 4 and spaces == 2 and not line[0]:
+                    self.win(player, info="四连胜", show=show)
+                    break
+                if counts > 5 and not line[0]:
+                    info = "长连胜" if player == W else "长连禁手负"
+                    self.win(player, info=info, show=show)
+                    break
+                if counts == 4 and spaces and len(line[0]) <= 1:
+                    self.check += [line["s"]]
+                    four_three_check[0] += 1
+                if counts == 3 and spaces == 2 and len(line[0]) <= 1:
+                    self.check += [line["s"]]
+                    four_three_check[1] += 1
+            self.check = sum(self.check, [])
+            if four_three_check == [1, 1]:
+                self.win(player, info="四三胜", show=show)
+            elif four_three_check[0] >= 2:
+                info = "四四胜" if player == W else "四四禁手负"
+                self.win(player, info=info, show=show)
+            elif four_three_check[1] >= 2:
+                info = "三三胜" if player == W else "三三禁手负"
+                self.win(player, info=info, show=show)
+
+        make_fresh_line()
+        checking_or_ending()
 
     def __init_all_lines(self):
+        self.lines = {
+            B: [],
+            W: [],
+        }
         for direction in range(4):
             checked = set([])
             for row in range(self.width):
@@ -48,15 +159,17 @@ class Gomokuy(BaseGame):
                     if len(line["s"]) + len(line[-1]) + len(line[0]) + len(line[1]) < 5:
                         continue
                     self.lines[chess].append(line)
+        self.__line_grouping(init_all=True)
 
     def __refresh_new_lines(self):
         def remove_old_lines():
-            if self.records:
-                last = self.records[-1]
-                for sid, d in self.values.items():
-                    for k, lines in d.items():
-                        new_lines = [line for line in lines if last not in line]
-                        self.values[sid][k] = new_lines
+            if not self.records:
+                return
+            last = self.records[-1]
+            logger.info(f"last_player:{self.table[last[0]][last[1]]}, loc:{last}")
+            for sid, d in self.values.items():
+                for k, lines in d.items():
+                    self.values[sid][k] = [line for line in lines if last not in line]
 
         def add_new_lines():
             if not self.overdue_chess:
@@ -70,9 +183,18 @@ class Gomokuy(BaseGame):
                 self.fresh_lines[chess].append(line)
         remove_old_lines()
         add_new_lines()
+        logger.info(self.fresh_lines)
+        self.__line_grouping(init_all=False)
 
     def __line_grouping(self, init_all=True):
-        all_lines = self.lines if init_all else self.fresh_lines
+        if init_all:
+            self.values = {
+                B: defaultdict(list),
+                W: defaultdict(list),
+            }
+            all_lines = self.lines
+        else:
+            all_lines = self.fresh_lines
         for sid, lines in all_lines.items():
             for line in lines:
                 chang = min(5, len(line["s"] + line[0]))
@@ -97,28 +219,36 @@ class Gomokuy(BaseGame):
                     continue
                 self.values[sid][key].append(format_line)
 
+    def going(self, loc, show=True):
+        player = super().going(loc)
+        if not player:
+            return
+        if show:
+            logger.info(f"{self.step}\t:{PRINTING[player]}:{loc}")
+        self.__ending(loc, player, show=show)
+
     def analyse(self):
         def win_chance_single_line():
             best_lines = []
-
-            if "冲4" in self_chance or "活4" in self_chance or "活5" in self_chance or "冲5" in self_chance:
+            if "冲4" in player_chance or "活4" in player_chance or "活5" in player_chance or "冲5" in player_chance:
                 if player == B:
-                    best_lines = self_chance["冲4"] + self_chance["活4"]
+                    best_lines = [player_chance[k] for k in ["冲4", "活4"] if k in player_chance]
                 else:
-                    best_lines = self_chance["冲4"] + self_chance["活4"] + self_chance["冲5"] + self_chance["活5"]
+                    best_lines = [player_chance[k] for k in ["冲4", "活4", "冲5", "活5"] if k in player_chance]
             elif "冲4" in opponent_chance or "活4" in opponent_chance or "活5" in opponent_chance or "冲5" in opponent_chance:
                 if player == W:
-                    best_lines = opponent_chance["冲4"] + opponent_chance["活4"]
+                    best_lines = [opponent_chance[k] for k in ["冲4", "活4"] if k in opponent_chance]
                 else:
-                    best_lines = opponent_chance["冲4"] + opponent_chance["活4"] + opponent_chance["冲5"] + opponent_chance["活5"]
-            elif "活3" in self_chance:
-                best_lines = self_chance["活3"]
+                    best_lines = [opponent_chance[k] for k in ["冲4", "活4", "冲5", "活5"] if k in opponent_chance]
+            elif "活3" in player_chance:
+                best_lines = player_chance["活3"] if "活3" in player_chance else []
+            best_lines = sum(best_lines, [])
 
             return list(set(sum(best_lines, [])))
 
         def win_chance_mul_lines():
-            my_3 = sum(self_chance["活2"], [])
-            my_4 = sum(self_chance["冲3"], [])
+            my_3 = sum(player_chance["活2"], [])
+            my_4 = sum(player_chance["冲3"], [])
             your_live_3 = sum(opponent_chance["活3"], [])
 
             my_33 = [item[0] for item in Counter(my_3).items() if item[1] > 1]
@@ -154,28 +284,31 @@ class Gomokuy(BaseGame):
 
         def normal_chance():
             # 从["冲3", "活2", "冲2", "冲1", "活1"]中选择
-            temp = [i[j] for i in (self_chance, opponent_chance) for j in ("冲3", "活2", "冲2", "冲1", "活1")]
+            temp = [i[j] for i in (player_chance, opponent_chance) for j in ("冲3", "活2", "冲2", "冲1", "活1")]
             ret = list(set(sum(sum(temp, []), [])))
             return ret
 
-        player = B if (self.step + 1) % 2 == 1 else W
+        if self.winner:
+            return False
+        player = W if self.step % 2 else B
         opponent = W if player == B else B
-
-        self_chance = self.values[player]
-        opponent_chance = self.values[opponent]
         self.__refresh_new_lines()
-        self.__line_grouping(init_all=False)
+        # self.__init_all_lines()
+
+        player_chance = self.values[player]
+        opponent_chance = self.values[opponent]
+        logger.info(player_chance)
+        logger.info(opponent_chance)
 
         return win_chance_single_line() or win_chance_mul_lines() or normal_chance()
 
     def min_max_search(self, DEEPS=5):
         def win_or_lose(deeps):
-            next_player = B if (self.step + 1) % 2 == 1 else W
-            opponent = W if next_player == B else B
+            player = W if self.step % 2 else B
             if not self.winner:
                 if deeps == 0:
-                    my_score = sum([SCORE[key] * len(v) for (key, v) in self.values[next_player].items()])
-                    your_score = sum([SCORE[key] * len(v) for (key, v) in self.values[opponent].items()])
+                    my_score = sum([SCORE[key] * len(v) for (key, v) in self.values[self.role].items()])
+                    your_score = sum([SCORE[key] * len(v) for (key, v) in self.values[self.other].items()])
                     return my_score - your_score
                 else:
                     poss = self.analyse()
@@ -191,39 +324,31 @@ class Gomokuy(BaseGame):
                         temp_score = win_or_lose(new_deeps)
                         result[ind] = temp_score
                         self.undo()
-                        if temp_score == 9999999 and next_player == my_roll:
+                        if temp_score == 9999999 and player == self.role:
                             # 轮到自己，且某一步可以自己赢
                             break
-                        elif temp_score == -9999999 and next_player != my_roll:
+                        elif temp_score == -9999999 and player != self.role:
                             # 轮到对方走，且某一步可以对方赢
                             break
                     if deeps == DEEPS:
                         return result, poss
-                    elif next_player == my_roll:
+                    elif player == self.role:
                         return max(result)
                     else:
                         return min(result)
-            elif self.winner == my_roll:
+            elif self.winner == self.role:
                 return 9999999
             else:
                 return -9999999
 
         if self.winner:
             return False
-        self.values = {
-            B: defaultdict(list),
-            W: defaultdict(list),
-        }
-        self.lines = {
-            B: [],
-            W: [],
-        }
+
         self.__init_all_lines()
         self.__line_grouping()
-        my_roll = B if (self.step + 1) % 2 == 1 else W
         fin_result, fin_poss = win_or_lose(DEEPS)
-        print(f"result=\t{fin_result}\nposs=\t{fin_poss}")
-        print(f"best=\t{fin_poss[fin_result.index(max(fin_result))]}")
+        logger.info(f"poss=\t{fin_poss}")
+        logger.info(f"result=\t{fin_result} best={fin_poss[fin_result.index(max(fin_result))]}")
         return fin_poss[fin_result.index(max(fin_result))]
 
 
@@ -231,6 +356,7 @@ class Gomokuy(BaseGame):
 def bag():
     g = Gomokuy()
     g.parse(a)
+    # print(g.analyse())
     g.min_max_search(DEEPS=8)
 
 if __name__ == '__main__':
