@@ -1,9 +1,27 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from conf import ROADS
+from functools import wraps
+import time
+
+ROADS = {0: (0, 1), 1: (1, 0), 2: (1, 1), 3: (1, -1)}
 B = 1
 W = 2
+
+
+def cost_count(func):
+    @wraps(func)
+    def costing(*args, **kw):
+        a = time.time()
+        ret = func(*args, **kw)
+        time_cost = int((time.time()-a) * 1000)
+        if time_cost > 0:
+            print("Func(" + str(func.__name__) + ")\tcost: " + str(time_cost) + " ms")
+        else:
+            time_cost = int((time.time()-a) * 1000000)
+            print("Func(" + str(func.__name__) + ")\tcost: " + str(time_cost) + " μs")
+        return ret
+    return costing
 
 
 class BaseGame:
@@ -18,8 +36,8 @@ class BaseGame:
         self.check = []
         self.overdue_chess = []
         self.fresh_lines = {
-            True: [],
-            False: [],
+            B: [],
+            W: [],
         }
 
     def restart(self):
@@ -37,19 +55,19 @@ class BaseGame:
         else:
             raise TypeError
 
-    def base_effect_loc(self, _row, _col, _direction, _side, _offset):
-        new_row = _row + _offset * _side * ROADS[_direction][0]
-        new_col = _col + _offset * _side * ROADS[_direction][1]
-        if new_row >= self.width or new_row < 0:
-            return False
-        if new_col >= self.width or new_col < 0:
-            return False
-
-        ret_cell = self.table[new_row][new_col]
-        ret_loc = (new_row, new_col)
-        return ret_loc, ret_cell
-
     def base_linear(self, row, col, chess, direction, radio=False):
+        def effect_area(_side, _offset):
+            new_row = row + _offset * _side * ROADS[direction][0]
+            new_col = col + _offset * _side * ROADS[direction][1]
+            if new_row >= self.width or new_row < 0:
+                return False
+            if new_col >= self.width or new_col < 0:
+                return False
+
+            ret_cell = self.table[new_row][new_col]
+            ret_loc = (new_row, new_col)
+            return ret_loc, ret_cell
+
         line = {
             "s": [(row, col)],
             0: [],  # 中间的缝隙
@@ -58,7 +76,7 @@ class BaseGame:
         }
         for side in (-1, 1):
             for offset in range(1, 9):
-                ret = self.base_effect_loc(row, col, direction, side, offset)
+                ret = effect_area(side, offset)
                 if not ret:
                     break
                 else:
@@ -83,79 +101,83 @@ class BaseGame:
                     break
         return line
 
-    def ending(self, loc, player):
-        self.check = []
-        self.overdue_chess = []
-        self.fresh_lines = {
-            True: [],
-            False: [],
-        }
-        four_three_check = [0, 0]
-
+    def __ending(self, loc, player, show=True):
         def win(man, info=""):
             self.winner = man
-            print(f"{self.records}\t{self.winner}{info} WIN!")
+            if show:
+                print(f"{self.records}\t{self.winner}{info} WIN!")
 
-        for direction in range(4):
-            line = self.base_linear(loc[0], loc[1], player, direction, radio=True)
+        def make_fresh_line():
+            self.overdue_chess = []
+            self.fresh_lines = {
+                B: [],
+                W: [],
+            }
 
-            if len(line["s"]) + len(line[-1]) + len(line[0]) + len(line[1]) >= 5:
-                self.fresh_lines[True].append(line)
+            for direction in range(4):
+                line = self.base_linear(loc[0], loc[1], player, direction, radio=True)
+                if len(line["s"]) + len(line[-1]) + len(line[0]) + len(line[1]) >= 5:
+                    self.fresh_lines[player].append(line)
 
-            counts = len(line["s"])
-            if line[-1] and line[1]:
-                spaces = 2
-            elif line[0] or line[1] or line[-1]:
-                spaces = 1
-            else:
-                spaces = 0
+        def checking_or_ending():
+            self.check = []
+            four_three_check = [0, 0]
+            for line in self.fresh_lines[player]:
+                counts = len(line["s"])
+                if line[-1] and line[1]:
+                    spaces = 2
+                elif line[0] or line[1] or line[-1]:
+                    spaces = 1
+                else:
+                    spaces = 0
 
-            if counts == 5 and not line[0]:
-                # counts == 5 但 有line[0] 怎么办？理论上算线的时候就要干掉啊。
-                win(player, info="五子棋胜")
-                break
-            if counts == 4 and spaces == 2 and not line[0]:
-                win(player, info="四连胜")
-                break
-            if counts > 5 and not line[0]:
-                win(W, info="长连禁手胜")
-                break
-            if counts == 4 and spaces and len(line[0]) <= 1:
-                self.check += [line["s"]]
-                four_three_check[0] += 1
-            if counts == 3 and spaces == 2 and len(line[0]) <= 1:
-                self.check += [line["s"]]
-                four_three_check[1] += 1
-        self.check = sum(self.check, [])
-        if four_three_check == [1, 1]:
-            win(player, info="四三胜")
-        elif max(four_three_check) >= 2:
-            win(W, info="禁手胜")
+                if counts == 5 and not line[0]:
+                    win(player, info="五子棋胜")
+                    break
+                if counts == 4 and spaces == 2 and not line[0]:
+                    win(player, info="四连胜")
+                    break
+                if counts > 5 and not line[0]:
+                    win(W, info="长连禁手胜")
+                    break
+                if counts == 4 and spaces and len(line[0]) <= 1:
+                    self.check += [line["s"]]
+                    four_three_check[0] += 1
+                if counts == 3 and spaces == 2 and len(line[0]) <= 1:
+                    self.check += [line["s"]]
+                    four_three_check[1] += 1
+            self.check = sum(self.check, [])
+            if four_three_check == [1, 1]:
+                win(player, info="四三胜")
+            elif max(four_three_check) >= 2:
+                win(W, info="禁手胜")
 
-    def going(self, loc):
+        make_fresh_line()
+        checking_or_ending()
+
+    def going(self, loc, show=True):
         if isinstance(loc, str):
             loc = list(map(int, loc.split(",")))
         if self.winner:
             return
-        loc_x, loc_y = loc
         if max(loc) >= self.width or min(loc) < 0:
             print("子落棋盘外")
             return
-        if self.table[loc_x][loc_y] != 0:
+        row, col = loc
+        if self.table[row][col] != 0:
             print("这个位置已经有棋了")
             return
         self.step += 1
         player = B if self.step % 2 == 1 else W
         # print(f"  go:\t{player}: {loc}")
-        self.table[loc_x][loc_y] = player
+        self.table[row][col] = player
         self.records.append(loc)
-        self.ending(loc, player)
+        self.__ending(loc, player, show=show)
 
-    def fallback(self, counts=1):
-        if len(self.records) < counts:
+    def undo(self):
+        if len(self.records) < 1:
             return
-        for i in range(counts):
-            loc = self.records.pop()
-            self.table[loc[0]][loc[1]] = 0
+        loc = self.records.pop()
+        self.table[loc[0]][loc[1]] = 0
         self.winner = ""
-        self.step -= counts
+        self.step -= 1

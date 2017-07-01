@@ -25,7 +25,7 @@ def home():
         return redirect(url_for("home"))
     if retract and retract == "1":
         # 悔棋
-        game.fallback(counts=1)
+        game.undo()
         return redirect(url_for("home"))
 
     if not loc:
@@ -40,10 +40,10 @@ def home():
     # 电脑下一步棋开始
     if len(game.records) <= 8:
         m_pos = game.min_max_search(DEEPS=2)
-    elif len(game.records) <= 20:
-        m_pos = game.min_max_search(DEEPS=4)
+    elif len(game.records) <= 16:
+        m_pos = game.min_max_search(DEEPS=6)
     else:
-        m_pos = game.min_max_search(DEEPS=8)
+        m_pos = game.min_max_search(DEEPS=12)
     if m_pos:
         game.going(m_pos)
 
