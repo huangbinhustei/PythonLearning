@@ -167,9 +167,16 @@ class Gomokuy(BaseGame):
                 return
             last = self.records[-1]
             logger.info(f"last_player:{self.table[last[0]][last[1]]}, loc:{last}")
+            ntd = []
             for sid, d in self.values.items():
-                for k, lines in d.items():
-                    self.values[sid][k] = [line for line in lines if last not in line]
+                for k, lines in d.copy().items():
+                    ret = [line for line in lines if last not in line]
+                    if ret:
+                        self.values[sid][k] = [line for line in lines if last not in line]
+                    else:
+                        ntd.append([sid, k])
+            for sid, k in ntd:
+                del self.values[sid][k]
 
         def add_new_lines():
             if not self.overdue_chess:
@@ -242,6 +249,8 @@ class Gomokuy(BaseGame):
                     best_lines = [opponent_chance[k] for k in ["冲4", "活4", "冲5", "活5"] if k in opponent_chance]
             elif "活3" in player_chance:
                 best_lines = player_chance["活3"] if "活3" in player_chance else []
+                best_lines = [best_lines]
+
             best_lines = sum(best_lines, [])
 
             return list(set(sum(best_lines, [])))
@@ -292,19 +301,18 @@ class Gomokuy(BaseGame):
             return False
         player = W if self.step % 2 else B
         opponent = W if player == B else B
+
         self.__refresh_new_lines()
         # self.__init_all_lines()
 
         player_chance = self.values[player]
         opponent_chance = self.values[opponent]
-        logger.info(player_chance)
-        logger.info(opponent_chance)
+        logger.info(self.values)
 
         return win_chance_single_line() or win_chance_mul_lines() or normal_chance()
 
     def min_max_search(self, DEEPS=5):
         def win_or_lose(deeps):
-            player = W if self.step % 2 else B
             if not self.winner:
                 if deeps == 0:
                     my_score = sum([SCORE[key] * len(v) for (key, v) in self.values[self.role].items()])
@@ -312,6 +320,7 @@ class Gomokuy(BaseGame):
                     return my_score - your_score
                 else:
                     poss = self.analyse()
+                    player = B if self.step % 2 else W
                     if not poss:
                         return False
                     result = [0] * len(poss)
@@ -356,8 +365,7 @@ class Gomokuy(BaseGame):
 def bag():
     g = Gomokuy()
     g.parse(a)
-    # print(g.analyse())
-    g.min_max_search(DEEPS=8)
+    g.min_max_search(DEEPS=10)
 
 if __name__ == '__main__':
     bag()
