@@ -4,25 +4,28 @@
 from functools import wraps
 import time
 import logging
+import os
 
 logger = logging.getLogger('Gomoku')
-logger.setLevel(logging.DEBUG)
 
-# 创建一个handler，用于写入日志文件
-file_name = time.strftime('%Y-%m-%d', time.localtime(time.time())) + ".log"
-fh = logging.FileHandler(file_name, encoding="utf-8")
-fh.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-fh.setFormatter(formatter)
-logger.addHandler(fh)
+def make_logger():
 
-# 再创建一个handler，用于输出到控制台
-ch = logging.StreamHandler()
-ch.setLevel(logging.WARNING)
-ch.setFormatter(formatter)
-logger.addHandler(ch)
+    # 创建一个handler，用于写入日志文件
+    file_name = os.path.join("log", time.strftime('%Y-%m-%d', time.localtime(time.time())) + ".txt")
+    fh = logging.FileHandler(file_name, encoding="utf-8")
+    fh.setLevel(logging.WARNING)
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
+
+    # 再创建一个handler，用于输出到控制台
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
 
 
+make_logger()
 B = 1
 W = 2
 PRINTING = {B: "黑", W: "白"}
@@ -44,7 +47,7 @@ def cost_count(func):
 
 
 class BaseGame:
-    def __init__(self, role=W, restart=False):
+    def __init__(self, restart=False):
         info = "游戏重新开始" if restart else "游戏开始"
         logger.info(info)
         self.winner = ""
@@ -55,13 +58,10 @@ class BaseGame:
         self.records = []
         self.step = 0
         self.check = []
-        self.role = role
-        self.other = B if role == W else W
+        
 
-    def restart(self, role=W):
-        self.__init__(role=role, restart=True)
-        if role == B:
-            self.going((7, 7))
+    def restart(self):
+        self.__init__(restart=True)
 
     def parse(self, manual):
         self.width = len(manual)

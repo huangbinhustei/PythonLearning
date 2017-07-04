@@ -25,7 +25,7 @@ SCORE = {
 
 class Gomokuy(BaseGame):
     def __init__(self, role=W, restart=False):
-        BaseGame.__init__(self, role=role, restart=restart)
+        super().__init__(self, restart=restart)
         self.values = {
             B: defaultdict(list),
             W: defaultdict(list),
@@ -39,6 +39,13 @@ class Gomokuy(BaseGame):
             B: [],
             W: [],
         }
+        self.role = role
+        self.other = B if role == W else W
+
+    def restart(self, role=W):
+        super().restart()
+        if role == B:
+            self.going((7, 7))
 
     def base_linear(self, row, col, chess, direction, radio=False):
         def effect_area(_side, _offset):
