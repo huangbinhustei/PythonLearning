@@ -1,9 +1,34 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from conf import ROADS
+from functools import wraps
+import time
+import logging
+
+ROADS = {0: (0, 1), 1: (1, 0), 2: (1, 1), 3: (1, -1)}
 B = 1
 W = 2
+PRINTING = {B: "黑", W: "白"}
+logger = logging.getLogger('Gomoku')
+logger.setLevel(logging.INFO)
+
+
+def cost_count(func):
+    @wraps(func)
+    def costing(*args, **kw):
+        a = time.time()
+        ret = func(*args, **kw)
+        time_cost = int((time.time()-a) * 1000)
+
+        if time_cost > 1000:
+            logger.warning("Func(" + str(func.__name__) + ")\tcost: " + str(time_cost) + " ms")
+        elif time_cost > 0:
+            logger.info("Func(" + str(func.__name__) + ")\tcost: " + str(time_cost) + " ms")
+        else:
+            time_cost = int((time.time()-a) * 1000000)
+            logger.debug("Func(" + str(func.__name__) + ")\tcost: " + str(time_cost) + " μs")
+        return ret
+    return costing
 
 
 class BaseGame:
@@ -32,22 +57,28 @@ class BaseGame:
         else:
             raise TypeError
 
-    def base_effect_loc(self, _row, _col, _direction, _side, _offset):
-        new_row = _row + _offset * _side * ROADS[_direction][0]
-        new_col = _col + _offset * _side * ROADS[_direction][1]
-        if new_row >= self.width or new_row < 0:
-            return False
-        if new_col >= self.width or new_col < 0:
-            return False
+    def base_linear(self, row, col, chess, direction):
+        def base_effect_loc(_side, _offset):
+            new_row = row + _offset * _side * ROADS[direction][0]
+            new_col = col + _offset * _side * ROADS[direction][1]
+            if new_row >= self.width or new_row < 0:
+                return False
+            if new_col >= self.width or new_col < 0:
+                return False
 
-        ret_cell = self.table[new_row][new_col]
-        ret_loc = (new_row, new_col)
-        return ret_loc, ret_cell
+            ret_cell = self.table[new_row][new_col]
+            ret_loc = (new_row, new_col)
+            return ret_loc, ret_cell
 
-    def base_linear(self, row, col, chess, direction, line):
+        line = {
+            "s": [(row, col)],
+            0: [],  # 中间的缝隙
+            -1: [],  # 某一边的空
+            1: [],  # 另一边的空
+        }
         for side in (-1, 1):
             for offset in range(1, 9):
-                ret = self.base_effect_loc(row, col, direction, side, offset)
+                ret = base_effect_loc(side, offset)
                 if not ret:
                     break
                 else:
@@ -70,23 +101,19 @@ class BaseGame:
                     break
         return line
 
-    def ending(self, loc, player):
+    def ending(self, loc, player, show=True):
         self.check = []
 
-        def win(man, info=""):
+        def win(man, info="", show=True):
             self.winner = man
-            # print(f"{self.records}\t{self.winner}{info} WIN!")
+            if show:
+                logger.info(f"{self.records}\t{info}")
+            else:
+                logger.debug(f"{self.records}\t{PRINTING[self.winner]}·{info}")
 
         four_three_check = [0, 0]
         for direction in range(4):
-            line = {
-                "s": [(loc[0], loc[1])],
-                0: [],  # 中间的缝隙
-                -1: [],  # 某一边的空
-                1: [],  # 另一边的空
-            }
-            line = self.base_linear(loc[0], loc[1], player, direction, line)
-
+            line = self.base_linear(loc[0], loc[1], player, direction)
             counts = len(line["s"])
             if line[-1] and line[1]:
                 spaces = 2
@@ -97,15 +124,16 @@ class BaseGame:
 
             if counts == 5 and not line[0]:
                 # counts == 5 但 有line[0] 怎么办？理论上算线的时候就要干掉啊。
-                win(player, info="五子棋胜")
+                win(player, info=PRINTING[player] + "·五连·胜")
                 break
             if counts == 4 and spaces == 2 and not line[0]:
-                win(player, info="四连胜")
+                win(player, info=PRINTING[player] + "·四连·胜")
                 break
             if counts > 5 and not line[0]:
-                win(W, info="长连禁手胜")
+                info = "白·长连·胜" if player == W else "黑·长连禁手·负"
+                win(W, info=info)
                 break
-            if counts == 4 and spaces:
+            if counts == 4 and spaces and len(line[0]) <= 1:
                 self.check += [line["s"]]
                 four_three_check[0] += 1
             if counts == 3 and spaces == 2 and len(line[0]) <= 1:
@@ -113,30 +141,36 @@ class BaseGame:
                 four_three_check[1] += 1
         self.check = sum(self.check, [])
         if four_three_check == [1, 1]:
-            win(player, info="四三胜")
-        elif max(four_three_check) >= 2:
-            win(W, info="禁手胜")
+            win(player, info=PRINTING[player] + "·四三·胜")
+            # todo:43不是必胜，堵住4的同时能够形成冲四或者活四，是可以翻盘的
+        elif four_three_check[0] >= 2:
+            info = "白·四四·胜" if player == W else "黑·四四禁手·负"
+            win(W, info=info)
+        elif four_three_check[1] >= 2:
+            # todo:33不是必胜，只要对方有冲三，就不算。
+            info = "白·三三·胜" if player == W else "黑·三三禁手·负"
+            win(W, info=info)
 
-    def going(self, loc):
+    def move(self, loc):
         if isinstance(loc, str):
             loc = list(map(int, loc.split(",")))
         if self.winner:
             return
         loc_x, loc_y = loc
         if max(loc) >= self.width or min(loc) < 0:
-            print("子落棋盘外")
+            logging.error("子落棋盘外")
             return
         if self.table[loc_x][loc_y] != 0:
-            print("这个位置已经有棋了")
+            logging.error("这个位置已经有棋了")
             return
         self.step += 1
         player = B if self.step % 2 == 1 else W
-        # print(f"  go:\t{player}: {loc}")
+        logging.debug(f"  go:\t{player}: {loc}")
         self.table[loc_x][loc_y] = player
         self.records.append(loc)
         self.ending(loc, player)
 
-    def fallback(self, counts=1):
+    def undo(self, counts=1):
         if len(self.records) < counts:
             return
         for i in range(counts):

@@ -21,11 +21,11 @@ def home():
         game.restart()
         fir = request.args.get('aifirst')
         if fir == "1":
-            game.going((7, 7))
+            game.move((7, 7))
         return redirect(url_for("home"))
     if retract and retract == "1":
         # 悔棋
-        game.fallback(counts=2)
+        game.undo(counts=2)
         return redirect(url_for("home"))
 
     if not loc:
@@ -34,7 +34,7 @@ def home():
     # 玩家下一步棋开始
     loc = int(loc)
     pos = (int(loc / game.width), int(loc % game.width))
-    game.going(pos)
+    game.move(pos)
     # 玩家下一步棋结束
 
     # 电脑下一步棋开始
@@ -46,7 +46,7 @@ def home():
     else:
         m_pos = game.min_max_search(DEEPS=8)
     if m_pos:
-        game.going(m_pos)
+        game.move(m_pos)
 
     # 电脑下一步棋结束
     return redirect(request.referrer)

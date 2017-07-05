@@ -1,6 +1,6 @@
 .but {
-  height: 6%;
-  width: 6%;
+  height: 42px;
+  width: 42px;
   border: 1px solid #CCC;
   text-align:center;
 }
@@ -8,4 +8,12 @@
 .lin {
   height: 36px;
   width: 36px;
+}
+
+.list-group-item-success {
+	background-color: #333;
+}
+
+.list-group-item-warning {
+	background-color: #EEE;
 }
