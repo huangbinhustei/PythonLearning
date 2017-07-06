@@ -4,7 +4,6 @@
 from functools import wraps
 import time
 import logging
-<<<<<<< HEAD
 
 ROADS = {0: (0, 1), 1: (1, 0), 2: (1, 1), 3: (1, -1)}
 B = 1
@@ -12,33 +11,6 @@ W = 2
 PRINTING = {B: "黑", W: "白"}
 logger = logging.getLogger('Gomoku')
 logger.setLevel(logging.INFO)
-=======
-import os
-
-logger = logging.getLogger('Gomoku')
-
-def make_logger():
-
-    # 创建一个handler，用于写入日志文件
-    file_name = os.path.join("log", time.strftime('%Y-%m-%d', time.localtime(time.time())) + ".txt")
-    fh = logging.FileHandler(file_name, encoding="utf-8")
-    fh.setLevel(logging.WARNING)
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    fh.setFormatter(formatter)
-    logger.addHandler(fh)
-
-    # 再创建一个handler，用于输出到控制台
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
-
-
-make_logger()
-B = 1
-W = 2
-PRINTING = {B: "黑", W: "白"}
->>>>>>> origin/master
 
 
 def cost_count(func):
@@ -47,16 +19,11 @@ def cost_count(func):
         a = time.time()
         ret = func(*args, **kw)
         time_cost = int((time.time()-a) * 1000)
-<<<<<<< HEAD
 
         if time_cost > 1000:
             logger.warning("Func(" + str(func.__name__) + ")\tcost: " + str(time_cost) + " ms")
         elif time_cost > 0:
             logger.info("Func(" + str(func.__name__) + ")\tcost: " + str(time_cost) + " ms")
-=======
-        if time_cost > 0:
-            logger.warning("Func(" + str(func.__name__) + ")\tcost: " + str(time_cost) + " ms")
->>>>>>> origin/master
         else:
             time_cost = int((time.time()-a) * 1000000)
             logger.debug("Func(" + str(func.__name__) + ")\tcost: " + str(time_cost) + " μs")
@@ -65,9 +32,7 @@ def cost_count(func):
 
 
 class BaseGame:
-    def __init__(self, restart=False):
-        info = "游戏重新开始" if restart else "游戏开始"
-        logger.info(info)
+    def __init__(self):
         self.winner = ""
         self.width = 15
         self.table = []
@@ -76,10 +41,9 @@ class BaseGame:
         self.records = []
         self.step = 0
         self.check = []
-        
 
     def restart(self):
-        self.__init__(restart=True)
+        self.__init__()
 
     def parse(self, manual):
         self.width = len(manual)
@@ -90,12 +54,9 @@ class BaseGame:
                 for cell in line:
                     if cell != 0:
                         self.step += 1
-            self.role = W if self.step % 2 else B
-            self.other = B if self.role == W else W
         else:
             raise TypeError
 
-<<<<<<< HEAD
     def base_linear(self, row, col, chess, direction):
         def base_effect_loc(_side, _offset):
             new_row = row + _offset * _side * ROADS[direction][0]
@@ -191,22 +152,12 @@ class BaseGame:
             win(W, info=info)
 
     def move(self, loc):
-=======
-    def win(self, man, info="", show=True):
-        self.winner = man
-        if show:
-            logger.info(f"{self.records}\t{PRINTING[self.winner]} {info} WIN!")
-        else:
-            logger.debug(f"{self.records}\t{PRINTING[self.winner]} {info} WIN!")
-
-    def going(self, loc):
->>>>>>> origin/master
         if isinstance(loc, str):
             loc = list(map(int, loc.split(",")))
         if self.winner:
-            return False
+            return
+        loc_x, loc_y = loc
         if max(loc) >= self.width or min(loc) < 0:
-<<<<<<< HEAD
             logging.error("子落棋盘外")
             return
         if self.table[loc_x][loc_y] != 0:
@@ -216,29 +167,14 @@ class BaseGame:
         player = B if self.step % 2 == 1 else W
         logging.debug(f"  go:\t{player}: {loc}")
         self.table[loc_x][loc_y] = player
-=======
-            logger.warning("子落棋盘外")
-            return False
-        row, col = loc
-        if self.table[row][col] != 0:
-            logger.warning("这个位置已经有棋了")
-            return False
-        player = W if self.step % 2 else B
-        self.table[row][col] = player
->>>>>>> origin/master
         self.records.append(loc)
-        self.step += 1
-        return player
+        self.ending(loc, player)
 
-<<<<<<< HEAD
     def undo(self, counts=1):
         if len(self.records) < counts:
-=======
-    def undo(self):
-        if len(self.records) < 1:
->>>>>>> origin/master
             return
-        loc = self.records.pop()
-        self.table[loc[0]][loc[1]] = 0
+        for i in range(counts):
+            loc = self.records.pop()
+            self.table[loc[0]][loc[1]] = 0
         self.winner = ""
-        self.step -= 1
+        self.step -= counts

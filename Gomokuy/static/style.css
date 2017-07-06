@@ -1,13 +1,7 @@
 .but {
-<<<<<<< HEAD
   height: 42px;
   width: 42px;
   border: 1px solid #CCC;
-=======
-  height: 40px;
-  width: 40px;
-  /*border: 1px solid #CCC;*/
->>>>>>> origin/master
   text-align:center;
 }
 
@@ -21,19 +15,5 @@
 }
 
 .list-group-item-warning {
-<<<<<<< HEAD
 	background-color: #EEE;
-=======
-	background-color: #ccc;
-}
-
-.warninga {
-	color: #ccc;
-	border: 0;
-}
-
-.successa {
-	color: #333;
-	border: 0;
->>>>>>> origin/master
 }
