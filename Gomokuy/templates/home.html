@@ -25,11 +25,11 @@
 									{% if (line, cell) in game.check %}
 										<li class="list-group-item list-group-item-success but" style="color: #FF0000">New</li>
 									{% else %}
-										<li class="list-group-item list-group-item-success but">New</li>
+										<li class="list-group-item list-group-item-success but new">New</li>
 									{% endif %}
 								{% else %}
 									{% if (line, cell) in game.check %}
-										<li class="list-group-item list-group-item-success but" style="color: #FF0000">·</li>
+										<li class="list-group-item list-group-item-success but" style="color: #FF0000">O</li>
 									{% else %}
 										<li class="list-group-item list-group-item-success but">·</li>
 									{% endif %}
@@ -39,11 +39,11 @@
 									{% if (line, cell) in game.check %}
 										<li class="list-group-item list-group-item-warning but" style="color: #FF0000">New</li>
 									{% else %}
-										<li class="list-group-item list-group-item-warning but">New</li>
+										<li class="list-group-item list-group-item-warning but new">New</li>
 									{% endif %}
 								{% else %}
 									{% if (line, cell) in game.check %}
-										<li class="list-group-item list-group-item-warning but" style="color: #FF0000">·</li>
+										<li class="list-group-item list-group-item-warning but" style="color: #FF0000">O</li>
 									{% else %}
 										<li class="list-group-item list-group-item-warning but">·</li>
 									{% endif %}
@@ -60,8 +60,10 @@
 			</div>
 
 			<ul class="col-xs-4 list-group">
-				{% if game.over %}
-					<li class="list-group-item"><h2>游戏结束！</h2></li>
+				{% if game.winner %}
+					<li class="list-group-item"><h2>{{game.winner}} WIN!</h2></li>
+				{% else %}
+					<li class="list-group-item"><h2>进行中</h2></li>
 				{% endif %}
 				{% if game.records %}
 					<li class="list-group-item">电脑刚刚走了 {{ game.records[-1] }}</li>

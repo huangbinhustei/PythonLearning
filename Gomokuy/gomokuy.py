@@ -136,7 +136,7 @@ class Gomokuy(BaseGame):
                     sec = your_33 + my_4 + my_3
                 else:
                     fir = [item for item in your_43 if item not in your_44 + your_33]
-                    sec = your_33 + my_4 + my_3
+                    sec = my_4 + my_3
                 defence = fir if fir else sec
                 ret = list(set(defence))
             return ret
@@ -166,7 +166,6 @@ class Gomokuy(BaseGame):
                 logger.debug(f"The first step is {_pos}")
 
         def new_win_or_lose(deeps, t_max=-99999999, t_min=99999999):
-            print("hehe", file=f)
             if not self.winner:
                 if deeps == 0:
                     my_score = sum([SCORE[key] * len(v) for (key, v) in self.values[player].items()])
@@ -223,7 +222,6 @@ class Gomokuy(BaseGame):
                 return -9999999
 
         def win_or_lose(deeps):
-            print("haha", file=f)
             if not self.winner:
                 if deeps == 0:
                     my_score = sum([SCORE[key] * len(v) for (key, v) in self.values[player].items()])
@@ -266,7 +264,6 @@ class Gomokuy(BaseGame):
         if self.winner:
             return False
 
-        f = open("/Users/baidu/Documents/百度/Git/PythonLearning/Gomokuy/1.txt" , "w")
         player = W if self.step % 2 else B
         opponent = W if player == B else B
         fin_result, fin_poss = win_or_lose(DEEPS)
@@ -274,7 +271,6 @@ class Gomokuy(BaseGame):
         logger.info(f"result：{fin_result}")
         logger.info(f"poss  ：{fin_poss}")
         logger.info(f"best  ： {best_choice}")
-        f.close()
         return best_choice
 
 

@@ -5,15 +5,16 @@
   text-align:center;
 }
 
-.lin {
-  height: 36px;
-  width: 36px;
+.new {
+  color: #F00 !important;
 }
 
 .list-group-item-success {
-	background-color: #333;
+  background-color: #333;
+  color: #333;
 }
 
 .list-group-item-warning {
-	background-color: #EEE;
+  background-color: #EEE;
+  color: #EEE;
 }

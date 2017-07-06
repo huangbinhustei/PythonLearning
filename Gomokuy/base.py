@@ -173,8 +173,7 @@ class BaseGame:
     def undo(self, counts=1):
         if len(self.records) < counts:
             return
-        for i in range(counts):
-            loc = self.records.pop()
-            self.table[loc[0]][loc[1]] = 0
+        loc = self.records.pop()
+        self.table[loc[0]][loc[1]] = 0
         self.winner = ""
         self.step -= counts
