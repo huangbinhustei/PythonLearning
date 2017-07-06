@@ -140,12 +140,12 @@ class BaseGame:
                 self.check += [line["s"]]
                 four_three_check[1] += 1
         self.check = sum(self.check, [])
-        if four_three_check == [1, 1]:
-            win(player, info=PRINTING[player] + "·四三·胜")
-            # todo:43不是必胜，堵住4的同时能够形成冲四或者活四，是可以翻盘的
-        elif four_three_check[0] >= 2:
+        if four_three_check[0] >= 2:
             info = "白·四四·胜" if player == W else "黑·四四禁手·负"
             win(W, info=info)
+        elif four_three_check == [1, 1]:
+            win(player, info=PRINTING[player] + "·四三·胜")
+            # todo:43不是必胜，堵住4的同时能够形成冲四或者活四，是可以翻盘的
         elif four_three_check[1] >= 2:
             # todo:33不是必胜，只要对方有冲三，就不算。
             info = "白·三三·胜" if player == W else "黑·三三禁手·负"

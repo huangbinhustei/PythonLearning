@@ -23,13 +23,13 @@
 							{% if game.table[line][cell] == 1 %}
 								{% if (line, cell) == game.records[-1] %}
 									{% if (line, cell) in game.check %}
-										<li class="list-group-item list-group-item-success but" style="color: #FF0000">New</li>
+										<li class="list-group-item list-group-item-success but new">New</li>
 									{% else %}
 										<li class="list-group-item list-group-item-success but new">New</li>
 									{% endif %}
 								{% else %}
 									{% if (line, cell) in game.check %}
-										<li class="list-group-item list-group-item-success but" style="color: #FF0000">O</li>
+										<li class="list-group-item list-group-item-success but new">O</li>
 									{% else %}
 										<li class="list-group-item list-group-item-success but">·</li>
 									{% endif %}
@@ -37,13 +37,13 @@
 							{% elif game.table[line][cell] == 2 %}
 								{% if (line, cell) == game.records[-1] %}
 									{% if (line, cell) in game.check %}
-										<li class="list-group-item list-group-item-warning but" style="color: #FF0000">New</li>
+										<li class="list-group-item list-group-item-warning but new">New</li>
 									{% else %}
 										<li class="list-group-item list-group-item-warning but new">New</li>
 									{% endif %}
 								{% else %}
 									{% if (line, cell) in game.check %}
-										<li class="list-group-item list-group-item-warning but" style="color: #FF0000">O</li>
+										<li class="list-group-item list-group-item-warning but new">O</li>
 									{% else %}
 										<li class="list-group-item list-group-item-warning but">·</li>
 									{% endif %}
