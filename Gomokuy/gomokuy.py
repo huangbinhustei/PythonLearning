@@ -10,18 +10,18 @@ import logging
 
 
 logger = logging.getLogger('Gomoku')
-logger.setLevel(logging.DEBUG)
+# logger.setLevel(logging.INFO)
 ROADS = {0: (0, 1), 1: (1, 0), 2: (1, 1), 3: (1, -1)}
 ADR = {
     0: {
-        "冲1":1, "冲2":3, "冲3":2, "冲4":1, "冲5":0, "冲6":0,
-        "活1":2, "活2":2, "活3":1, "活4":1, "活5":0, "活6":0},
+        "冲1":1, "冲2":2, "冲3":2, "冲4":1, "冲5":0, "冲6":0,
+        "活1":1, "活2":1, "活3":1, "活4":1, "活5":0, "活6":0},
     1: {
         "冲1":1, "冲2":2, "冲3":1, "冲4":0, "冲5":0, "冲6":0,
-        "活1":2, "活2":1, "活3":1, "活4":0, "活5":0, "活6":0},
+        "活1":1, "活2":1, "活3":1, "活4":0, "活5":0, "活6":0},
     2: {
         "冲1":1, "冲2":1, "冲3":0, "冲4":0, "冲5":0, "冲6":0,
-        "活1":2, "活2":1, "活3":0, "活4":0, "活5":0, "活6":0},
+        "活1":1, "活2":1, "活3":0, "活4":0, "活5":0, "活6":0},
     }
 SCORE = {
     "活6": 100000,
@@ -29,9 +29,9 @@ SCORE = {
     "活5": 100000,
     "冲5": 100000,
     "活4": 100000,
-    "冲4": 10000,
+    "冲4": 1000,
     "活3": 1000,
-    "冲3": 100,
+    "冲3": 10,
     "活2": 10,
     "冲2": 1,
     "活1": 1,
@@ -43,10 +43,6 @@ class Gomokuy(BaseGame):
     def __init__(self):
         BaseGame.__init__(self)
         self.values = dict()
-        self.lines = {
-            B: [],
-            W: [],
-        }
         self.check = []
         self.forbidden = [0, 0]
 
@@ -91,10 +87,12 @@ class Gomokuy(BaseGame):
             B: defaultdict(list),
             W: defaultdict(list),
         }
-        self.lines = {
-            B: [],
-            W: [],
-        }
+        self.check = []
+        self.forbidden = [0, 0]
+        last_move = self.records[-1] if self.records else "nothing"
+        if last_move == W:
+            # 禁手仅对黑方有效
+            last_move = "nothing"
 
         for direction in range(4):
             checked = set([])
@@ -109,43 +107,36 @@ class Gomokuy(BaseGame):
                     checked |= set(line["s"])
                     if len(line["s"]) + len(line[-1]) + len(line[0]) + len(line[1]) < 5:
                         continue
-                    self.lines[chess].append(line)
-        self.inside_line_grouping()
+                    self.inside_line_grouping(line, chess, last_move)
 
-    def inside_line_grouping(self):
-        last_move = self.records[-1]
-        if last_move == W:
-            # 禁手仅对黑方有效
-            last_move = "nothing"
-        self.check = []
-        self.forbidden = [0, 0]
-        for sid, lines in self.lines.items():
-            for line in lines:
-                t = len(line["s"])
-                t = 6 if t >= 6 else t
-                if line[-1] and line[1]:
-                    key = "活" + str(t) if t + len(line[0]) <= 4 else  "冲" + str(t)
-                    if t >= 3:
-                        self.check += line["s"]
-                    if last_move in line["s"]:
-                        if t == 3:
-                            self.forbidden[0] += 1
-                        elif t == 4:
-                            self.forbidden[1] += 1
-                elif line[0] or line[1] or line[-1]:
-                    key = "冲" + str(t)
-                    if t >= 4:
-                        self.check += line["s"]
-                    if t == 4 and last_move in line["s"]:
-                        self.forbidden[1] += 1
-                line[-1] = line[-1][:ADR[len(line[0])][key]]
-                line[1] = line[1][:ADR[len(line[0])][key]]
-                format_line = line[-1] + line[0] + line[1]
-                self.values[sid][key].append(format_line)
+    def inside_line_grouping(self, line, sid, last_move):
+        t = len(line["s"])
+        t = 6 if t >= 6 else t
+        if line[-1] and line[1]:
+            key = "活" + str(t) if t + len(line[0]) <= 4 else  "冲" + str(t)
+            if t >= 4:
+                self.check += line["s"]
+            elif t == 3 and len(line[0]) <= 1:
+                self.check += line["s"]
+            if last_move in line["s"]:
+                if t == 3 and len(line[0]) <= 1:
+                    self.forbidden[0] += 1
+                elif t == 4:
+                    self.forbidden[1] += 1
+        elif line[0] or line[1] or line[-1]:
+            key = "冲" + str(t)
+            if t >= 4:
+                self.check += line["s"]
+            if t == 4 and last_move in line["s"]:
+                self.forbidden[1] += 1
+        line[-1] = line[-1][:ADR[len(line[0])][key]]
+        line[1] = line[1][:ADR[len(line[0])][key]]
+        format_line = line[-1] + line[0] + line[1]
+        self.values[sid][key].append(format_line)
 
     def move(self, loc, show=True):
         super().move(loc, show=show)
-        self.analyse()
+        self.analyse(show=show)
 
     def win_announce(self, show=True):
         info = ""
@@ -193,7 +184,7 @@ class Gomokuy(BaseGame):
         else:
             logger.debug(f"{self.records}\t{info}")
 
-    def analyse(self):
+    def analyse(self, show=True):
         def win_chance_single_line():
             # 自己有冲四、活四 -> 对方的冲四、活四 -> 自己的活三
             B_chance = [i for i in ["冲4", "活4"] if i in self.values[B]]
@@ -221,17 +212,21 @@ class Gomokuy(BaseGame):
             your_live_3 = sum(opponent_chance["活3"], [])
 
             my_33 = [item[0] for item in Counter(my_3).items() if item[1] > 1]
-            temp = [item for item in self.lines[B] if len(item["s"]) == 2]
             my_44 = [item[0] for item in Counter(my_4).items() if item[1] > 1]
             my_43 = [item for item in my_4 if item in my_3]
 
             if player == B:
                 # 针对黑棋，自己的四三 > 对方的活三
-                attack = [item for item in my_43 if item not in my_44 + my_33] or your_live_3 + my_4
+                attack = [item for item in my_43 if item not in my_44 + my_33]
+                if not attack and your_live_3:
+                    attack = your_live_3 + my_4
                 # todo: 43不能在同一行，比如 0 1 1 1 0 0 1 0 0，此时电脑会判断中间两个0能够组成43胜，但是其实是长连禁手
             else:
                 # 针对白棋，自己四四或四三 > 对方的活三 > 自己的三三，都没有实际上返回的是 False
-                attack = my_44 + my_43 or your_live_3 + my_4 or my_33
+                if my_44 + my_43:
+                    attack = my_44 + my_43
+                else:
+                    attack = your_live_3 + my_4 if your_live_3 else my_33
             if attack:
                 ret = list(set(attack))
             else:
@@ -243,19 +238,18 @@ class Gomokuy(BaseGame):
                 your_43 = [item for item in your_4 if item in your_3]
                 if player == B:
                     fir = your_44 + your_43
-                    sec = your_33 + my_4 + my_3
+                    sec = your_33 + my_4 if your_33 else []
                 else:
                     fir = [item for item in your_43 if item not in your_44 + your_33]
-                    sec = my_4 + my_3
+                    sec = []
                 defence = fir if fir else sec
                 ret = list(set(defence))
             return ret
 
         def normal_chance():
             # 从["冲3", "活2", "冲2", "冲1", "活1"]中选择
-            temp1 = [i[j] for i in (player_chance, opponent_chance) for j in ("冲3", "活2")]
-            temp2 = [i[j] for i in (player_chance, opponent_chance) for j in ("冲2", "冲1", "活1")]
-            temp = sum(temp1, []) or sum(temp2, [])
+            temp = [i[j] for i in (player_chance, opponent_chance) for j in ("冲3", "活2", "冲2", "冲1", "活1")]
+            temp = sum(temp, [])
             ret = list(set(sum(temp, [])))
             return ret
 
@@ -263,7 +257,7 @@ class Gomokuy(BaseGame):
             return False
 
         self.inside_make_line()
-        self.win_announce()
+        self.win_announce(show=show)
 
         player = W if self.step % 2 else B
         opponent = W if player == B else B
@@ -287,7 +281,7 @@ class Gomokuy(BaseGame):
                     your_score = sum([SCORE[key] * len(v) for (key, v) in self.values[opponent].items()])
                     return my_score - your_score
                 else:
-                    poss = self.analyse()
+                    poss = self.analyse(show=False)
                     if not poss:
                         return False
                     result = [0] * len(poss)
@@ -296,9 +290,11 @@ class Gomokuy(BaseGame):
                         _logging(pos, deeps)
                         self.move(pos, show=False)
                         if deeps == DEEPS:
+                            print(poss)
                             new_deeps = deeps - 1 if len(poss) > 1 else 0
                         else:
-                            new_deeps = deeps - 1 if len(poss) > 1 else deeps
+                            new_deeps = deeps - 1
+                            # new_deeps = deeps - 1 if len(poss) > 1 else deeps
                         temp_score = win_or_lose(new_deeps)
                         result[ind] = temp_score
                         self.undo()
@@ -337,6 +333,7 @@ func_count = 0
 if __name__ == '__main__':
     g = Gomokuy()
     g.parse(a)
-    # print(g.analyse())
-    g.min_max_search(DEEPS=11)
+    print(g.analyse())
+    # print(g.values)
+    # g.min_max_search(DEEPS=11)
     print(f"Min_Max_Search count: {func_count} times")
