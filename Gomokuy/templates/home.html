@@ -15,7 +15,7 @@
 		<!-- <div class="row"><h1>五子棋<small>_第一版</small></h1></div> -->
 		<br>
 		<div class="row">
-			<div class="col-xs-8">
+			<div class="col-xs-9">
 				{% for line in range(game.width) %}
 				<div class="row">
 					<ul class="list-group list-inline">
@@ -23,9 +23,9 @@
 							{% if game.table[line][cell] == 1 %}
 								{% if (line, cell) == game.records[-1] %}
 									{% if (line, cell) in game.check %}
-										<li class="list-group-item list-group-item-success but new">New</li>
+										<li class="list-group-item list-group-item-success but new">●</li>
 									{% else %}
-										<li class="list-group-item list-group-item-success but new">New</li>
+										<li class="list-group-item list-group-item-success but new">●</li>
 									{% endif %}
 								{% else %}
 									{% if (line, cell) in game.check %}
@@ -37,9 +37,9 @@
 							{% elif game.table[line][cell] == 2 %}
 								{% if (line, cell) == game.records[-1] %}
 									{% if (line, cell) in game.check %}
-										<li class="list-group-item list-group-item-warning but new">New</li>
+										<li class="list-group-item list-group-item-warning but new">●</li>
 									{% else %}
-										<li class="list-group-item list-group-item-warning but new">New</li>
+										<li class="list-group-item list-group-item-warning but new">●</li>
 									{% endif %}
 								{% else %}
 									{% if (line, cell) in game.check %}
@@ -59,7 +59,7 @@
 
 			</div>
 
-			<ul class="col-xs-4 list-group">
+			<ul class="col-xs-3 list-group">
 				{% if game.winner %}
 					<li class="list-group-item"><h2>{{game.winner}} WIN!</h2></li>
 				{% else %}

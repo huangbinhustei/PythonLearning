@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from collections import defaultdict
-from base import BaseGame, B, W, cost_count
+from base import BaseGame, B, W, cost_count, PRINTING
 from conf import a
 from random import choice
 from collections import Counter
@@ -10,7 +10,22 @@ import logging
 
 
 logger = logging.getLogger('Gomoku')
+logger.setLevel(logging.DEBUG)
+ROADS = {0: (0, 1), 1: (1, 0), 2: (1, 1), 3: (1, -1)}
+ADR = {
+    0: {
+        "冲1":1, "冲2":3, "冲3":2, "冲4":1, "冲5":0, "冲6":0,
+        "活1":2, "活2":2, "活3":1, "活4":1, "活5":0, "活6":0},
+    1: {
+        "冲1":1, "冲2":2, "冲3":1, "冲4":0, "冲5":0, "冲6":0,
+        "活1":2, "活2":1, "活3":1, "活4":0, "活5":0, "活6":0},
+    2: {
+        "冲1":1, "冲2":1, "冲3":0, "冲4":0, "冲5":0, "冲6":0,
+        "活1":2, "活2":1, "活3":0, "活4":0, "活5":0, "活6":0},
+    }
 SCORE = {
+    "活6": 100000,
+    "冲6": 100000,
     "活5": 100000,
     "冲5": 100000,
     "活4": 100000,
@@ -32,6 +47,44 @@ class Gomokuy(BaseGame):
             B: [],
             W: [],
         }
+        self.check = []
+        self.forbidden = [0, 0]
+
+    def base_linear(self, row, col, chess, direction):
+        line = {
+            "s": [(row, col)],
+            0: [],  # 中间的缝隙
+            -1: [],  # 某一边的空
+            1: [],  # 另一边的空
+        }
+        for side in (-1, 1):
+            for offset in range(1, 9):
+                new_row = row + offset * side * ROADS[direction][0]
+                new_col = col + offset * side * ROADS[direction][1]
+                if new_row >= self.width or new_row < 0:
+                    break
+                if new_col >= self.width or new_col < 0:
+                    break
+
+                new_cell = self.table[new_row][new_col]
+                new_loc = (new_row, new_col)
+
+                if new_cell == 0:
+                    line[side].append(new_loc)
+                elif new_cell == chess:
+                    if line[side]:
+                        if line[0]:
+                            break
+                        else:
+                            if len(line[side]) <= 2:
+                                line[0] = line[side]
+                                line[side] = []
+                            else:
+                                break
+                    line["s"].append(new_loc)
+                else:
+                    break
+        return line
 
     def inside_make_line(self):
         self.values = {
@@ -60,50 +113,107 @@ class Gomokuy(BaseGame):
         self.inside_line_grouping()
 
     def inside_line_grouping(self):
+        last_move = self.records[-1]
+        if last_move == W:
+            # 禁手仅对黑方有效
+            last_move = "nothing"
+        self.check = []
+        self.forbidden = [0, 0]
         for sid, lines in self.lines.items():
             for line in lines:
-                chang = min(5, len(line["s"] + line[0]))
                 t = len(line["s"])
-                t = "5" if t >= 5 else str(t)
+                t = 6 if t >= 6 else t
                 if line[-1] and line[1]:
-                    key = "活" + t if len(line[0]) <= 1 else "冲" + t
-                    range_att = min(max(0, 4 - chang), 2)
-                    range_def = 1 if chang < 5 else 0
-                    r = range_att if sid else range_def
-                    line[-1] = line[-1][:r]
-                    line[1] = line[1][:r]
-                    format_line = line[-1] + line[0] + line[1]
-
+                    key = "活" + str(t) if t + len(line[0]) <= 4 else  "冲" + str(t)
+                    if t >= 3:
+                        self.check += line["s"]
+                    if last_move in line["s"]:
+                        if t == 3:
+                            self.forbidden[0] += 1
+                        elif t == 4:
+                            self.forbidden[1] += 1
                 elif line[0] or line[1] or line[-1]:
-                    key = "冲" + t
-                    r = 5 - chang
-                    line[-1] = line[-1][:r]
-                    line[1] = line[1][:r]
-                    format_line = line[-1] + line[0] + line[1]
-                else:
-                    continue
+                    key = "冲" + str(t)
+                    if t >= 4:
+                        self.check += line["s"]
+                    if t == 4 and last_move in line["s"]:
+                        self.forbidden[1] += 1
+                line[-1] = line[-1][:ADR[len(line[0])][key]]
+                line[1] = line[1][:ADR[len(line[0])][key]]
+                format_line = line[-1] + line[0] + line[1]
                 self.values[sid][key].append(format_line)
+
+    def move(self, loc, show=True):
+        super().move(loc, show=show)
+        self.analyse()
+
+    def win_announce(self, show=True):
+        info = ""
+        for _player in (B, W):
+            _opt = B if _player == W else W
+
+            if self.values[_player]["活6"]:
+                self.winner = W
+                info = "白·长连·胜" if _player == W else "黑·长连禁手·负"
+            elif self.values[_player]["活5"]:
+                self.winner = _player
+                info = PRINTING[_player] + "·五连·胜"
+            elif len(self.values[_player]["活4"]) + len(self.values[_player]["冲4"]) >= 2:
+                if self.forbidden[1] >= 2:
+                    self.winner = W
+                    info = "白·四四·胜" if _player == W else "黑·四四禁手·负"
+                else:
+                    # 不相交的不是禁手
+                    self.winner = _player
+                    info = PRINTING[_player] + "·四四·胜"
+            elif self.values[_player]["活4"]:
+                self.winner = _player
+                info = PRINTING[_player] + "·四连·胜"
+            elif len(self.values[_player]["活3"]) >= 2:
+                if self.forbidden[0] >= 2:
+                    self.winner = W
+                    info = "黑·三三禁手·负"
+                if self.values[_opt]["活3"] or self.values[_opt]["冲3"] or self.values[_opt]["冲4"]:
+                    # 对方还可以防御
+                    continue
+                else:
+                    self.winner = _player
+                    info = PRINTING[_player] + "·三三·胜"
+            elif len(self.values[_player]["活4"]) + len(self.values[_player]["冲4"]) + len(self.values[_player]["活3"]) >= 2:
+                def_poss = sum(self.values[_player]["活4"] + self.values[_player]["冲4"], [])
+                att_poss = sum(self.values[_opt]["活3"] + self.values[_opt]["冲3"], [])
+                if not [p for p in def_poss if p in att_poss]:
+                    self.winner = _player
+                    info = PRINTING[_player] + "·四三·胜"
+        
+        if not self.winner:
+            return
+        if show:
+            logger.info(f"{self.records}\t{info}")
+        else:
+            logger.debug(f"{self.records}\t{info}")
 
     def analyse(self):
         def win_chance_single_line():
-            best_lines = []
-            if "冲4" in player_chance or "活4" in player_chance or "活5" in player_chance or "冲5" in player_chance:
-                if player == B:
-                    best_lines = [player_chance[k] for k in ["冲4", "活4"] if k in player_chance]
-                else:
-                    best_lines = [player_chance[k] for k in ["冲4", "活4", "冲5", "活5"] if k in player_chance]
-            elif "冲4" in opponent_chance or "活4" in opponent_chance or "活5" in opponent_chance or "冲5" in opponent_chance:
-                if player == W:
-                    best_lines = [opponent_chance[k] for k in ["冲4", "活4"] if k in opponent_chance]
-                else:
-                    best_lines = [opponent_chance[k] for k in ["冲4", "活4", "冲5", "活5"] if k in opponent_chance]
-            elif "活3" in player_chance:
-                best_lines = player_chance["活3"] if "活3" in player_chance else []
-                best_lines = [best_lines]
+            # 自己有冲四、活四 -> 对方的冲四、活四 -> 自己的活三
+            B_chance = [i for i in ["冲4", "活4"] if i in self.values[B]]
+            W_chance = [i for i in ["冲4", "活4", "冲5", "活5", "冲6", "活6"] if i in self.values[W]]
 
-            best_lines = sum(best_lines, [])
+            # first_choice:走了直接赢
+            first_choice = [player_chance[k] for k in B_chance] if player == B else [player_chance[k] for k in W_chance]
+            first_choice = sum(first_choice, [])
+            first_choice = list(set(sum(first_choice, [])))
+            
+            # second_choice:不走直接输
+            second_choice = [opponent_chance[k] for k in B_chance] if player == W else [opponent_chance[k] for k in W_chance]
+            second_choice = sum(second_choice, [])
+            second_choice = list(set(sum(second_choice, [])))
+            
+            # third_choice:假如对方没有冲四活四等，那么自己的活三，走了也是直接赢
+            third_choice = player_chance["活3"] if "活3" in player_chance else []
+            third_choice = list(set(sum(third_choice, [])))
 
-            return list(set(sum(best_lines, [])))
+            return first_choice or second_choice or third_choice
 
         def win_chance_mul_lines():
             my_3 = sum(player_chance["活2"], [])
@@ -111,17 +221,17 @@ class Gomokuy(BaseGame):
             your_live_3 = sum(opponent_chance["活3"], [])
 
             my_33 = [item[0] for item in Counter(my_3).items() if item[1] > 1]
+            temp = [item for item in self.lines[B] if len(item["s"]) == 2]
             my_44 = [item[0] for item in Counter(my_4).items() if item[1] > 1]
             my_43 = [item for item in my_4 if item in my_3]
 
             if player == B:
                 # 针对黑棋，自己的四三 > 对方的活三
-                attack = [item for item in my_43 if item not in my_44 + my_33] or your_live_3
+                attack = [item for item in my_43 if item not in my_44 + my_33] or your_live_3 + my_4
                 # todo: 43不能在同一行，比如 0 1 1 1 0 0 1 0 0，此时电脑会判断中间两个0能够组成43胜，但是其实是长连禁手
             else:
                 # 针对白棋，自己四四或四三 > 对方的活三 > 自己的三三，都没有实际上返回的是 False
-                attack = my_44 + my_43 or your_live_3 or my_33
-
+                attack = my_44 + my_43 or your_live_3 + my_4 or my_33
             if attack:
                 ret = list(set(attack))
             else:
@@ -143,17 +253,20 @@ class Gomokuy(BaseGame):
 
         def normal_chance():
             # 从["冲3", "活2", "冲2", "冲1", "活1"]中选择
-            temp = [i[j] for i in (player_chance, opponent_chance) for j in ("冲3", "活2", "冲2", "冲1", "活1")]
-            ret = list(set(sum(sum(temp, []), [])))
+            temp1 = [i[j] for i in (player_chance, opponent_chance) for j in ("冲3", "活2")]
+            temp2 = [i[j] for i in (player_chance, opponent_chance) for j in ("冲2", "冲1", "活1")]
+            temp = sum(temp1, []) or sum(temp2, [])
+            ret = list(set(sum(temp, [])))
             return ret
 
         if self.winner:
             return False
-        player = W if self.step % 2 else B
-        opponent = W if player == B else B
 
         self.inside_make_line()
+        self.win_announce()
 
+        player = W if self.step % 2 else B
+        opponent = W if player == B else B
         player_chance = self.values[player]
         opponent_chance = self.values[opponent]
 
@@ -165,63 +278,9 @@ class Gomokuy(BaseGame):
             if _deeps == DEEPS:
                 logger.debug(f"The first step is {_pos}")
 
-        def new_win_or_lose(deeps, t_max=-99999999, t_min=99999999):
-            if not self.winner:
-                if deeps == 0:
-                    my_score = sum([SCORE[key] * len(v) for (key, v) in self.values[player].items()])
-                    your_score = sum([SCORE[key] * len(v) for (key, v) in self.values[opponent].items()])
-                    return my_score - your_score
-                else:
-                    poss = self.analyse()
-                    if not poss:
-                        return False
-                    result = [0] * len(poss)
-                    next_player = B if (self.step + 1) % 2 == 1 else W
-                    if deeps == DEEPS:
-                        new_deeps = deeps - 1 if len(poss) > 1 else 0
-                    else:
-                        new_deeps = deeps - 1
-                    if next_player != player:
-                        # max层，返回这一层的最大值
-                        for ind, pos in enumerate(poss):
-                            _logging(pos, deeps)
-                            self.move(pos)
-                            v = new_win_or_lose(new_deeps,t_max=t_max, t_min=t_min)
-                            # v是下一层的分，下一层一定是返回最小值
-                            # 假如某个最小值比现在的最大值小，那么他一定会选这个最小的值，所以这个点的下一层就不用算了。
-                            t_max = max(t_max, v)
-                            result[ind] = v
-                            self.undo()
-
-                            if t_min <= t_max:
-                                break
-                        if deeps == DEEPS:
-                            # 假如是顶层，返回所有选项 & 分值
-                            return result, poss
-                        else:
-                            return v
-                    else:
-                        # min层，返回这一层的最小值
-                        v = 9999999
-                        for ind, pos in enumerate(poss):
-                            _logging(pos, deeps)
-                            self.move(pos)
-                            v = new_win_or_lose(new_deeps,t_max=t_max, t_min=t_min)
-                            t_min = min(t_min, v)
-                            result[ind] = v
-                            self.undo()
-                            if t_min <= t_max:
-                                break
-                        if deeps == DEEPS:
-                            return result, poss
-                        else:
-                            return v
-            elif self.winner == player:
-                return 9999999
-            else:
-                return -9999999
-
         def win_or_lose(deeps):
+            global func_count
+            func_count += 1
             if not self.winner:
                 if deeps == 0:
                     my_score = sum([SCORE[key] * len(v) for (key, v) in self.values[player].items()])
@@ -231,16 +290,15 @@ class Gomokuy(BaseGame):
                     poss = self.analyse()
                     if not poss:
                         return False
-
                     result = [0] * len(poss)
                     next_player = B if (self.step + 1) % 2 == 1 else W
                     for ind, pos in enumerate(poss):
                         _logging(pos, deeps)
-                        self.move(pos)
+                        self.move(pos, show=False)
                         if deeps == DEEPS:
                             new_deeps = deeps - 1 if len(poss) > 1 else 0
                         else:
-                            new_deeps = deeps - 1
+                            new_deeps = deeps - 1 if len(poss) > 1 else deeps
                         temp_score = win_or_lose(new_deeps)
                         result[ind] = temp_score
                         self.undo()
@@ -262,7 +320,7 @@ class Gomokuy(BaseGame):
                 return -9999999
 
         if self.winner:
-            return False
+            return False        
 
         player = W if self.step % 2 else B
         opponent = W if player == B else B
@@ -271,10 +329,14 @@ class Gomokuy(BaseGame):
         logger.info(f"result：{fin_result}")
         logger.info(f"poss  ：{fin_poss}")
         logger.info(f"best  ： {best_choice}")
+        print(f"Min_Max_Search count: {func_count} times")
         return best_choice
 
+func_count = 0
 
 if __name__ == '__main__':
     g = Gomokuy()
     g.parse(a)
-    g.min_max_search(DEEPS=10)
+    # print(g.analyse())
+    g.min_max_search(DEEPS=11)
+    print(f"Min_Max_Search count: {func_count} times")

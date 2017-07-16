@@ -39,12 +39,10 @@ def home():
 
     # 电脑下一步棋开始
     # m_pos = game.analyse()
-    if len(game.records) <= 8:
-        m_pos = game.min_max_search(DEEPS=3)
-    elif len(game.records) <= 16:
-        m_pos = game.min_max_search(DEEPS=5)
+    if len(game.records) <= 10:
+        m_pos = game.min_max_search(DEEPS=2)
     else:
-        m_pos = game.min_max_search(DEEPS=7)
+        m_pos = game.min_max_search(DEEPS=4)
     if m_pos:
         game.move(m_pos)
 
