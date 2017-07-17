@@ -1,4 +1,4 @@
-﻿.idea
+.idea
 __pycache__
 *.jpg
 *.gif
@@ -8,10 +8,10 @@ __pycache__
 *.xml
 *.ini
 *.txt
-
-
 *.jpeg
 *.wav
-gonglve/bd_aip/apps.py
 *.mp3
+
+gonglve/bd_aip/apps.py
 config.py
+gonglve/tools/*
