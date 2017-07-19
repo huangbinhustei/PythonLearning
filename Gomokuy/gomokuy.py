@@ -248,9 +248,15 @@ class Gomokuy(BaseGame):
 
         def normal_chance():
             # 从["冲3", "活2", "冲2", "冲1", "活1"]中选择
-            temp = [i[j] for i in (player_chance, opponent_chance) for j in ("冲3", "活2", "冲2", "冲1", "活1")]
+            # temp = [i[j] for i in (player_chance, opponent_chance) for j in ("冲3", "活2", "冲2", "冲1", "活1")]
+            temp = [i[j] for i in (player_chance, opponent_chance) for j in ("冲3", "活2")]
+            
+            worst_line = [i[j] for i in (player_chance, opponent_chance) for j in ("冲2", "冲1", "活1")]
+            worst_pos = sum(sum(worst_line, []), [])
+            worst = [item[0] for item in sorted(Counter(worst_pos).items(), key=lambda x: x[1],reverse=True)][:5]
+            
             temp = sum(temp, [])
-            ret = list(set(sum(temp, [])))
+            ret = list(set(sum(temp, []))) + worst
             return ret
 
         if self.winner:
@@ -266,7 +272,6 @@ class Gomokuy(BaseGame):
 
         return win_chance_single_line() or win_chance_mul_lines() or normal_chance()
 
-    @cost_count
     def min_max_search(self, DEEPS=5):
         def _logging(_pos, _deeps):
             if _deeps == DEEPS:
@@ -290,11 +295,10 @@ class Gomokuy(BaseGame):
                         _logging(pos, deeps)
                         self.move(pos, show=False)
                         if deeps == DEEPS:
-                            print(poss)
                             new_deeps = deeps - 1 if len(poss) > 1 else 0
                         else:
-                            new_deeps = deeps - 1
-                            # new_deeps = deeps - 1 if len(poss) > 1 else deeps
+                            # new_deeps = deeps - 1
+                            new_deeps = deeps - 1 if len(poss) > 1 else deeps
                         temp_score = win_or_lose(new_deeps)
                         result[ind] = temp_score
                         self.undo()
@@ -316,24 +320,33 @@ class Gomokuy(BaseGame):
                 return -9999999
 
         if self.winner:
-            return False        
+            return False, False, False, False
 
         player = W if self.step % 2 else B
         opponent = W if player == B else B
         fin_result, fin_poss = win_or_lose(DEEPS)
         best_choice = fin_poss[fin_result.index(max(fin_result))]
+        return best_choice, max(fin_result), fin_poss, fin_result
+
+    @cost_count
+    def iterative_deepening(self, max_deep):
+        global func_count
+        for d in range(1, max_deep, 2):
+            func_count = 0
+            pos, fen, fin_poss, fin_result = self.min_max_search(DEEPS=d)
+            if fen == 9999999:
+                break
         logger.info(f"result：{fin_result}")
         logger.info(f"poss  ：{fin_poss}")
-        logger.info(f"best  ： {best_choice}")
+        logger.info(f"best  ： {pos}")
         print(f"Min_Max_Search count: {func_count} times")
-        return best_choice
+        return pos
 
 func_count = 0
 
 if __name__ == '__main__':
     g = Gomokuy()
     g.parse(a)
-    print(g.analyse())
+    # print(g.analyse())
     # print(g.values)
-    # g.min_max_search(DEEPS=11)
-    print(f"Min_Max_Search count: {func_count} times")
+    g.iterative_deepening(7)
