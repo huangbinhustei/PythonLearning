@@ -5,17 +5,19 @@ from collections import defaultdict
 from base import BaseGame, B, W, cost_count, PRINTING
 from conf import a
 from random import choice
-from collections import Counter
+from collections import Counter, defaultdict
 import logging
+from time import time
 
 
+step = []
 logger = logging.getLogger('Gomoku')
 # logger.setLevel(logging.INFO)
 ROADS = {0: (0, 1), 1: (1, 0), 2: (1, 1), 3: (1, -1)}
 ADR = {
     0: {
         "冲1":1, "冲2":2, "冲3":2, "冲4":1, "冲5":0, "冲6":0,
-        "活1":1, "活2":1, "活3":1, "活4":1, "活5":0, "活6":0},
+        "活1":1, "活2":1, "活3":2, "活4":1, "活5":0, "活6":0},
     1: {
         "冲1":1, "冲2":2, "冲3":1, "冲4":0, "冲5":0, "冲6":0,
         "活1":1, "活2":1, "活3":1, "活4":0, "活5":0, "活6":0},
@@ -37,6 +39,7 @@ SCORE = {
     "活1": 1,
     "冲1": 1,
     }
+func_count = 0
 
 
 class Gomokuy(BaseGame):
@@ -72,7 +75,7 @@ class Gomokuy(BaseGame):
                         if line[0]:
                             break
                         else:
-                            if len(line[side]) <= 2:
+                            if len(line[side]) <= 1:
                                 line[0] = line[side]
                                 line[side] = []
                             else:
@@ -113,7 +116,7 @@ class Gomokuy(BaseGame):
         t = len(line["s"])
         t = 6 if t >= 6 else t
         if line[-1] and line[1]:
-            key = "活" + str(t) if t + len(line[0]) <= 4 else  "冲" + str(t)
+            key = "活" + str(t) if t + len(line[0]) <= 4 else "冲" + str(t)
             if t >= 4:
                 self.check += line["s"]
             elif t == 3 and len(line[0]) <= 1:
@@ -153,10 +156,10 @@ class Gomokuy(BaseGame):
                 if self.forbidden[1] >= 2:
                     self.winner = W
                     info = "白·四四·胜" if _player == W else "黑·四四禁手·负"
-                else:
-                    # 不相交的不是禁手
-                    self.winner = _player
-                    info = PRINTING[_player] + "·四四·胜"
+                # else:
+                #     # 不相交的不是禁手
+                #     self.winner = _player
+                #     info = PRINTING[_player] + "·四四·胜"
             elif self.values[_player]["活4"]:
                 self.winner = _player
                 info = PRINTING[_player] + "·四连·胜"
@@ -167,9 +170,10 @@ class Gomokuy(BaseGame):
                 if self.values[_opt]["活3"] or self.values[_opt]["冲3"] or self.values[_opt]["冲4"]:
                     # 对方还可以防御
                     continue
-                else:
-                    self.winner = _player
-                    info = PRINTING[_player] + "·三三·胜"
+                # else:
+                #     # todo: 这种似乎不叫三三胜，上面的四四胜也是同理
+                #     self.winner = _player
+                #     info = PRINTING[_player] + "·三三·胜"
             elif len(self.values[_player]["活4"]) + len(self.values[_player]["冲4"]) + len(self.values[_player]["活3"]) >= 2:
                 def_poss = sum(self.values[_player]["活4"] + self.values[_player]["冲4"], [])
                 att_poss = sum(self.values[_opt]["活3"] + self.values[_opt]["冲3"], [])
@@ -248,15 +252,15 @@ class Gomokuy(BaseGame):
 
         def normal_chance():
             # 从["冲3", "活2", "冲2", "冲1", "活1"]中选择
-            # temp = [i[j] for i in (player_chance, opponent_chance) for j in ("冲3", "活2", "冲2", "冲1", "活1")]
             temp = [i[j] for i in (player_chance, opponent_chance) for j in ("冲3", "活2")]
             
-            worst_line = [i[j] for i in (player_chance, opponent_chance) for j in ("冲2", "冲1", "活1")]
-            worst_pos = sum(sum(worst_line, []), [])
-            worst = [item[0] for item in sorted(Counter(worst_pos).items(), key=lambda x: x[1],reverse=True)][:5]
+            # worst_line = [i[j] for i in (player_chance, opponent_chance) for j in ("冲2", "冲1", "活1")]
+            # worst_pos = sum(sum(worst_line, []), [])
+            # worst = [item[0] for item in sorted(Counter(worst_pos).items(), key=lambda x: x[1],reverse=True)][:5]
             
             temp = sum(temp, [])
-            ret = list(set(sum(temp, []))) + worst
+            # ret = list(set(sum(temp, []))) + worst
+            ret = list(set(sum(temp, [])))
             return ret
 
         if self.winner:
@@ -272,12 +276,14 @@ class Gomokuy(BaseGame):
 
         return win_chance_single_line() or win_chance_mul_lines() or normal_chance()
 
-    def min_max_search(self, DEEPS=5):
+    def min_max_search(self, DEEPS=5, start=False, max_deep=0):
         def _logging(_pos, _deeps):
             if _deeps == DEEPS:
                 logger.debug(f"The first step is {_pos}")
 
         def win_or_lose(deeps):
+            if start and time() - start > max_deep:
+                return 0
             global func_count
             func_count += 1
             if not self.winner:
@@ -311,16 +317,24 @@ class Gomokuy(BaseGame):
                     if deeps == DEEPS:
                         return result, poss
                     elif next_player == player:
+                        if max(result) == 9999999:
+                            step.append([self.step, poss[result.index(max(result))]])
+                        else:
+                            step.clear()
                         return max(result)
                     else:
+                        if min(result) == 9999999:
+                            print(step)
+                            step.append([self.step, poss[::-1]])
                         return min(result)
             elif self.winner == player:
+                step.append([self.step, False])
                 return 9999999
             else:
                 return -9999999
 
         if self.winner:
-            return False, False, False, False
+            return False
 
         player = W if self.step % 2 else B
         opponent = W if player == B else B
@@ -329,24 +343,64 @@ class Gomokuy(BaseGame):
         return best_choice, max(fin_result), fin_poss, fin_result
 
     @cost_count
-    def iterative_deepening(self, max_deep):
+    def iterative_deepening(self, max_deep, timing=False):
         global func_count
-        for d in range(1, max_deep, 2):
-            func_count = 0
-            pos, fen, fin_poss, fin_result = self.min_max_search(DEEPS=d)
-            if fen == 9999999:
-                break
-        logger.info(f"result：{fin_result}")
-        logger.info(f"poss  ：{fin_poss}")
-        logger.info(f"best  ： {pos}")
-        print(f"Min_Max_Search count: {func_count} times")
+        func_count = 0
+        if not timing:
+            for d in range(1, max_deep, 2):
+                ret = self.min_max_search(DEEPS=d)
+                if ret:
+                    pos, fen, fin_poss, fin_result = ret
+                    if fen == 9999999:
+                        break
+                else:
+                    pos = False
+        else:
+            start = time()
+            d = -1
+            while 1:
+                d += 2
+                if time() - start > max_deep:
+                    break
+                ret = self.min_max_search(DEEPS=d, start=start, max_deep=max_deep)
+                if ret:
+                    pos, fen, fin_poss, fin_result = ret
+                    if fen == 9999999:
+                        break
+                else:
+                    pos = False
+        if pos:
+            logger.debug(f"result：{fin_result}")
+            logger.debug(f"poss  ：{fin_poss}")
+            logger.debug(f"best  ： {pos}")
+            logger.info(f"Min_Max_Search count: {func_count} times for {len(fin_poss)} points")
         return pos
-
-func_count = 0
 
 if __name__ == '__main__':
     g = Gomokuy()
     g.parse(a)
-    # print(g.analyse())
-    # print(g.values)
-    g.iterative_deepening(7)
+    # pos, fen, fin_poss, fin_result = g.min_max_search(DEEPS=9)
+    # logger.debug(f"result：{fin_result}")
+    # logger.debug(f"poss  ：{fin_poss}")
+    # logger.debug(f"best  ： {pos}")
+    # logger.info(f"Min_Max_Search count: {func_count} times for {len(fin_poss)} points")
+    pos = g.iterative_deepening(9)
+
+    road_map = defaultdict(list)
+    for k in step[::-1]:
+        t = k[1] if k[1] else [False]
+        road_map[k[0]].append(t)
+    road_map[min(road_map.keys())] = road_map[min(road_map.keys())][0]
+    for k, v in road_map.items():
+        print(f"{k}\t{len(v)}\t{v}")
+
+    s = 15
+    while 1:
+        pos = input("!!!!\n")
+        pos = (int(str(pos)[0]),int(str(pos)[1]))
+        if pos not in road_map[s] and pos != road_map[s]:
+            print("WRONG")
+            continue
+        s += 1
+        ind = road_map[s].index(pos)
+        road_map[s+1] = road_map[s+1][ind]

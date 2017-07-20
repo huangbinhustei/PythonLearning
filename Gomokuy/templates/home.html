@@ -23,9 +23,9 @@
 							{% if game.table[line][cell] == 1 %}
 								{% if (line, cell) == game.records[-1] %}
 									{% if (line, cell) in game.check %}
-										<li class="list-group-item list-group-item-success but new">●</li>
+										<li class="list-group-item list-group-item-success but new">{{ game.step }}</li>
 									{% else %}
-										<li class="list-group-item list-group-item-success but new">●</li>
+										<li class="list-group-item list-group-item-success but new">{{ game.step }}</li>
 									{% endif %}
 								{% else %}
 									{% if (line, cell) in game.check %}
@@ -37,9 +37,9 @@
 							{% elif game.table[line][cell] == 2 %}
 								{% if (line, cell) == game.records[-1] %}
 									{% if (line, cell) in game.check %}
-										<li class="list-group-item list-group-item-warning but new">●</li>
+										<li class="list-group-item list-group-item-warning but new">{{ game.step }}</li>
 									{% else %}
-										<li class="list-group-item list-group-item-warning but new">●</li>
+										<li class="list-group-item list-group-item-warning but new">{{ game.step }}</li>
 									{% endif %}
 								{% else %}
 									{% if (line, cell) in game.check %}

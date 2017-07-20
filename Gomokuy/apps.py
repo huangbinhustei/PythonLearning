@@ -31,6 +31,7 @@ def home():
     if not loc:
         # 第一次打开，直接开始新游戏
         return render_template("home.html", game=game)
+    
     # 玩家下一步棋开始
     loc = int(loc)
     pos = (int(loc / game.width), int(loc % game.width))
@@ -38,12 +39,11 @@ def home():
     # 玩家下一步棋结束
 
     # 电脑下一步棋开始
-    # m_pos = game.analyse()
-    m_pos = game.iterative_deepening(4)
-    if m_pos:
-        game.move(m_pos)
-
+    g_pos = game.iterative_deepening(5, timing=False)
+    if g_pos:
+        game.move(g_pos)
     # 电脑下一步棋结束
+
     return redirect(request.referrer)
 
 
