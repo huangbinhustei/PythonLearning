@@ -9,8 +9,6 @@ B = 1
 W = 2
 PRINTING = {B: "黑", W: "白"}
 logger = logging.getLogger('Gomoku')
-logger.setLevel(logging.INFO)
-# logger.setLevel(logging.DEBUG)
 
 
 def cost_count(func):
