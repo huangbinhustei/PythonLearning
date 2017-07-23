@@ -16,14 +16,15 @@ def cost_count(func):
     def costing(*args, **kw):
         a = time.time()
         ret = func(*args, **kw)
-        time_cost = int((time.time()-a) * 1000)
+        time_cost = time.time()-a
 
-        if time_cost > 1000:
-            logger.warning("Func(" + str(func.__name__) + ")\tcost: " + str(time_cost) + " ms")
-        elif time_cost > 0:
+        if time_cost > 1:
+            logger.warning("Func(" + str(func.__name__) + ")\tcost: " + str(round(time_cost, 2)) + " s")
+        elif time_cost > 0.001:
+            time_cost = int(time_cost * 1000)
             logger.info("Func(" + str(func.__name__) + ")\tcost: " + str(time_cost) + " ms")
         else:
-            time_cost = int((time.time()-a) * 1000000)
+            time_cost = int(time_cost * 1000000)
             logger.debug("Func(" + str(func.__name__) + ")\tcost: " + str(time_cost) + " μs")
         return ret
     return costing
