@@ -40,6 +40,8 @@ SCORE = {
     "冲1": 1,
     }
 func_count = 0
+v_max=-0
+v_min=0
 
 
 class Gomokuy(BaseGame):
@@ -253,14 +255,14 @@ class Gomokuy(BaseGame):
             temp = sum(temp, [])
 
             if self.settle:
-            	# 解题时，只管进攻
-            	ret = list(set(sum(temp, [])))
+                # 解题时，只管进攻
+                ret = list(set(sum(temp, [])))
             else:
-            	# 游戏时，还需要看更多情况
-            	worst_line = [i[j] for i in (player_chance, opponent_chance) for j in ("冲2", "冲1", "活1")]
-            	worst_pos = sum(sum(worst_line, []), [])
-            	worst = [item[0] for item in sorted(Counter(worst_pos).items(), key=lambda x: x[1],reverse=True)][:5]
-            	ret = list(set(sum(temp, []))) + worst
+                # 游戏时，还需要看更多情况
+                worst_line = [i[j] for i in (player_chance, opponent_chance) for j in ("冲2", "冲1", "活1")]
+                worst_pos = sum(sum(worst_line, []), [])
+                worst = [item[0] for item in sorted(Counter(worst_pos).items(), key=lambda x: x[1],reverse=True)][:5]
+                ret = list(set(sum(temp, []))) + worst
             return ret
             
             
@@ -284,6 +286,8 @@ class Gomokuy(BaseGame):
                 logger.debug(f"The first step is {_pos}")
 
         def win_or_lose(deeps):
+            global v_max
+            global v_min
             if start and time() - start > max_deep:
                 return 0
             global func_count
@@ -306,15 +310,20 @@ class Gomokuy(BaseGame):
                             new_deeps = deeps - 1 if len(poss) > 1 else 0
                         else:
                             new_deeps = deeps if len(poss) == 1 else deeps - 1
+                        
                         temp_score = win_or_lose(new_deeps)
                         result[ind] = temp_score
                         self.undo()
-                        if temp_score == 9999999 and next_player == player:
+
+                        if temp_score >= v_max and next_player == player:
+                            v_max = max(temp_score, v_max)
                             # 轮到自己，且某一步可以自己赢
                             break
-                        elif temp_score == -9999999 and next_player != player:
+                        elif temp_score <= v_min and next_player != player:
+                            v_min = min(temp_score, v_min)
                             # 轮到对方走，且某一步可以对方赢
                             break
+
                     if deeps == DEEPS:
                         return result, poss
                     elif next_player == player:
@@ -338,6 +347,8 @@ class Gomokuy(BaseGame):
 
         player = W if self.step % 2 else B
         opponent = W if player == B else B
+        v_max=-9999999
+        v_min=9999999
         fin_result, fin_poss = win_or_lose(DEEPS)
         best_choice = fin_poss[fin_result.index(max(fin_result))]
         return best_choice, max(fin_result), fin_poss, fin_result
@@ -398,7 +409,7 @@ def roading():
 
 if __name__ == '__main__':
     settling()
-    roading()
+    # roading()
 
     # s = 15
     # while 1:
