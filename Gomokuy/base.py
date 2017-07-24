@@ -4,11 +4,27 @@
 from functools import wraps
 import time
 import logging
+from collections import defaultdict
 
 B = 1
 W = 2
 PRINTING = {B: "黑", W: "白"}
 logger = logging.getLogger('Gomoku')
+
+
+myd = defaultdict(lambda :[0, 0.0])
+
+def timing(func):
+    @wraps(func)
+    def costing(*args, **kw):
+        a = time.time()
+        ret = func(*args, **kw)
+        time_cost = time.time()-a
+        global myd
+        myd[func.__name__][0] += 1
+        myd[func.__name__][1] += time_cost
+        return ret
+    return costing
 
 
 def cost_count(func):
