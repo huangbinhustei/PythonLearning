@@ -1,31 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from collections import defaultdict
-from base import BaseGame, B, W, cost_count, PRINTING, timing, myd
-from conf import a
-from random import choice
 from collections import Counter, defaultdict
 import logging
-from time import time
+
+from base import BaseGame, B, W, timing, cost_dict
+from conf import a
 
 v_max = -9999999
 v_min = 9999999
 step = []
-logger = logging.getLogger('Gomoku')
-logger.setLevel(logging.DEBUG)
 ROADS = {0: (0, 1), 1: (1, 0), 2: (1, 1), 3: (1, -1)}
-ADR = {
-    0: {
-        "冲1": 1, "冲2": 2, "冲3": 2, "冲4": 1, "冲5": 0, "冲6": 0,
-        "活1": 1, "活2": 1, "活3": 2, "活4": 1, "活5": 0, "活6": 0},
-    1: {
-        "冲1": 1, "冲2": 2, "冲3": 1, "冲4": 0, "冲5": 0, "冲6": 0,
-        "活1": 1, "活2": 1, "活3": 1, "活4": 0, "活5": 0, "活6": 0},
-    2: {
-        "冲1": 1, "冲2": 1, "冲3": 0, "冲4": 0, "冲5": 0, "冲6": 0,
-        "活1": 1, "活2": 1, "活3": 0, "活4": 0, "活5": 0, "活6": 0},
-}
+
 SCORE = {
     "活6": 100000,
     "冲6": 100000,
@@ -41,220 +27,28 @@ SCORE = {
     "冲1": 1,
 }
 
+logger = logging.getLogger('Gomoku')
+logger.setLevel(logging.DEBUG)
+
 
 class Gomokuy(BaseGame):
-    @timing
     def __init__(self, settle=False, restricted=True):
-        BaseGame.__init__(self)
-        self.values = {
-            B: defaultdict(list),
-            W: defaultdict(list)}
-        self.check = []
-        self.forbidden = [0, 0]
+        BaseGame.__init__(self, restricted=restricted)
         self.settle = settle
-        self.restricted = restricted
 
     @timing
-    def move_to_win(self, row, col, chess, show=True):
-        if self.winner:
-            return False
-        ft = [0, 0]
-        info = ""
-        for direction in range(4):
-            ret = [False, 0, False]
-            for side in (-1, 1):
-                for offset in range(1, 6):
-                    new_row = row + offset * side * ROADS[direction][0]
-                    new_col = col + offset * side * ROADS[direction][1]
-                    if new_row >= self.width or new_row < 0:
-                        break
-                    if new_col >= self.width or new_col < 0:
-                        break
+    def evaluate(self):
+        self.inside_make_line()
 
-                    new_cell = self.table[new_row][new_col]
-                    new_loc = (new_row, new_col)
+        player = W if self.step % 2 else B
+        opponent = W if player == B else B
 
-                    if new_cell == 0:
-                        ret[1 + side] = True
-                    elif new_cell == chess:
-                        ret[1] += 1
-                    else:
-                        break
-            if ret[1] > 5:
-                self.winner = W
-                info = "白·长连·胜" if chess == W else "黑·长连禁手·负"
-            elif ret[1] == 5:
-                self.winner = chess
-                info = PRINTING[chess] + "·五连·胜"
-            elif ret[1] == 4:
-                if ret[0] and ret[2]:
-                    self.winner = chess
-                    info = PRINTING[chess] + "·四连·胜"
-                elif ret[0] or ret[2]:
-                    ft[0] += 1
-            elif ret[1] == 3:
-                ft[1] += 1
-        if ft[0] >= 2:
-            self.winner = W
-            info = "白·四四·胜" if chess == W else "黑·四四禁手·负"
-        elif ft[1] >= 2 and chess == B:
-            self.winner = W
-            info = "黑·三三禁手·负"
-
-        if self.winner:
-            if show:
-                logger.info(f"{self.records}\t{info}")
-            else:
-                logger.debug(f"{self.records}\t{info}")
-            return False
-        elif sum(ft) >= 2:
-            return True
-        else:
-            return False
+        my_score = sum([SCORE[key] * len(v1) for (key, v1) in self.values[player].items()])
+        your_score = sum([SCORE[key] * len(v2) for (key, v2) in self.values[opponent].items()])
+        return my_score - your_score
 
     @timing
-    def base_linear(self, row, col, chess, direction):
-        line = {
-            "s": [(row, col)],
-            0: [],  # 中间的缝隙
-            -1: [],  # 某一边的空
-            1: [],  # 另一边的空
-        }
-        for side in (-1, 1):
-            for offset in range(1, 9):
-                new_row = row + offset * side * ROADS[direction][0]
-                new_col = col + offset * side * ROADS[direction][1]
-                if new_row >= self.width or new_row < 0:
-                    break
-                if new_col >= self.width or new_col < 0:
-                    break
-
-                new_cell = self.table[new_row][new_col]
-                new_loc = (new_row, new_col)
-
-                if new_cell == 0:
-                    line[side].append(new_loc)
-                elif new_cell == chess:
-                    if line[side]:
-                        if line[0]:
-                            break
-                        else:
-                            if len(line[side]) <= 1:
-                                line[0] = line[side]
-                                line[side] = []
-                            else:
-                                break
-                    line["s"].append(new_loc)
-                else:
-                    break
-        return line
-
-    @timing
-    def inside_make_line(self):
-        self.values = {
-            B: defaultdict(list),
-            W: defaultdict(list)}
-        self.check = []
-        self.forbidden = [0, 0]
-        last_move = self.records[-1] if self.records else False
-
-        for direction in range(4):
-            checked = set([])
-            for row, t_ling in enumerate(self.table):
-                for col, chess in enumerate(t_ling):
-                    chess = self.table[row][col]
-                    if not chess:
-                        continue
-                    if (row, col) in checked:
-                        continue
-                    line = self.base_linear(row, col, chess, direction)
-                    checked |= set(line["s"])
-                    if len(line["s"]) + len(line[-1]) + len(line[0]) + len(line[1]) < 5:
-                        continue
-                    self.inside_line_grouping(line, chess, last_move)
-
-    @timing
-    def inside_line_grouping(self, line, sid, last_move):
-        t = len(line["s"])
-        t = 6 if t >= 6 else t
-        if line[-1] and line[1]:
-            key = "活" + str(t) if t + len(line[0]) <= 4 else "冲" + str(t)
-            if t >= 4:
-                self.check += line["s"]
-            elif t == 3 and len(line[0]) <= 1:
-                self.check += line["s"]
-            if last_move in line["s"]:
-                if t == 3 and len(line[0]) <= 1:
-                    self.forbidden[0] += 1
-                elif t == 4:
-                    self.forbidden[1] += 1
-        elif line[0] or line[1] or line[-1]:
-            key = "冲" + str(t)
-            if t >= 4:
-                self.check += line["s"]
-            if t == 4 and last_move in line["s"]:
-                self.forbidden[1] += 1
-        else:
-            return
-        line[-1] = line[-1][:ADR[len(line[0])][key]]
-        line[1] = line[1][:ADR[len(line[0])][key]]
-        format_line = line[-1] + line[0] + line[1]
-        self.values[sid][key].append(format_line)
-
-    @timing
-    def move(self, loc, show=True):
-        super().move(loc, show=show)
-        ccc = player = B if self.step % 2 == 0 else W
-        ret = self.move_to_win(loc[0], loc[1], ccc)
-        if ret:
-            self.analyse(show=show)
-
-    @timing
-    def win_announce(self, show=True):
-        info = ""
-        for _player in (B, W):
-            _opt = B if _player == W else W
-
-            if self.values[_player]["活6"]:
-                self.winner = W
-                info = "白·长连·胜" if _player == W else "黑·长连禁手·负"
-            elif self.values[_player]["活5"]:
-                self.winner = _player
-                info = PRINTING[_player] + "·五连·胜"
-            elif self.forbidden[1] >= 2:
-                self.winner = W
-                info = "白·四四·胜" if _player == W else "黑·四四禁手·负"
-            elif self.values[_player]["活4"]:
-                self.winner = _player
-                info = PRINTING[_player] + "·四连·胜"
-            elif self.forbidden[0] >= 2:
-                if _player == B:
-                    self.winner = W
-                    info = "黑·三三禁手·负"
-                elif self.values[_opt]["活3"] or self.values[_opt]["冲3"] or self.values[_opt]["冲4"]:
-                    # 对方还可以防御
-                    continue
-                else:
-                    self.winner = _player
-                    info = PRINTING[_player] + "·三三·胜"
-            elif len(self.values[_player]["活4"]) + len(self.values[_player]["冲4"]) + len(
-                    self.values[_player]["活3"]) >= 2:
-                def_poss = sum(self.values[_player]["活4"] + self.values[_player]["冲4"], [])
-                att_poss = sum(self.values[_opt]["活3"] + self.values[_opt]["冲3"], [])
-                if not [p for p in def_poss if p in att_poss]:
-                    # 这里 def_poss 算短了， x x x 0 0 第二个 0 是可以防守成功的。
-                    self.winner = _player
-                    info = PRINTING[_player] + "·四三·胜"
-
-        if not self.winner:
-            return
-        if show:
-            logger.info(f"{self.records}\t{info}")
-        else:
-            logger.debug(f"{self.records}\t{info}")
-    
-    @timing
-    def analyse(self, show=True):
+    def gen(self):
         @timing
         def win_chance_single_line():
             # 自己有冲四、活四 -> 对方的冲四、活四 -> 自己的活三
@@ -337,11 +131,7 @@ class Gomokuy(BaseGame):
                 ret = list(set(sum(temp, []))) + worst
             return ret
 
-        if self.winner:
-            return False
-
         self.inside_make_line()
-        self.win_announce(show=show)
 
         player = W if self.step % 2 else B
         opponent = W if player == B else B
@@ -351,137 +141,111 @@ class Gomokuy(BaseGame):
         return win_chance_single_line() or win_chance_mul_lines() or normal_chance()
 
     @timing
-    def min_max_search(self, start=False, max_deep=5):
+    def min_max_search(self, max_deep=5):
         v_max = -9999999
         v_min = 9999999
 
-        @timing
         def win_or_lose(deep):
             global v_max
             global v_min
-            if not self.winner:
-                if start and time() - start > max_deep:
-                    return 0
-                if deep == max_deep:
-                    my_score = sum([SCORE[key] * len(v) for (key, v) in self.values[player].items()])
-                    your_score = sum([SCORE[key] * len(v) for (key, v) in self.values[opponent].items()])
-                    return my_score - your_score
-                else:
-                    next_player = B if (self.step + 1) % 2 == 1 else W
-                    poss = self.analyse(show=False)
-                    if not poss:
-                        return False
-                    result = [0] * len(poss)
-                    for ind, pos in enumerate(poss):
-                        self.move(pos, show=False)
-                        if deep == 0:
-                            new_deeps = deep + 1 if len(poss) > 1 else max_deep
-                        else:
-                            new_deeps = deep + 1
-                        temp_score = win_or_lose(new_deeps)
-                        result[ind] = temp_score
-                        self.undo()
-
-                        if temp_score >= v_max and next_player == player:
-                        # if temp_score == 9999999 and next_player == player:
-                            v_max = max(temp_score, v_max)
-                            break
-                        elif temp_score <= v_min and next_player != player:
-                        # elif temp_score == -9999999 and next_player != player:
-                            v_min = min(temp_score, v_min)
-                            break
-                    if deep == 0:
-                        return result, poss
-                    elif next_player == player:
-                        if max(result) == 9999999:
-                            step.append([self.step, poss[result.index(max(result))]])
-                        else:
-                            step.clear()
-                        return max(result)
-                    else:
-                        if min(result) == 9999999:
-                            step.append([self.step, poss[::-1]])
-                        return min(result)
-            elif self.winner == player:
-                step.append([self.step, False])
-                return 9999999
+            if deep == max_deep:
+                return self.evaluate()
             else:
-                return -9999999
+                next_player = B if (self.step + 1) % 2 == 1 else W
+                poss = self.gen()
+                if not poss:
+                    return False
+                result = [0] * len(poss)
+                if deep == 0 and len(poss) == 1:
+                    new_deeps = max_deep
+                else:
+                    new_deeps = deep + 1
+                for ind, pos in enumerate(poss):
+                    self.move(pos, show=False)
+                    if self.winner:
+                        if self.winner == player:
+                            step.append([self.step, False])
+                            temp_score = 9999999
+                        else:
+                            temp_score = -9999999
+                    else:
+                        temp_score = win_or_lose(new_deeps)
+                    self.undo()
+                    result[ind] = temp_score
+
+                    if temp_score >= v_max and next_player == player:
+                        v_max = max(temp_score, v_max)
+                        break
+                    elif temp_score <= v_min and next_player != player:
+                        v_min = min(temp_score, v_min)
+                        break
+                if deep == 0:
+                    return result, poss
+                elif next_player == player:
+                    if max(result) == 9999999:
+                        step.append([self.step, poss[result.index(max(result))]])
+                    else:
+                        step.clear()
+                    return max(result)
+                else:
+                    if min(result) == 9999999:
+                        step.append([self.step, poss[::-1]])
+                    return min(result)
 
         if self.winner:
             return False
 
         player = W if self.step % 2 else B
-        opponent = W if player == B else B
         fin_result, fin_poss = win_or_lose(0)
         best_choice = fin_poss[fin_result.index(max(fin_result))]
         return best_choice, max(fin_result), fin_poss, fin_result
 
     @timing
-    def iterative_deepening(self, max_deep, timing=False):
-        if not timing:
-            for d in range(1, max_deep + 1, 2):
-                ret = self.min_max_search(max_deep=d)
-                if ret:
-                    pos, fen, fin_poss, fin_result = ret
-                    if fen == 9999999:
-                        break
-                else:
-                    pos = False
-        else:
-            # 这个算法有问题
-            start = time()
-            d = -1
-            while 1:
-                d += 2
-                if time() - start > max_deep:
-                    break
-                ret = self.min_max_search(start=start, max_deep=max_deep)
-                if ret:
-                    pos, fen, fin_poss, fin_result = ret
-                    if fen == 9999999:
-                        break
-                else:
-                    pos = False
+    def iterative_deepening(self, max_deep):
+        pos = False
+        for d in range(1, max_deep + 1, 2):
+            ret = self.min_max_search(max_deep=d)
+            if not ret:
+                continue
+            pos, fen, fin_poss, fin_result = ret
+            if fen == 9999999:
+                break
         if pos:
-            logger.debug(f"result：{fin_result}")
-            logger.debug(f"poss  ：{fin_poss}")
-            logger.debug(f"best  ： {pos}")
+            print(f"result：{fin_result}")
+            print(f"poss  ：{fin_poss}")
+            print(f"best  ： {pos}")
         return pos
 
 
 def settling():
-    g = Gomokuy(settle=True)
+    g = Gomokuy(settle=True, restricted=True)
     g.parse(a)
     g.iterative_deepening(7)
 
 
+def show_timing():
+    print("Timing\n+-%-24s-+-%-12s-+-%-8s-+" % ("-" * 24, "-" * 12, "-" * 8))
+    print("| %-24s | %-12s | %-8s |" % ("func name", "times", "cost"))
+    print("+-%-24s-+-%-12s-+-%-8s-+" % ("-" * 24, "-" * 12, "-" * 8))
+    for k, v in cost_dict.items():
+        print("| %-24s | %-12d | %-8s |" % (k, v[0], str(round(v[1], 3))))
+        # print(f"{k}\t{v[0]}\t{round(v[1], 3)}")
+    print("+-%-24s-+-%-12s-+-%-8s-+\n" % ("-" * 24, "-" * 12, "-" * 8))
+
+
 def road_finding():
     road_map = defaultdict(list)
-    for k in step[::-1]:
-        t = k[1] if k[1] else [False]
-        road_map[k[0]].append(t)
+    for k1 in step[::-1]:
+        t = k1[1] if k1[1] else [False]
+        road_map[k1[0]].append(t)
     road_map[min(road_map.keys())] = road_map[min(road_map.keys())][0]
     print("\nROAD MAP:")
     print(road_map)
-    for k, v in road_map.items():
-        print(f"{k}\t{len(v)}\t{v}")
+    for k1, v1 in road_map.items():
+        print(f"{k1}\t{len(v1)}\t{v1}")
 
 
 if __name__ == '__main__':
     settling()
-    global myd
-    for k, v in myd.items():
-        print(f"{k}\t{v[0]}\t{round(v[1], 3)}")
-    # road_finding()
-
-    # s = 15
-    # while 1:
-    #     pos = input("!!!!\n")
-    #     pos = (int(str(pos)[0]),int(str(pos)[1]))
-    #     if pos not in road_map[s] and pos != road_map[s]:
-    #         print("WRONG")
-    #         continue
-    #     s += 1
-    #     ind = road_map[s].index(pos)
-    #     road_map[s+1] = road_map[s+1][ind]
+    show_timing()
+    road_finding()
