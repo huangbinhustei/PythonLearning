@@ -25,6 +25,7 @@ ADR = {
 }
 logger = logging.getLogger('Gomoku')
 logger.setLevel(logging.DEBUG)
+info = ""
 
 
 def timing(func):
@@ -32,7 +33,7 @@ def timing(func):
     def costing(*args, **kw):
         a = time.time()
         ret = func(*args, **kw)
-        time_cost = time.time()-a
+        time_cost = time.time() - a
         global cost_dict
         cost_dict[func.__name__][0] += 1
         cost_dict[func.__name__][1] += time_cost
@@ -112,35 +113,22 @@ class BaseGame:
         self.values = {
             B: defaultdict(list),
             W: defaultdict(list)}
-        self.check = []
 
         for direction in range(4):
             checked = set([])
             for row, t_line in enumerate(self.table):
                 for col, chess in enumerate(t_line):
-                    if side:
-                        if not chess:
-                            continue
-                        if (row, col) in checked:
-                            continue
-                        if chess != side:
-                            continue
-                        line = self.base_linear(row, col, chess, direction)
-                        checked |= set(line["s"])
-                        if len(line["s"]) + len(line[-1]) + len(line[0]) + len(line[1]) < 5:
-                            continue
-                        self.inside_line_grouping(line, chess)
-
-                    else:
-                        if not chess:
-                            continue
-                        if (row, col) in checked:
-                            continue
-                        line = self.base_linear(row, col, chess, direction)
-                        checked |= set(line["s"])
-                        if len(line["s"]) + len(line[-1]) + len(line[0]) + len(line[1]) < 5:
-                            continue
-                        self.inside_line_grouping(line, chess)
+                    if not chess:
+                        continue
+                    if (row, col) in checked:
+                        continue
+                    if side and chess != side:
+                        continue
+                    line = self.base_linear(row, col, chess, direction)
+                    checked |= set(line["s"])
+                    if len(line["s"]) + len(line[-1]) + len(line[0]) + len(line[1]) < 5:
+                        continue
+                    self.inside_line_grouping(line, chess)
 
     @timing
     def inside_line_grouping(self, line, chess):
@@ -148,14 +136,8 @@ class BaseGame:
         t = 6 if t >= 6 else t
         if line[-1] and line[1]:
             key = "活" + str(t) if t + len(line[0]) <= 4 else "冲" + str(t)
-            if t >= 4:
-                self.check += line["s"]
-            elif t == 3 and len(line[0]) <= 1:
-                self.check += line["s"]
         elif line[0] or line[1] or line[-1]:
             key = "冲" + str(t)
-            if t >= 4:
-                self.check += line["s"]
         else:
             return
         sli = ADR[len(line[0])][key]
@@ -168,47 +150,48 @@ class BaseGame:
     def judge(self, loc, player):
         row, col = loc
         _opt = B if player == W else W
+        self.check = []
 
         @timing
         def judge_first():
+            global info
             four_three = [0, 0]
-            info = ""
-            need_more_check = False
 
             for direction in range(4):
                 line = self.base_linear(row, col, player, direction)
                 chang = len(line["s"])
 
                 if chang > 5 and not line[0]:
+                    self.check += line["s"]
                     if self.restricted:
                         self.winner = W
                         info = "白·长连·胜!" if player == W else "黑·长连禁手·负!"
                     else:
                         self.winner = player
                         info = PRINTING[player] + "·长连·胜!"
+                    return True
                 elif chang == 5 and not line[0]:
                     self.winner = player
                     info = PRINTING[player] + "·五连·胜!"
+                    self.check += line["s"]
+                    return True
                 elif chang == 4:
-                    # 这段代码稀烂
-                    if not line[0]:
-                        if line[1]:
-                            if line[-1]:
-                                self.winner = player
-                                info = PRINTING[player] + "·四连·胜!"
-                            else:
-                                four_three[0] += 1
-                                block = line[1][0]
-                        else:
-                            if line[-1]:
-                                four_three[0] += 1
-                                block = line[-1][0]
-                    else:
+                    self.check += line["s"]
+                    if line[0]:
                         four_three[0] += 1
                         block = line[0][0]
-
+                    elif line[-1] and line[1]:
+                        self.winner = player
+                        info = PRINTING[player] + "·四连·胜!"
+                        return True
+                    elif line[-1] or line[1]:
+                        four_three[0] += 1
+                        temp = line[-1] or line[1]
+                        block = temp[0]
                 elif chang == 3 and line[1] and line[-1]:
                     four_three[1] += 1
+                    self.check += line["s"]
+
             if four_three[0] >= 2:
                 if self.restricted:
                     self.winner = W
@@ -216,15 +199,16 @@ class BaseGame:
                 else:
                     self.winner = player
                     info = PRINTING[player] + "·四四·胜!"
+                return True
             elif four_three[1] >= 2:
                 if player == B and self.restricted:
                     self.winner = W
                     info = "黑·三三禁手·负!"
+                    return True
                 else:
                     # 有可能三三胜
-                    need_more_check = True
+                    return False
             elif sum(four_three) >= 2:
-                # 有可能四三胜
                 row_o, col_o = block
                 for direction in range(4):
                     line = self.base_linear(row_o, col_o, _opt, direction)
@@ -233,16 +217,12 @@ class BaseGame:
                 else:
                     self.winner = player
                     info = PRINTING[player] + "·四三·胜!"
-
-            if self.winner:
-                print(f"{info}\t{self.records}")
-
-            return need_more_check
+                    return True
+            return True
 
         @timing
         def judge_second():
             self.inside_make_line(side=_opt)
-
             # 双活三，需要看对方是否有冲三、冲四、活三
             # 禁手已经处理掉了，这里只管赢
             if self.values[_opt]["活3"] or self.values[_opt]["冲3"] or self.values[_opt]["冲4"]:
@@ -250,14 +230,13 @@ class BaseGame:
                 pass
             else:
                 self.winner = player
+                global info
                 info = PRINTING[player] + "·三三·胜"
 
-            if self.winner:
-                print(f"{info}\t{self.records}")
+        judge_first() or judge_second()
 
-        once_more = judge_first()
-        if once_more:
-            judge_second()
+        if self.winner:
+            print(f"{info}\t{self.records}")
 
     @timing
     def move(self, loc, show=True):

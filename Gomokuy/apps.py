@@ -41,7 +41,7 @@ def home():
     # 玩家下一步棋结束
 
     # 电脑下一步棋开始
-    g_pos = game.iterative_deepening(5, timing=False)
+    g_pos = game.iterative_deepening(4)
     if g_pos:
         game.move(g_pos)
     # 电脑下一步棋结束
