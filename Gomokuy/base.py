@@ -24,7 +24,6 @@ ADR = {
         "活1": 1, "活2": 1, "活3": 0, "活4": 0, "活5": 0, "活6": 0},
 }
 logger = logging.getLogger('Gomoku')
-logger.setLevel(logging.DEBUG)
 info = ""
 
 
@@ -151,7 +150,7 @@ class BaseGame:
             self.values[chess][key].append(format_line)
 
     @timing
-    def judge(self, loc, player):
+    def judge(self, loc, player, show=True):
         row, col = loc
         _opt = B if player == W else W
         self.check = []
@@ -239,8 +238,10 @@ class BaseGame:
 
         judge_first() or judge_second()
 
-        if self.winner:
-            print(f"{info}\t{self.records}")
+        if self.winner and show:
+            logger.info(f"{info}\t{self.records}")
+        else:
+            logger.debug(f"{info}\t{self.records}")
 
     @timing
     def move(self, loc, show=True):
@@ -259,13 +260,14 @@ class BaseGame:
         player = B if self.step % 2 == 1 else W
         self.table[row][col] = player
         self.records.append(loc)
-        self.judge(loc, player)
+        self.judge(loc, player, show=show)
 
-    def undo(self):
-        if not self.records:
+    def undo(self, count=1):
+        if len(self.records) < count:
             logger.error("悔棋失败！！！！！")
             return
-        row, col = self.records.pop()
-        self.table[row][col] = 0
+        for i in range(count):
+            row, col = self.records.pop()
+            self.table[row][col] = 0
         self.winner = False
-        self.step -= 1
+        self.step -= count

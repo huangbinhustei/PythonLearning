@@ -11,45 +11,53 @@ app = Flask(__name__)
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 logger = logging.getLogger('Gomoku')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
+count = 1
 
-
-@app.route("/")
-def home():
-    loc = request.args.get('loc')
-    retract, restart= request.args.get('retract'), request.args.get('restart')
-    if restart:
-        print("重启游戏")
-        game.restart()
-        fir = request.args.get('aifirst')
-        if fir == "1":
-            game.move((7, 7))
-        return redirect(url_for("home"))
-    if retract and retract == "1":
-        # 悔棋
-        game.undo()
-        return redirect(url_for("home"))
-
-    if not loc:
-        # 第一次打开，直接开始新游戏
-        return render_template("home.html", game=game)
-    
+def pvp(pos):
+    ret = 1
     # 玩家下一步棋开始
-    loc = int(loc)
-    pos = (int(loc / game.width), int(loc % game.width))
+
     game.move(pos)
     # 玩家下一步棋结束
 
     # 电脑下一步棋开始
     g_pos = game.iterative_deepening(4)
     if g_pos:
-        game.move(g_pos)
+        ret += 1
+        game.move(g_pos, show=True)
     # 电脑下一步棋结束
+    return ret
+
+
+@app.route("/")
+def home():
+    global count
+    loc = request.args.get('loc')
+    retract, restart= request.args.get('retract'), request.args.get('restart')
+    if restart:
+        logger.info("重启游戏")
+        game.restart()
+        fir = request.args.get('aifirst')
+        if fir == "1":
+            game.move((7, 7), show=True)
+        return redirect(url_for("home"))
+    if retract and retract == "1":
+        # 悔棋
+        game.undo(count=count)
+        return redirect(url_for("home"))
+    if not loc:
+        # 第一次打开，直接开始新游戏
+        return render_template("home.html", game=game)
+
+    loc = int(loc)
+    pos = (int(loc / game.width), int(loc % game.width))
+    count = pvp(pos)
 
     return redirect(request.referrer)
 
 
 if __name__ == '__main__':
-    print("游戏开始")
+    logger.info("游戏开始")
     game = Gomokuy()
     app.run(host="0.0.0.0", debug=True)

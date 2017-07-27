@@ -27,7 +27,6 @@ SCORE = {
 }
 
 logger = logging.getLogger('Gomoku')
-logger.setLevel(logging.DEBUG)
 
 
 class Gomokuy(BaseGame):
@@ -240,9 +239,9 @@ class Gomokuy(BaseGame):
             if fen == 9999999:
                 break
         if pos:
-            print(f"result：{fin_result}")
-            print(f"poss  ：{fin_poss}")
-            print(f"best  ： {pos}")
+            logger.debug(f"result：{fin_result}")
+            logger.debug(f"poss  ：{fin_poss}")
+            logger.info(f"best  ： {pos}, score={max(fin_result)}, step={self.step}")
         return pos
 
 
@@ -275,6 +274,7 @@ def road_finding():
 
 
 if __name__ == '__main__':
+    logger.setLevel(logging.DEBUG)
     settling()
     show_timing()
     road_finding()
