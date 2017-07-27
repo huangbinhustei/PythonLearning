@@ -131,7 +131,7 @@ class BaseGame:
                     self.inside_line_grouping(line, chess)
 
     @timing
-    def inside_line_grouping(self, line, chess):
+    def inside_line_grouping(self, line, chess, values=False):
         t = len(line["s"])
         t = 6 if t >= 6 else t
         if line[-1] and line[1]:
@@ -139,12 +139,16 @@ class BaseGame:
         elif line[0] or line[1] or line[-1]:
             key = "冲" + str(t)
         else:
-            return
+            return values
         sli = ADR[len(line[0])][key]
         line[-1] = line[-1][:sli]
         line[1] = line[1][:sli]
         format_line = line[-1] + line[0] + line[1]
-        self.values[chess][key].append(format_line)
+        if values:
+            values[chess][key].append(format_line)
+            return values
+        else:
+            self.values[chess][key].append(format_line)
 
     @timing
     def judge(self, loc, player):

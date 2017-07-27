@@ -11,7 +11,6 @@ v_max = -9999999
 v_min = 9999999
 step = []
 ROADS = {0: (0, 1), 1: (1, 0), 2: (1, 1), 3: (1, -1)}
-
 SCORE = {
     "活6": 100000,
     "冲6": 100000,
@@ -38,6 +37,36 @@ class Gomokuy(BaseGame):
 
     @timing
     def evaluate(self):
+        lc = self.records[-1]
+        player = self.table[lc[0]][lc[1]]
+        opponent = W if player == B else B
+        values = {
+            B: defaultdict(list),
+            W: defaultdict(list)}
+
+        my_score = sum([SCORE[key] * len(v1) for (key, v1) in self.values[player].items()])
+        your_score = sum([SCORE[key] * len(v2) for (key, v2) in self.values[opponent].items()])
+        
+        for direction in range(4):
+            line = self.base_linear(lc[0], lc[1], player, direction)
+            values = self.inside_line_grouping(line, player, values=values)
+        
+        my_score += sum([SCORE[key] * len(v1) for (key, v1) in values[player].items()])
+        your_score += sum([SCORE[key] * len(v2) for (key, v2) in values[opponent].items()])
+
+        for key, v1 in self.values[player].items():
+            del_v1 = [l for l in v1 if lc in l]
+            my_score -= SCORE[key] * len(del_v1)
+
+        for key, v1 in self.values[opponent].items():
+            del_v1 = [l for l in v1 if lc in l]
+            my_score -= SCORE[key] * len(del_v1)
+        
+        # print(f"得分：{my_score - your_score}")
+        return my_score - your_score
+
+    @timing
+    def old_evaluate(self):
         self.inside_make_line()
 
         player = W if self.step % 2 else B
@@ -145,7 +174,7 @@ class Gomokuy(BaseGame):
         v_max = -9999999
         v_min = 9999999
 
-        def win_or_lose(deep):
+        def alpha_beta(deep):
             global v_max
             global v_min
             if deep == max_deep:
@@ -169,7 +198,7 @@ class Gomokuy(BaseGame):
                         else:
                             temp_score = -9999999
                     else:
-                        temp_score = win_or_lose(new_deeps)
+                        temp_score = alpha_beta(new_deeps)
                     self.undo()
                     result[ind] = temp_score
 
@@ -196,7 +225,7 @@ class Gomokuy(BaseGame):
             return False
 
         player = W if self.step % 2 else B
-        fin_result, fin_poss = win_or_lose(0)
+        fin_result, fin_poss = alpha_beta(0)
         best_choice = fin_poss[fin_result.index(max(fin_result))]
         return best_choice, max(fin_result), fin_poss, fin_result
 
@@ -224,7 +253,7 @@ def settling():
 
 
 def show_timing():
-    print("Timing\n+-%-24s-+-%-12s-+-%-8s-+" % ("-" * 24, "-" * 12, "-" * 8))
+    print("\nTiming\n+-%-24s-+-%-12s-+-%-8s-+" % ("-" * 24, "-" * 12, "-" * 8))
     print("| %-24s | %-12s | %-8s |" % ("func name", "times", "cost"))
     print("+-%-24s-+-%-12s-+-%-8s-+" % ("-" * 24, "-" * 12, "-" * 8))
     for k, v in cost_dict.items():
