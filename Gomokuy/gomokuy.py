@@ -46,11 +46,11 @@ class Gomokuy(BaseGame):
 
         my_score = sum([SCORE[key] * len(v1) for (key, v1) in self.values[player].items()])
         your_score = sum([SCORE[key] * len(v2) for (key, v2) in self.values[opponent].items()])
-        
+
         for direction in range(4):
             line = self.base_linear(lc[0], lc[1], player, direction)
             values = self.inside_line_grouping(line, player, values=values)
-        
+
         my_score += sum([SCORE[key] * len(v1) for (key, v1) in values[player].items()])
         your_score += sum([SCORE[key] * len(v2) for (key, v2) in values[opponent].items()])
 
@@ -61,8 +61,7 @@ class Gomokuy(BaseGame):
         for key, v1 in self.values[opponent].items():
             del_v1 = [l for l in v1 if lc in l]
             my_score -= SCORE[key] * len(del_v1)
-        
-        # print(f"得分：{my_score - your_score}")
+
         return my_score - your_score
 
     @timing
@@ -259,7 +258,6 @@ def show_timing():
     print("+-%-24s-+-%-12s-+-%-8s-+" % ("-" * 24, "-" * 12, "-" * 8))
     for k, v in cost_dict.items():
         print("| %-24s | %-12d | %-8s |" % (k, v[0], str(int(v[1]*1000))))
-        # print(f"{k}\t{v[0]}\t{round(v[1], 3)}")
     print("+-%-24s-+-%-12s-+-%-8s-+\n" % ("-" * 24, "-" * 12, "-" * 8))
 
 

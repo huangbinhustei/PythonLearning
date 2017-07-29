@@ -97,6 +97,10 @@ class BaseGame:
     @timing
     def modify_values(self, loc, chess):
         row, col = loc
+        for sid, d in self.values.items():
+            for key, v in d.items():
+                self.values[sid][key] = [l for l in v if loc not in l]
+
         for direction in range(4):
             line = self.base_linear(row, col, chess, direction)
             self.values = self.inside_line_grouping(line, chess, self.values)
