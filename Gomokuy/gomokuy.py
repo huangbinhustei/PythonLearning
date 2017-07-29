@@ -11,9 +11,7 @@ v_max = -9999999
 v_min = 9999999
 ROADS = {0: (0, 1), 1: (1, 0), 2: (1, 1), 3: (1, -1)}
 SCORE = {
-    "活6": 100000,
     "冲6": 100000,
-    "活5": 100000,
     "冲5": 100000,
     "活4": 100000,
     "冲4": 1000,
@@ -35,8 +33,9 @@ class Gomokuy(BaseGame):
             logger.setLevel(logging.DEBUG)
         else:
             logger.setLevel(logging.INFO)
+        self.last_deep = 16
 
-    # @timing
+    @timing
     def evaluate(self):
         lc = self.records[-1]
         player = self.table[lc[0]][lc[1]]
@@ -159,28 +158,25 @@ class Gomokuy(BaseGame):
                 ret = list(set(sum(temp, []))) + worst
             return ret
 
-        player = W if self.step % 2 else B
-        opponent = W if player == B else B
-
-        if self.records:
-            last_loc = self.records[-1]
-            pos = self.get_zod(last_loc, player, deep)
-            if pos:
-                return pos
+        pos = self.get_zod(deep)
+        if pos:
+            return pos
 
         self.inside_make_line()
 
+        player = W if self.step % 2 else B
+        opponent = W if player == B else B
         player_chance = self.values[player]
         opponent_chance = self.values[opponent]
 
         return win_chance_single_line() or win_chance_mul_lines() or normal_chance()
 
+    @timing
     def min_max_search(self, max_deep=5):
         v_max = -9999999
         v_min = 9999999
 
         def alpha_beta(deep):
-
             global v_max
             global v_min
             if deep == max_deep:
@@ -216,8 +212,7 @@ class Gomokuy(BaseGame):
                 if deep == 0:
                     return result, poss
                 elif next_player == player:
-                    zod_key = self.get_zod_key_the_hard_way()
-                    self.tt[zod_key] = {
+                    self.translation_table[self.zod_key] = {
                         "pos": poss[result.index(max(result))],
                         "result": max(result),
                         "deep": max_deep - deep,

@@ -59,44 +59,24 @@ class BaseGame:
 
         self.zod_grid = []
         self.zod_key = 0
-        ra = 2 ** 96
+        ra = 2 ** 105
         for i in range(self.width):
             t = []
             for j in range(self.width):
                 t1 = []
                 for k in range(3):
-                    v = random.random() * ra
-                    t1.append(int(v))
+                    t1.append(int(random.random() * ra))
                 t.append(t1)
             self.zod_grid.append(t)
-        self.tt = dict()
+        self.translation_table = dict()
 
-    @timing
-    def get_zod_key_the_hard_way(self):
-        ret = 0
-        for row, line in enumerate(self.table):
-            for col, chess in enumerate(line):
-                ret ^= self.zod_grid[row][col][chess]
-        return ret
-
-    def get_zod_key(self, loc, player):
-        row, col = loc
-        r = self.zod_grid[row][col]
-        self.zod_key ^= r[0]
-        self.zod_key ^= r[player]
-        return self.zod_key
-
-    @timing
-    def get_zod(self, loc, player, deep):
-        k = self.get_zod_key_the_hard_way()
-        if k in self.tt:
-            if self.tt[k]["result"] == 9999999 or deep <= self.tt[k]["deep"]:
-                return [self.tt[k]["pos"]]
+    def get_zod(self, deep):
+        k = self.zod_key
+        if k in self.translation_table:
+            if self.translation_table[k]["result"] == 9999999 or deep <= self.translation_table[k]["deep"]:
+                return [self.translation_table[k]["pos"]]
         else:
             return False
-
-    def upgrade_zod(self, loc, player, deep, score, best_pos):
-        pass
 
     def restart(self):
         self.__init__()
@@ -113,6 +93,13 @@ class BaseGame:
                         self.step += 1
         else:
             raise TypeError
+
+    @timing
+    def modify_values(self, loc, chess):
+        row, col = loc
+        for direction in range(4):
+            line = self.base_linear(row, col, chess, direction)
+            self.values = self.inside_line_grouping(line, chess, self.values)
 
     @timing
     def base_linear(self, row, col, chess, direction):
@@ -170,10 +157,10 @@ class BaseGame:
                     checked |= set(line["s"])
                     if len(line["s"]) + len(line[-1]) + len(line[0]) + len(line[1]) < 5:
                         continue
-                    self.inside_line_grouping(line, chess)
+                    self.values = self.inside_line_grouping(line, chess, self.values)
 
     @timing
-    def inside_line_grouping(self, line, chess, values=False):
+    def inside_line_grouping(self, line, chess, values):
         t = len(line["s"])
         t = 6 if t >= 6 else t
         if line[-1] and line[1]:
@@ -186,13 +173,10 @@ class BaseGame:
         line[-1] = line[-1][:sli]
         line[1] = line[1][:sli]
         format_line = line[-1] + line[0] + line[1]
-        if values:
-            values[chess][key].append(format_line)
-            return values
-        else:
-            self.values[chess][key].append(format_line)
+        values[chess][key].append(format_line)
+        return values
 
-    # @timing
+    @timing
     def judge(self, loc, player, show=True):
         row, col = loc
         _opt = B if player == W else W
@@ -288,7 +272,7 @@ class BaseGame:
                             continue
                         if len(line["s"]) + len(line[-1]) + len(line[0]) + len(line[1]) < 5:
                             continue
-                        values = self.inside_line_grouping(line, _opt, values=values)
+                        values = self.inside_line_grouping(line, _opt, values)
 
             if values[_opt]["活3"] or values[_opt]["冲3"] or values[_opt]["冲4"]:
                 pass
@@ -322,8 +306,10 @@ class BaseGame:
         self.step += 1
         player = B if self.step % 2 == 1 else W
         self.table[row][col] = player
+        self.zod_key ^= self.zod_grid[row][col][0] ^ self.zod_grid[row][col][player]
         self.records.append(loc)
         self.judge(loc, player, show=show)
+        # self.modify_values(loc, player)
 
     def undo(self, count=1):
         if len(self.records) < count:
@@ -331,6 +317,8 @@ class BaseGame:
             return
         for i in range(count):
             row, col = self.records.pop()
+            tmp = self.table[row][col]
             self.table[row][col] = 0
+            self.zod_key ^= self.zod_grid[row][col][tmp] ^ self.zod_grid[row][col][0]
         self.winner = False
         self.step -= count
