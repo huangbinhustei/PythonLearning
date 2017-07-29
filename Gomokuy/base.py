@@ -5,6 +5,7 @@ from functools import wraps
 import time
 import logging
 from collections import defaultdict
+import random
 
 
 B = 1
@@ -23,8 +24,9 @@ ADR = {
         "冲1": 0, "冲2": 1, "冲3": 0, "冲4": 0, "冲5": 0, "冲6": 0,
         "活1": 1, "活2": 1, "活3": 0, "活4": 0, "活5": 0, "活6": 0},
 }
-logger = logging.getLogger('Gomoku')
 info = ""
+logger = logging.getLogger('Gomoku')
+logger.addHandler(logging.StreamHandler())
 
 
 def timing(func):
@@ -55,6 +57,47 @@ class BaseGame:
             W: defaultdict(list)}
         self.check = []
 
+        self.zod_grid = []
+        self.zod_key = 0
+        ra = 2 ** 96
+        for i in range(self.width):
+            t = []
+            for j in range(self.width):
+                t1 = []
+                for k in range(3):
+                    v = random.random() * ra
+                    t1.append(int(v))
+                t.append(t1)
+            self.zod_grid.append(t)
+        self.tt = dict()
+
+    @timing
+    def get_zod_key_the_hard_way(self):
+        ret = 0
+        for row, line in enumerate(self.table):
+            for col, chess in enumerate(line):
+                ret ^= self.zod_grid[row][col][chess]
+        return ret
+
+    def get_zod_key(self, loc, player):
+        row, col = loc
+        r = self.zod_grid[row][col]
+        self.zod_key ^= r[0]
+        self.zod_key ^= r[player]
+        return self.zod_key
+
+    @timing
+    def get_zod(self, loc, player, deep):
+        k = self.get_zod_key_the_hard_way()
+        if k in self.tt:
+            if self.tt[k]["result"] == 9999999 or deep <= self.tt[k]["deep"]:
+                return [self.tt[k]["pos"]]
+        else:
+            return False
+
+    def upgrade_zod(self, loc, player, deep, score, best_pos):
+        pass
+
     def restart(self):
         self.__init__()
 
@@ -63,8 +106,9 @@ class BaseGame:
         if [len(item) for item in manual] == [self.width] * self.width:
             self.table = manual
             self.step = 0
-            for line in manual:
-                for cell in line:
+            for row, line in enumerate(manual):
+                for col, cell in enumerate(line):
+                    self.zod_key ^= self.zod_grid[row][col][cell]
                     if cell != 0:
                         self.step += 1
         else:
@@ -76,8 +120,7 @@ class BaseGame:
             "s": [(row, col)],
             0: [],  # 中间的缝隙
             -1: [],  # 某一边的空
-            1: [],  # 另一边的空
-        }
+            1: []}  # 另一边的空
         for side in (-1, 1):
             for offset in range(1, 6):
                 new_row = row + offset * side * ROADS[direction][0]
@@ -149,13 +192,13 @@ class BaseGame:
         else:
             self.values[chess][key].append(format_line)
 
-    @timing
+    # @timing
     def judge(self, loc, player, show=True):
         row, col = loc
         _opt = B if player == W else W
         self.check = []
 
-        @timing
+        # @timing
         def judge_first():
             global info
             four_three = [0, 0]
@@ -223,13 +266,31 @@ class BaseGame:
                     return True
             return True
 
-        @timing
+        # @timing
         def judge_second():
-            self.inside_make_line(side=_opt)
             # 双活三，需要看对方是否有冲三、冲四、活三
             # 禁手已经处理掉了，这里只管赢
-            if self.values[_opt]["活3"] or self.values[_opt]["冲3"] or self.values[_opt]["冲4"]:
-                # 对方还可以防御
+            values = {
+                B: defaultdict(list),
+                W: defaultdict(list)}
+
+            for direction in range(4):
+                checked = set([])
+                for row, t_line in enumerate(self.table):
+                    for col, chess in enumerate(t_line):
+                        if chess != _opt:
+                            continue
+                        if (row, col) in checked:
+                            continue
+                        line = self.base_linear(row, col, chess, direction)
+                        checked |= set(line["s"])
+                        if len(line["s"]) < 3:
+                            continue
+                        if len(line["s"]) + len(line[-1]) + len(line[0]) + len(line[1]) < 5:
+                            continue
+                        values = self.inside_line_grouping(line, _opt, values=values)
+
+            if values[_opt]["活3"] or values[_opt]["冲3"] or values[_opt]["冲4"]:
                 pass
             else:
                 self.winner = player
@@ -238,7 +299,9 @@ class BaseGame:
 
         judge_first() or judge_second()
 
-        if self.winner and show:
+        if not self.winner:
+            return
+        if show:
             logger.info(f"{info}\t{self.records}")
         else:
             logger.debug(f"{info}\t{self.records}")

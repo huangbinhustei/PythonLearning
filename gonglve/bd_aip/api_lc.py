@@ -1,10 +1,11 @@
 import os
 import requests as req
-from aip import AipAntiPorn
+from aip import AipImageCensor
 from aip import AipFace
 from aip import AipOcr
 from aip import AipNlp
 from apps import get_tok, basedir, app_id
+from aip import AipSpeech
 import logging
 logging.basicConfig(level=logging.ERROR)
 
@@ -15,33 +16,27 @@ def get_file_content(file_path):
 
 
 class MyTTS:
-    def __init__(self, file_name, c_uid="", output_dir="res"):
-        tok = get_tok()
-        if not tok:
-            logging.error("INIT ERROR: NO TOKEN")
-            return
-        if not os.path.exists(file_name):
-            logging.error("NO FILE")
-            return
-        self.api_url = "http://tsn.baidu.com/text2audio"
-        self.api_params = {'ctp': 1, 'cuid': c_uid if c_uid else "PPT2VIDEO", 'lan': 'zh', 'tex': '', 'spd': 7,
-                           "tok": tok}
-        self.output_dir = os.path.join(basedir, output_dir)
+    def __init__(self, file_name):
+        self.aipSpeech = AipSpeech(app_id["APP_ID"], app_id["API_KEY"], app_id["SECRET_KEY"])
+        self.output_dir = os.path.join(basedir, "res")
         with open(file_name, "r") as f:
             self.texts = [line.strip() for line in f.readlines() if len(line) > 5]
+        self.setting = {
+            "spd": "6",
+            "per": "0",
+        }
 
     def make_mp3(self, resp, ind):
-        if "err_msg" in resp.json():
-            logging.error(resp.json()["err_msg"])
+        if isinstance(resp, dict):
+            logging.error(resp)
             return
         with open(os.path.join(self.output_dir, str(ind) + ".wav"), "wb") as f:
-            f.write(resp.content)
+            f.write(resp)
 
     def run(self):
         for index, item in enumerate(self.texts):
-            self.api_params["tex"] = item
-            r = req.get(self.api_url, params=self.api_params)
-            self.make_mp3(r, index)
+            resp = self.aipSpeech.synthesis(item, "zh", 1, self.setting)
+            self.make_mp3(resp, index)
 
 
 class MyNlp:
@@ -79,8 +74,8 @@ def func_ocr():
 
 def func_tts():
     file = os.path.join(basedir, "daxue.txt")
-    tts = MyTTS(file, "FORTEST")
+    tts = MyTTS(file)
     tts.run()
 
 if __name__ == '__main__':
-    func_ocr()
+    func_tts()

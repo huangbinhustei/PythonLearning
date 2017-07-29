@@ -9,7 +9,6 @@ from conf import a
 
 v_max = -9999999
 v_min = 9999999
-step = []
 ROADS = {0: (0, 1), 1: (1, 0), 2: (1, 1), 3: (1, -1)}
 SCORE = {
     "活6": 100000,
@@ -25,7 +24,6 @@ SCORE = {
     "活1": 1,
     "冲1": 1,
 }
-
 logger = logging.getLogger('Gomoku')
 
 
@@ -33,8 +31,12 @@ class Gomokuy(BaseGame):
     def __init__(self, settle=False, restricted=True):
         BaseGame.__init__(self, restricted=restricted)
         self.settle = settle
+        if self.settle:
+            logger.setLevel(logging.DEBUG)
+        else:
+            logger.setLevel(logging.INFO)
 
-    @timing
+    # @timing
     def evaluate(self):
         lc = self.records[-1]
         player = self.table[lc[0]][lc[1]]
@@ -67,17 +69,15 @@ class Gomokuy(BaseGame):
     @timing
     def old_evaluate(self):
         self.inside_make_line()
-
         player = W if self.step % 2 else B
         opponent = W if player == B else B
-
         my_score = sum([SCORE[key] * len(v1) for (key, v1) in self.values[player].items()])
         your_score = sum([SCORE[key] * len(v2) for (key, v2) in self.values[opponent].items()])
         return my_score - your_score
 
     @timing
-    def gen(self):
-        @timing
+    def gen(self, deep):
+        # @timing
         def win_chance_single_line():
             # 自己有冲四、活四 -> 对方的冲四、活四 -> 自己的活三
             black_key = [i for i in ["冲4", "活4"] if i in self.values[B]]
@@ -101,7 +101,7 @@ class Gomokuy(BaseGame):
 
             return first_choice or second_choice or third_choice
 
-        @timing
+        # @timing
         def win_chance_mul_lines():
             my_3 = sum(player_chance["活2"], [])
             my_4 = sum(player_chance["冲3"], [])
@@ -142,7 +142,7 @@ class Gomokuy(BaseGame):
                 ret = list(set(defence))
             return ret
 
-        @timing
+        # @timing
         def normal_chance():
             # 从["冲3", "活2", "冲2", "冲1", "活1"]中选择
             temp = [i[j] for i in (player_chance, opponent_chance) for j in ("冲3", "活2")]
@@ -159,28 +159,35 @@ class Gomokuy(BaseGame):
                 ret = list(set(sum(temp, []))) + worst
             return ret
 
-        self.inside_make_line()
-
         player = W if self.step % 2 else B
         opponent = W if player == B else B
+
+        if self.records:
+            last_loc = self.records[-1]
+            pos = self.get_zod(last_loc, player, deep)
+            if pos:
+                return pos
+
+        self.inside_make_line()
+
         player_chance = self.values[player]
         opponent_chance = self.values[opponent]
 
         return win_chance_single_line() or win_chance_mul_lines() or normal_chance()
 
-    @timing
     def min_max_search(self, max_deep=5):
         v_max = -9999999
         v_min = 9999999
 
         def alpha_beta(deep):
+
             global v_max
             global v_min
             if deep == max_deep:
                 return self.evaluate()
             else:
                 next_player = B if (self.step + 1) % 2 == 1 else W
-                poss = self.gen()
+                poss = self.gen(max_deep - deep)
                 if not poss:
                     return False
                 result = [0] * len(poss)
@@ -192,7 +199,6 @@ class Gomokuy(BaseGame):
                     self.move(pos, show=False)
                     if self.winner:
                         if self.winner == player:
-                            step.append([self.step, False])
                             temp_score = 9999999
                         else:
                             temp_score = -9999999
@@ -210,14 +216,14 @@ class Gomokuy(BaseGame):
                 if deep == 0:
                     return result, poss
                 elif next_player == player:
-                    if max(result) == 9999999:
-                        step.append([self.step, poss[result.index(max(result))]])
-                    else:
-                        step.clear()
+                    zod_key = self.get_zod_key_the_hard_way()
+                    self.tt[zod_key] = {
+                        "pos": poss[result.index(max(result))],
+                        "result": max(result),
+                        "deep": max_deep - deep,
+                    }
                     return max(result)
                 else:
-                    if min(result) == 9999999:
-                        step.append([self.step, poss[::-1]])
                     return min(result)
 
         if self.winner:
@@ -239,42 +245,29 @@ class Gomokuy(BaseGame):
             if fen == 9999999:
                 break
         if pos:
-            logger.debug(f"result：{fin_result}")
-            logger.debug(f"poss  ：{fin_poss}")
-            logger.info(f"best  ： {pos}, score={max(fin_result)}, step={self.step}")
+            logger.info(f"result：{fin_result}")
+            logger.info(f"poss  ：{fin_poss}")
+            logger.info(f"best  ： {pos} when step is {self.step}")
         return pos
 
 
 def settling():
     g = Gomokuy(settle=True, restricted=True)
     g.parse(a)
+    # print(g.gen())
     g.iterative_deepening(7)
 
 
 def show_timing():
     print("\nTiming\n+-%-24s-+-%-12s-+-%-8s-+" % ("-" * 24, "-" * 12, "-" * 8))
-    print("| %-24s | %-12s | %-8s |" % ("func name", "times", "cost"))
+    print("| %-24s | %-12s | %-8s |" % ("func name", "times", "cost(ms)"))
     print("+-%-24s-+-%-12s-+-%-8s-+" % ("-" * 24, "-" * 12, "-" * 8))
     for k, v in cost_dict.items():
-        print("| %-24s | %-12d | %-8s |" % (k, v[0], str(round(v[1], 3))))
+        print("| %-24s | %-12d | %-8s |" % (k, v[0], str(int(v[1]*1000))))
         # print(f"{k}\t{v[0]}\t{round(v[1], 3)}")
     print("+-%-24s-+-%-12s-+-%-8s-+\n" % ("-" * 24, "-" * 12, "-" * 8))
 
 
-def road_finding():
-    road_map = defaultdict(list)
-    for k1 in step[::-1]:
-        t = k1[1] if k1[1] else [False]
-        road_map[k1[0]].append(t)
-    road_map[min(road_map.keys())] = road_map[min(road_map.keys())][0]
-    print("\nROAD MAP:")
-    print(road_map)
-    for k1, v1 in road_map.items():
-        print(f"{k1}\t{len(v1)}\t{v1}")
-
-
 if __name__ == '__main__':
-    logger.setLevel(logging.DEBUG)
     settling()
     show_timing()
-    road_finding()

@@ -11,15 +11,12 @@ app = Flask(__name__)
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 logger = logging.getLogger('Gomoku')
-logger.setLevel(logging.DEBUG)
 count = 1
+
 
 def pvp(pos):
     ret = 1
-    # 玩家下一步棋开始
-
     game.move(pos)
-    # 玩家下一步棋结束
 
     # 电脑下一步棋开始
     g_pos = game.iterative_deepening(4)
@@ -58,6 +55,7 @@ def home():
 
 
 if __name__ == '__main__':
-    logger.info("游戏开始")
     game = Gomokuy()
+    logger.setLevel(logging.INFO)
+    logger.info("游戏开始")
     app.run(host="0.0.0.0", debug=True)
