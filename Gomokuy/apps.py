@@ -55,7 +55,7 @@ def home():
 
 
 if __name__ == '__main__':
-    game = Gomokuy()
+    game = Gomokuy(restricted=False)
     logger.setLevel(logging.INFO)
     logger.info("游戏开始")
     app.run(host="0.0.0.0", debug=True)

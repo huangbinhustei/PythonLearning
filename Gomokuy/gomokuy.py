@@ -20,7 +20,8 @@ SCORE = {
     "活2": 10,
     "冲2": 1,
     "活1": 1,
-    "冲1": 1,
+    "冲1": 0,
+    "禁手": -100,
 }
 logger = logging.getLogger('Gomoku')
 
@@ -33,41 +34,62 @@ class Gomokuy(BaseGame):
             logger.setLevel(logging.DEBUG)
         else:
             logger.setLevel(logging.INFO)
-        self.last_deep = 16
+
+    def score_calc(self, values):
+        ret = {
+            B: 0,
+            W: 0}
+        if self.restricted:
+            for sid, d in values.items():
+                for key, v1 in d.items():
+                    key = "禁手" if sid == B and key in ("冲5", "冲6") else key
+                    ret[sid] += SCORE[key] * len(v1)
+        else:
+            for sid, d in values.items():
+                ret[sid] = sum([SCORE[key] * len(v1) for (key, v1) in d.items()])
+        return ret
 
     @timing
     def evaluate(self):
         lc = self.records[-1]
         player = self.table[lc[0]][lc[1]]
         opponent = W if player == B else B
+
+        # 落子之前的得分
+        s1 = self.score_calc(self.values)
+        my_score = s1[player]
+        your_score = s1[opponent]
+
+        # 落子之后，己方新增的 line 分需要加上，对方受影响的线要加回来。
         values = {
             B: defaultdict(list),
             W: defaultdict(list)}
-
-        my_score = sum([SCORE[key] * len(v1) for (key, v1) in self.values[player].items()])
-        your_score = sum([SCORE[key] * len(v2) for (key, v2) in self.values[opponent].items()])
-
         for direction in range(4):
-            line = self.base_linear(lc[0], lc[1], player, direction)
+            # 计算自己新增的 line， 以及对方受影响的棋子（opt）
+            line, opt = self.base_linear(lc[0], lc[1], player, direction, modify=True)
             values = self.inside_line_grouping(line, player, values=values)
+            if opt:
+                # 假如有对方的棋子受影响，对应的 line 需要重算
+                opt_line = self.base_linear(opt[0], opt[1], opponent, direction)
+                values = self.inside_line_grouping(opt_line, opponent, values=values)
+        s2 = self.score_calc(values)
+        my_score += s2[player]
+        your_score += s2[opponent]
 
-        my_score += sum([SCORE[key] * len(v1) for (key, v1) in values[player].items()])
-        your_score += sum([SCORE[key] * len(v2) for (key, v2) in values[opponent].items()])
-
+        # 落子之后，对方一些 line 被破坏了，上面落子时已经重算了，这里直接全部删掉
         for key, v1 in self.values[player].items():
             del_v1 = [l for l in v1 if lc in l]
             my_score -= SCORE[key] * len(del_v1)
-
         for key, v1 in self.values[opponent].items():
             del_v1 = [l for l in v1 if lc in l]
-            my_score -= SCORE[key] * len(del_v1)
+            your_score -= SCORE[key] * len(del_v1)
 
         return my_score - your_score
 
     @timing
     def old_evaluate(self):
         self.inside_make_line()
-        player = W if self.step % 2 else B
+        player = B if self.step % 2 else W
         opponent = W if player == B else B
         my_score = sum([SCORE[key] * len(v1) for (key, v1) in self.values[player].items()])
         your_score = sum([SCORE[key] * len(v2) for (key, v2) in self.values[opponent].items()])
@@ -162,7 +184,6 @@ class Gomokuy(BaseGame):
             return pos
 
         self.inside_make_line()
-
         player = W if self.step % 2 else B
         opponent = W if player == B else B
         player_chance = self.values[player]
@@ -253,12 +274,12 @@ def settling():
 
 
 def show_timing():
-    print("\nTiming\n+-%-24s-+-%-12s-+-%-8s-+" % ("-" * 24, "-" * 12, "-" * 8))
-    print("| %-24s | %-12s | %-8s |" % ("func name", "times", "cost(ms)"))
-    print("+-%-24s-+-%-12s-+-%-8s-+" % ("-" * 24, "-" * 12, "-" * 8))
+    logger.debug("\nTiming\n+-%-24s-+-%-12s-+-%-8s-+" % ("-" * 24, "-" * 12, "-" * 8))
+    logger.debug("| %-24s | %-12s | %-8s |" % ("func name", "times", "cost(ms)"))
+    logger.debug("+-%-24s-+-%-12s-+-%-8s-+" % ("-" * 24, "-" * 12, "-" * 8))
     for k, v in cost_dict.items():
-        print("| %-24s | %-12d | %-8s |" % (k, v[0], str(int(v[1]*1000))))
-    print("+-%-24s-+-%-12s-+-%-8s-+\n" % ("-" * 24, "-" * 12, "-" * 8))
+        logger.debug("| %-24s | %-12d | %-8s |" % (k, v[0], str(int(v[1]*1000))))
+    logger.debug("+-%-24s-+-%-12s-+-%-8s-+\n" % ("-" * 24, "-" * 12, "-" * 8))
 
 
 if __name__ == '__main__':

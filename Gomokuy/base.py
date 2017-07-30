@@ -95,23 +95,32 @@ class BaseGame:
             raise TypeError
 
     @timing
-    def modify_values(self, loc, chess):
+    def modify_values(self, loc, player):
         row, col = loc
+        opponent = W if player == B else B
+
+        for direction in range(4):
+            # 计算自己新增的 line， 以及对方受影响的棋子（opt）
+            line, opt = self.base_linear(row, col, player, direction, modify=True)
+            self.values = self.inside_line_grouping(line, player, values=self.values)
+            if opt:
+                # 假如有对方的棋子受影响，对应的 line 需要重算
+                opt_line = self.base_linear(opt[0], opt[1], opponent, direction)
+                self.values = self.inside_line_grouping(opt_line, opponent, values=self.values)
+
+        # 落子之后，对方一些 line 被破坏了，上面落子时已经重算了，这里直接全部删掉
         for sid, d in self.values.items():
             for key, v in d.items():
                 self.values[sid][key] = [l for l in v if loc not in l]
 
-        for direction in range(4):
-            line = self.base_linear(row, col, chess, direction)
-            self.values = self.inside_line_grouping(line, chess, self.values)
-
     @timing
-    def base_linear(self, row, col, chess, direction):
+    def base_linear(self, row, col, chess, direction, modify=False):
         line = {
             "s": [(row, col)],
             0: [],  # 中间的缝隙
             -1: [],  # 某一边的空
             1: []}  # 另一边的空
+        opt = False
         for side in (-1, 1):
             for offset in range(1, 6):
                 new_row = row + offset * side * ROADS[direction][0]
@@ -138,7 +147,10 @@ class BaseGame:
                                 break
                     line["s"].append(new_loc)
                 else:
+                    opt = new_loc
                     break
+        if modify:
+            return line, opt
         return line
 
     @timing
@@ -170,6 +182,8 @@ class BaseGame:
         if line[-1] and line[1]:
             key = "活" + str(t) if t + len(line[0]) <= 4 else "冲" + str(t)
         elif line[0] or line[1] or line[-1]:
+            if t == 1:
+                return values
             key = "冲" + str(t)
         else:
             return values
@@ -199,14 +213,14 @@ class BaseGame:
                     self.check += line["s"]
                     if self.restricted:
                         self.winner = W
-                        info = "白·长连·胜!" if player == W else "黑·长连禁手·负!"
+                        info = "白·长连·胜" if player == W else "黑·长连禁手·负"
                     else:
                         self.winner = player
-                        info = PRINTING[player] + "·长连·胜!"
+                        info = PRINTING[player] + "·长连·胜"
                     return True
                 elif chang == 5 and not line[0]:
                     self.winner = player
-                    info = PRINTING[player] + "·五连·胜!"
+                    info = PRINTING[player] + "·五连·胜"
                     self.check += line["s"]
                     return True
                 elif chang == 4:
@@ -216,7 +230,7 @@ class BaseGame:
                         block = line[0][0]
                     elif line[-1] and line[1]:
                         self.winner = player
-                        info = PRINTING[player] + "·四连·胜!"
+                        info = PRINTING[player] + "·四连·胜"
                         return True
                     elif line[-1] or line[1]:
                         four_three[0] += 1
@@ -229,15 +243,15 @@ class BaseGame:
             if four_three[0] >= 2:
                 if self.restricted:
                     self.winner = W
-                    info = "白·四四·胜!" if player == W else "黑·四四禁手·负!"
+                    info = "白·四四·胜" if player == W else "黑·四四禁手·负"
                 else:
                     self.winner = player
-                    info = PRINTING[player] + "·四四·胜!"
+                    info = PRINTING[player] + "·四四·胜"
                 return True
             elif four_three[1] >= 2:
                 if player == B and self.restricted:
                     self.winner = W
-                    info = "黑·三三禁手·负!"
+                    info = "黑·三三禁手·负"
                     return True
                 else:
                     # 有可能三三胜
@@ -250,7 +264,7 @@ class BaseGame:
                         break
                 else:
                     self.winner = player
-                    info = PRINTING[player] + "·四三·胜!"
+                    info = PRINTING[player] + "·四三·胜"
                     return True
             return True
 
@@ -313,7 +327,6 @@ class BaseGame:
         self.zod_key ^= self.zod_grid[row][col][0] ^ self.zod_grid[row][col][player]
         self.records.append(loc)
         self.judge(loc, player, show=show)
-        # self.modify_values(loc, player)
 
     def undo(self, count=1):
         if len(self.records) < count:
