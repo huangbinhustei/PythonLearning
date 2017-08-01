@@ -16,3 +16,5 @@ __pycache__
 gonglve/bd_aip/apps.py
 config.py
 gonglve/tools/*
+
+*.pyc

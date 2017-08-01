@@ -42,8 +42,17 @@ def timing(func):
     return costing
 
 
+def show_timing():
+    logger.debug("\nTiming\n+-%-24s-+-%-12s-+-%-8s-+" % ("-" * 24, "-" * 12, "-" * 8))
+    logger.debug("| %-24s | %-12s | %-8s |" % ("func name", "times", "cost(ms)"))
+    logger.debug("+-%-24s-+-%-12s-+-%-8s-+" % ("-" * 24, "-" * 12, "-" * 8))
+    for k, v in cost_dict.items():
+        logger.debug("| %-24s | %-12d | %-8s |" % (k, v[0], str(int(v[1]*1000))))
+    logger.debug("+-%-24s-+-%-12s-+-%-8s-+\n" % ("-" * 24, "-" * 12, "-" * 8))
+
+
 class BaseGame:
-    def __init__(self, restricted=True):
+    def __init__(self, restricted=True, manual=[]):
         self.winner = False
         self.width = 15
         self.table = []
@@ -70,6 +79,19 @@ class BaseGame:
             self.zod_grid.append(t)
         self.translation_table = dict()
 
+        if manual:
+            self.width = len(manual)
+            if [len(item) for item in manual] == [self.width] * self.width:
+                self.table = manual
+                self.step = 0
+                for row, line in enumerate(manual):
+                    for col, cell in enumerate(line):
+                        self.zod_key ^= self.zod_grid[row][col][cell]
+                        if cell != 0:
+                            self.step += 1
+            else:
+                raise TypeError
+
     def get_zod(self, deep):
         k = self.zod_key
         if k in self.translation_table:
@@ -80,19 +102,6 @@ class BaseGame:
 
     def restart(self):
         self.__init__()
-
-    def parse(self, manual):
-        self.width = len(manual)
-        if [len(item) for item in manual] == [self.width] * self.width:
-            self.table = manual
-            self.step = 0
-            for row, line in enumerate(manual):
-                for col, cell in enumerate(line):
-                    self.zod_key ^= self.zod_grid[row][col][cell]
-                    if cell != 0:
-                        self.step += 1
-        else:
-            raise TypeError
 
     @timing
     def modify_values(self, loc, player):
@@ -304,9 +313,11 @@ class BaseGame:
         if not self.winner:
             return
         if show:
-            logger.info(f"{info}\t{self.records}")
+            logger.info("{:<12}{}".format(info,self.records))
+            # logger.info(f"{info}\t{self.records}")
         else:
-            logger.debug(f"{info}\t{self.records}")
+            logger.debug("{:<12}{}".format(info,self.records))
+            # logger.debug(f"{info}\t{self.records}")
 
     @timing
     def move(self, loc, show=True):

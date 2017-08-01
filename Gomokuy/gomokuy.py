@@ -4,7 +4,7 @@
 from collections import Counter, defaultdict
 import logging
 
-from base import BaseGame, B, W, timing, cost_dict
+from base import BaseGame, B, W, timing, show_timing
 from conf import a
 
 v_max = -9999999
@@ -27,8 +27,8 @@ logger = logging.getLogger('Gomoku')
 
 
 class Gomokuy(BaseGame):
-    def __init__(self, settle=False, restricted=True):
-        BaseGame.__init__(self, restricted=restricted)
+    def __init__(self, settle=False, restricted=True, manual=[]):
+        BaseGame.__init__(self, restricted=restricted, manual=manual)
         self.settle = settle
         if self.settle:
             logger.setLevel(logging.DEBUG)
@@ -84,15 +84,6 @@ class Gomokuy(BaseGame):
             del_v1 = [l for l in v1 if lc in l]
             your_score -= SCORE[key] * len(del_v1)
 
-        return my_score - your_score
-
-    @timing
-    def old_evaluate(self):
-        self.inside_make_line()
-        player = B if self.step % 2 else W
-        opponent = W if player == B else B
-        my_score = sum([SCORE[key] * len(v1) for (key, v1) in self.values[player].items()])
-        your_score = sum([SCORE[key] * len(v2) for (key, v2) in self.values[opponent].items()])
         return my_score - your_score
 
     @timing
@@ -189,7 +180,9 @@ class Gomokuy(BaseGame):
         player_chance = self.values[player]
         opponent_chance = self.values[opponent]
 
-        return win_chance_single_line() or win_chance_mul_lines() or normal_chance()
+        ret = win_chance_single_line() or win_chance_mul_lines() or normal_chance()
+
+        return ret
 
     @timing
     def min_max_search(self, max_deep=5):
@@ -214,10 +207,7 @@ class Gomokuy(BaseGame):
                 for ind, pos in enumerate(poss):
                     self.move(pos, show=False)
                     if self.winner:
-                        if self.winner == player:
-                            temp_score = 9999999
-                        else:
-                            temp_score = -9999999
+                        temp_score = 9999999 if self.winner == player else -9999999
                     else:
                         temp_score = alpha_beta(new_deeps)
                     self.undo()
@@ -260,26 +250,15 @@ class Gomokuy(BaseGame):
             if fen == 9999999:
                 break
         if pos:
-            logger.info(f"result：{fin_result}")
-            logger.info(f"poss  ：{fin_poss}")
-            logger.info(f"best  ： {pos} when step is {self.step}")
+            logger.info("result：{}".format(fin_result))
+            logger.info("poss  ：{}".format(fin_poss))
+            logger.info("best  ： {0} when step is {1}".format(pos, self.step))
         return pos
 
 
 def settling():
-    g = Gomokuy(settle=True, restricted=True)
-    g.parse(a)
-    # print(g.gen())
+    g = Gomokuy(settle=True, restricted=True, manual=a)
     g.iterative_deepening(7)
-
-
-def show_timing():
-    logger.debug("\nTiming\n+-%-24s-+-%-12s-+-%-8s-+" % ("-" * 24, "-" * 12, "-" * 8))
-    logger.debug("| %-24s | %-12s | %-8s |" % ("func name", "times", "cost(ms)"))
-    logger.debug("+-%-24s-+-%-12s-+-%-8s-+" % ("-" * 24, "-" * 12, "-" * 8))
-    for k, v in cost_dict.items():
-        logger.debug("| %-24s | %-12d | %-8s |" % (k, v[0], str(int(v[1]*1000))))
-    logger.debug("+-%-24s-+-%-12s-+-%-8s-+\n" % ("-" * 24, "-" * 12, "-" * 8))
 
 
 if __name__ == '__main__':

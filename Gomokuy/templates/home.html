@@ -69,8 +69,8 @@
 					<li class="list-group-item">电脑刚刚走了 {{ game.records[-1] }}</li>
 				{% endif %}
 				<li class="list-group-item"><a href={{ url_for("home", retract=1)}}>悔棋</a></li>
-				<li class="list-group-item"><a href={{ url_for("home", restart=1, aifirst = 1)}}>以白棋重开</a></li>
-				<li class="list-group-item"><a href={{ url_for("home", restart=1, aifirst = 2)}}>以黑棋重开</a></li>
+				<li class="list-group-item"><a href={{ url_for("home", restart=1, aifirst=True)}}>以白棋重开</a></li>
+				<li class="list-group-item"><a href={{ url_for("home", restart=1, aifirst=False)}}>以黑棋重开</a></li>
 			</ul>		
 		</div>
 	</div>
