@@ -7,7 +7,6 @@ import logging
 from collections import defaultdict
 import random
 
-
 B = 1
 W = 2
 PRINTING = {B: "黑", W: "白"}
@@ -39,6 +38,7 @@ def timing(func):
         cost_dict[func.__name__][0] += 1
         cost_dict[func.__name__][1] += time_cost
         return ret
+
     return costing
 
 
@@ -47,7 +47,7 @@ def show_timing():
     logger.debug("| %-24s | %-12s | %-8s |" % ("func name", "times", "cost(ms)"))
     logger.debug("+-%-24s-+-%-12s-+-%-8s-+" % ("-" * 24, "-" * 12, "-" * 8))
     for k, v in cost_dict.items():
-        logger.debug("| %-24s | %-12d | %-8s |" % (k, v[0], str(int(v[1]*1000))))
+        logger.debug("| %-24s | %-12d | %-8s |" % (k, v[0], str(int(v[1] * 1000))))
     logger.debug("+-%-24s-+-%-12s-+-%-8s-+\n" % ("-" * 24, "-" * 12, "-" * 8))
 
 
@@ -313,11 +313,9 @@ class BaseGame:
         if not self.winner:
             return
         if show:
-            logger.info("{:<12}{}".format(info,self.records))
-            # logger.info(f"{info}\t{self.records}")
+            logger.info("{:<12}{}".format(info, self.records))
         else:
-            logger.debug("{:<12}{}".format(info,self.records))
-            # logger.debug(f"{info}\t{self.records}")
+            logger.debug("{:<12}{}".format(info, self.records))
 
     @timing
     def move(self, loc, show=True):
@@ -338,6 +336,7 @@ class BaseGame:
         self.zod_key ^= self.zod_grid[row][col][0] ^ self.zod_grid[row][col][player]
         self.records.append(loc)
         self.judge(loc, player, show=show)
+        return True
 
     def undo(self, count=1):
         if len(self.records) < count:

@@ -2,69 +2,114 @@
 # -*- coding: utf-8 -*-
 
 
-from flask import Flask, render_template, request, redirect, url_for
-from gomokuy import Gomokuy
+import queue
 import logging
+import threading
+import time
+import os
+from tkinter import *
 
+from gomokuy import Gomokuy
 
-app = Flask(__name__)
-log = logging.getLogger('werkzeug')
-log.setLevel(logging.ERROR)
 logger = logging.getLogger('Gomoku')
+logger.setLevel(logging.WARNING)
 
 
-class PVE(Gomokuy):
-    def __init__(self, restricted=True, ai_first=False, difficulty=4):
-        Gomokuy.__init__(self, settle=False, restricted=restricted)
-        if ai_first:
-            self.move((7, 7), show=True)
+class PVE(threading.Thread, Gomokuy):
+    def __init__(self, ui, q, pve=True):
+        # threading.Thread.__init__(self)
+        print('Process (%s) start in PVE' % threading.currentThread().getName())
+        Gomokuy.__init__(self)
+        self.gui = ui
+        self.queue = q
+        self.pve = pve
+        # self.daemon = True
+        # self.start()
+        self.gui.bind("<Button-1>", self.on_click)
 
-        self.ai_first = ai_first
-        self.difficulty = difficulty
-        logger.info("游戏开始")
+    def on_click(self, event):
+        if self.winner:
+            print("游戏结束")
+            return
+        col = (event.x + 15) // 30 - 1
+        row = (event.y + 15) // 30 - 1
 
-    def restart(self, restricted=True, ai_first=False, difficulty=4):
-        logger.info("重启游戏")
-        self.__init__(restricted=restricted, ai_first=ai_first, difficulty=difficulty)
-
-    def round(self, pos):
-        self.move(pos)
-        ai_pos = game.iterative_deepening(self.difficulty)
-        if ai_pos:
-            game.move(ai_pos, show=True)
-
-    def undo_in_use(self):
-        # 以白棋走，悔棋悔到偶数
-        if (not self.step % 2) and self.ai_first:
-            self.undo(count=1)
+        ret = self.move((row, col))
+        if ret:
+            self.queue.put({
+                "game": self,
+                "info": "move"})
+            print("before" + str(time.ctime()))
+            if not self.pve:
+                return
+            pos2 = self.iterative_deepening(3)
+            if pos2:
+                self.move(pos2)
+                self.queue.put({
+                    "game": self,
+                    "info": "move"})
+            print("after" + str(time.ctime()))
         else:
-            self.undo(count=2)
+            self.queue.put({
+                "game": self,
+                "info": "Game Over"})
 
 
-@app.route("/")
-def home():
-    loc = request.args.get('loc')
-    retract, restart = request.args.get('retract'), request.args.get('restart')
-    ai_first = (request.args.get("aifirst") == "True")
-    if restart:
-        game.restart(ai_first=ai_first)
-        return redirect(url_for("home"))
-    if retract and retract == "1":
-        # 悔棋
-        game.undo_in_use()
-        return redirect(url_for("home"))
-    if not loc:
-        # 第一次打开，直接开始新游戏
-        return render_template("home.html", game=game)
+class GUI():
+    def __init__(self, ui, q):
+        print('Process (%s) start in GUI' % threading.currentThread().getName())
+        print("GUI打开")
+        self.queue = q
+        self.ui = ui
+        self.bg = Canvas(self.ui, width=480, height=480, bg="white")
+        self.bg_draw()
 
-    loc = int(loc)
-    pos = (int(loc / game.width), int(loc % game.width))
-    game.round(pos)
+        # self.btn_solve = Button(self, text="解题", command=self.solve)
+        # self.btn_solve.grid(row=0, column=1, sticky=W)
+        # 支持EVE 之后，才有解题的必要
 
-    return redirect(request.referrer)
+        # self.btn_restart = Button(self, text="重启", command=self.restart)
+        # self.btn_restart.grid(row=1, column=1, sticky=W)
+
+        self.ui.title("Gomokuy")
+        self.queue_handler()
+
+    def renew(self):
+        self.bg.delete(ALL)
+        self.bg_draw()
+
+    def bg_draw(self):
+        for row in range(1, 16):
+            self.bg.create_line(row * 30, 30, row * 30, 450, fill="black", width=1)
+            self.bg.create_line(30, row * 30, 450, row * 30, fill="black", width=1)
+        self.bg.grid(row=0, column=0)
+
+    def circle_draw(self, x, y, r, **kwargs):
+        return self.bg.create_oval(x - r, y - r, x + r, y + r, **kwargs)
+
+    def queue_handler(self):
+        try:
+            task = self.queue.get(block=False)
+            self.renew()
+            for row, line in enumerate(task["game"].table):
+                for col, cell in enumerate(line):
+                    if cell == 0:
+                        continue
+                    color = "white" if cell == 2 else "black"
+                    self.circle_draw(col * 30 + 30, row * 30 + 30, 12, fill=color)
+                    if (row, col) in task["game"].check:
+                        self.circle_draw(col * 30 + 30, row * 30 + 30, 6, fill="red")
+                    if (row, col) == task["game"].records[-1]:
+                        self.circle_draw(col * 30 + 30, row * 30 + 30, 6, fill="yellow")
+            self.bg.after(10, self.queue_handler)
+        except queue.Empty:
+            self.bg.after(10, self.queue_handler)
 
 
 if __name__ == '__main__':
-    logger.setLevel(logging.INFO)
-    game = PVE()
-    app.run(host="0.0.0.0", debug=True)
+    window = Tk()
+    que = queue.Queue(maxsize=2)
+    gui = GUI(window, que)
+    game = PVE(window, que)
+    window.mainloop()
+    

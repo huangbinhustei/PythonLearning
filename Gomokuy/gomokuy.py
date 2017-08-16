@@ -34,6 +34,8 @@ class Gomokuy(BaseGame):
             logger.setLevel(logging.DEBUG)
         else:
             logger.setLevel(logging.INFO)
+        self.happiness = 0
+        self.score = SCORE
 
     def score_calc(self, values):
         ret = {
@@ -43,10 +45,10 @@ class Gomokuy(BaseGame):
             for sid, d in values.items():
                 for key, v1 in d.items():
                     key = "禁手" if sid == B and key in ("冲5", "冲6") else key
-                    ret[sid] += SCORE[key] * len(v1)
+                    ret[sid] += self.score[key] * len(v1)
         else:
             for sid, d in values.items():
-                ret[sid] = sum([SCORE[key] * len(v1) for (key, v1) in d.items()])
+                ret[sid] = sum([self.score[key] * len(v1) for (key, v1) in d.items()])
         return ret
 
     @timing
@@ -166,7 +168,7 @@ class Gomokuy(BaseGame):
                 # 游戏时，还需要看更多情况
                 worst_line = [i[j] for i in (player_chance, opponent_chance) for j in ("冲2", "冲1", "活1")]
                 worst_pos = sum(sum(worst_line, []), [])
-                worst = [item[0] for item in sorted(Counter(worst_pos).items(), key=lambda x: x[1], reverse=True)][:5]
+                worst = [item[0] for item in sorted(Counter(worst_pos).items(), key=lambda x: x[1], reverse=True)]
                 ret = list(set(sum(temp, []))) + worst
             return ret
 
@@ -253,6 +255,7 @@ class Gomokuy(BaseGame):
             logger.info("result：{}".format(fin_result))
             logger.info("poss  ：{}".format(fin_poss))
             logger.info("best  ： {0} when step is {1}".format(pos, self.step))
+            self.happiness = max(fin_result)
         return pos
 
 
