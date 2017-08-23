@@ -6,7 +6,6 @@ import queue
 import logging
 import threading
 import time
-import os
 from tkinter import *
 
 from gomokuy import Gomokuy
@@ -22,30 +21,56 @@ GUICONF = {
 }
 
 
-class PVE(Gomokuy):
-    def __init__(self, gui, que_game2ui, que_ui2game,
-                 pve=True, restricted=True, ai_first=False, difficulty=4):
-        print('Thread (%s) start in PVE' % threading.currentThread().getName())
-        Gomokuy.__init__(self, settle=False, restricted=restricted)
+class GAME(Gomokuy):
+    def __init__(self, _gui, que_game2ui, que_ui2game,
+                 restricted=True, ai="White", difficulty=2):
+        """
+        :param _gui:
+        :param que_game2ui:
+        :param que_ui2game:
+        :param restricted: 是否支持悔棋，True/False
+        :param ai: ai执黑还是执白，假如是PVP或者录入题目，ai=False
+        :param difficulty: 思考深度
+        """
 
-        if ai_first:
-            self.moving(7, 7)
-        self.ai_first = ai_first
-
-        self.difficulty = difficulty
-        self.gui = gui
+        self.gui = _gui
         self.que_game2ui = que_game2ui
         self.que_ui2game = que_ui2game
-        self.pve = pve
         self.queue_handler()
 
-    def restart(self, restricted=True, ai_first=False, difficulty=4):
-        logger.info("重启游戏")
         Gomokuy.__init__(self, settle=False, restricted=restricted)
-        if ai_first:
-            self.moving(7, 7)
-        self.ai_first = ai_first
+        self.ai = ai
         self.difficulty = difficulty
+        if ai == "Black":
+            self.move((7, 7))
+            self.que_game2ui.put({
+                "game": self,
+                "info": "move"})
+
+    def restart(self, restricted=True, ai="Black", difficulty=4):
+        logger.info("重启游戏")
+        self.__init__(self.gui, self.que_game2ui, self.que_ui2game,
+                      restricted=restricted, ai=ai, difficulty=difficulty)
+
+    def solve(self):
+        pos = self.iterative_deepening(7)
+        self.move(pos)
+        self.que_game2ui.put({
+            "game": self,
+            "info": "move"})
+
+    def undo_in_use(self):
+        # 以白棋走，悔棋悔到偶数
+        if not self.ai:
+            count = 1
+        elif self.ai == "Black":
+            count = 1 if self.step % 2 else 2
+        elif self.ai == "White":
+            count = 2 if self.step % 2 else 1
+        Gomokuy.undo(self, count=count)
+        self.que_game2ui.put({
+            "game": self,
+            "info": "move"})
 
     def queue_handler(self):
         try:
@@ -54,10 +79,11 @@ class PVE(Gomokuy):
                 row, col = task["loc"]
                 self.moving(row, col)
             elif task["option"] == "restart":
-                print("restart in PVE")
                 self.restart()
             elif task["option"] == "solve":
-                print("solve in PVE")
+                self.solve()
+            elif task["option"] == "undo":
+                self.undo_in_use()
 
             self.gui.after(10, self.queue_handler)
         except queue.Empty:
@@ -73,10 +99,10 @@ class PVE(Gomokuy):
             self.que_game2ui.put({
                 "game": self,
                 "info": "move"})
-            if not self.pve:
+            if not self.ai:
                 return
             f = time.time()
-            pos2 = self.iterative_deepening(1)
+            pos2 = self.iterative_deepening(self.difficulty)
             print(time.time() - f)
             if pos2:
                 self.move(pos2)
@@ -104,11 +130,18 @@ class GUI:
         self.ui.title("Gomokuy")
         self.ui.bind("<Button-1>", self.on_click)
         self.btn_solve = Button(self.ui, text="解题", command=self.solve)
-        self.btn_solve.grid(row=0, column=1, sticky=W)
+        self.btn_solve.grid(row=1, column=0, sticky=E)
         self.btn_restart = Button(self.ui, text="重启", command=self.restart)
-        self.btn_restart.grid(row=1, column=1, sticky=W)
+        self.btn_restart.grid(row=1, column=1, sticky=E)
+        self.btn_undo = Button(self.ui, text="悔棋", command=self.undo)
+        self.btn_undo.grid(row=1, column=2, sticky=E)
 
         self.queue_handler()
+
+    def undo(self):
+        self.que_ui2game.put({
+            "option": "undo",
+        })
 
     def solve(self):
         self.que_ui2game.put({
@@ -122,7 +155,6 @@ class GUI:
         })
 
     def on_click(self, event):
-        print(time.ctime())
         col = (event.x + GUICONF["half_gap"]) // GUICONF["gap"] - 1
         row = (event.y + GUICONF["half_gap"]) // GUICONF["gap"] - 1
         self.que_ui2game.put({
@@ -138,9 +170,7 @@ class GUI:
             color = "black"
         else:
             color = "white"
-        print(time.ctime())
         self.circle_draw(row, col, GUICONF["flag"], fill=color)
-        print(time.ctime())
 
     def renew(self):
         self.bg.delete(ALL)
@@ -148,9 +178,11 @@ class GUI:
 
     def bg_draw(self):
         for row in range(1, 16):
-            self.bg.create_line(row * GUICONF["gap"], GUICONF["gap"], row * GUICONF["gap"], GUICONF["gap"] * 15,
+            self.bg.create_line(row * GUICONF["gap"], GUICONF["gap"],
+                                row * GUICONF["gap"], GUICONF["gap"] * 15,
                                 fill="black", width=1)
-            self.bg.create_line(GUICONF["gap"], row * GUICONF["gap"], GUICONF["gap"] * 15, row * GUICONF["gap"],
+            self.bg.create_line(GUICONF["gap"], row * GUICONF["gap"],
+                                GUICONF["gap"] * 15, row * GUICONF["gap"],
                                 fill="black", width=1)
         self.bg.grid(row=0, column=0)
 
@@ -181,10 +213,10 @@ class GUI:
 
 if __name__ == '__main__':
     window = Tk()
-    que_game2ui = queue.Queue(maxsize=2)
-    que_ui2game = queue.Queue(maxsize=2)
-    gui = GUI(window, que_game2ui, que_ui2game)
-    t1 = threading.Thread(target=PVE, args=(window, que_game2ui, que_ui2game))
+    q_game2ui = queue.Queue(maxsize=2)
+    q_ui2game = queue.Queue(maxsize=2)
+    gui = GUI(window, q_game2ui, q_ui2game)
+    t1 = threading.Thread(target=GAME, args=(window, q_game2ui, q_ui2game))
     t1.daemon = True
     t1.start()
     window.mainloop()
