@@ -23,7 +23,7 @@ GUICONF = {
 
 class GAME(Gomokuy):
     def __init__(self, _gui, que_game2ui, que_ui2game,
-                 restricted=True, ai="White", difficulty=2):
+                 restricted=True, ai="White", difficulty=1):
         """
         :param _gui:
         :param que_game2ui:
@@ -38,16 +38,16 @@ class GAME(Gomokuy):
         self.que_ui2game = que_ui2game
         self.queue_handler()
 
-        Gomokuy.__init__(self, settle=False, restricted=restricted)
         self.ai = ai
         self.difficulty = difficulty
+        Gomokuy.__init__(self, settle=False, restricted=restricted)
         if ai == "Black":
             self.move((7, 7))
             self.que_game2ui.put({
                 "game": self,
                 "info": "move"})
 
-    def restart(self, restricted=True, ai="Black", difficulty=4):
+    def restart(self, restricted=True, ai="Black", difficulty=2):
         logger.info("重启游戏")
         self.__init__(self.gui, self.que_game2ui, self.que_ui2game,
                       restricted=restricted, ai=ai, difficulty=difficulty)
@@ -64,9 +64,9 @@ class GAME(Gomokuy):
         if not self.ai:
             count = 1
         elif self.ai == "Black":
-            count = 1 if self.step % 2 else 2
-        elif self.ai == "White":
             count = 2 if self.step % 2 else 1
+        elif self.ai == "White":
+            count = 1 if self.step % 2 else 2
         Gomokuy.undo(self, count=count)
         self.que_game2ui.put({
             "game": self,
