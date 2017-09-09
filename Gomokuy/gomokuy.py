@@ -112,7 +112,11 @@ class Gomokuy(BaseGame):
             third_choice = player_chance["活3"] if "活3" in player_chance else []
             third_choice = list(set(sum(third_choice, [])))
 
-            return first_choice or second_choice or third_choice
+            ret = first_choice or second_choice or third_choice
+
+            ret = sorted(sorted(ret, key=lambda x: x[1]), key=lambda x: x[0])
+
+            return ret
 
         # @timing
         def win_chance_mul_lines():
@@ -153,6 +157,9 @@ class Gomokuy(BaseGame):
                     sec = []
                 defence = fir if fir else sec
                 ret = list(set(defence))
+
+            ret = sorted(sorted(ret, key=lambda x: x[1]), key=lambda x: x[0])
+
             return ret
 
         # @timing
@@ -170,11 +177,26 @@ class Gomokuy(BaseGame):
                 worst_pos = sum(sum(worst_line, []), [])
                 worst = [item[0] for item in sorted(Counter(worst_pos).items(), key=lambda x: x[1], reverse=True)]
                 ret = list(set(sum(temp, []))) + worst
+
+            ret = sorted(sorted(ret, key=lambda x: x[1]), key=lambda x: x[0])
+            
             return ret
 
-        pos = self.get_zod(deep)
-        if pos:
-            return pos
+        ret = False
+        tttttt = False
+        zod = self.get_zod()
+        if zod:
+            if zod["result"] == 9999999 or deep <= zod["deep"]:
+                # 可以直接用之前的最佳结果
+                tttttt = [zod["pos"]]
+                # ret = [zod["pos"]]
+            # else:
+                tttttt = zod["poss"]
+                # 之前的最佳结果不值得信任，但是 poss 可以直接用
+                # ret = zod["poss"]
+
+        if ret:
+            return ret
 
         self.inside_make_line()
         player = W if self.step % 2 else B
@@ -184,6 +206,19 @@ class Gomokuy(BaseGame):
 
         ret = win_chance_single_line() or win_chance_mul_lines() or normal_chance()
 
+        sa = 0
+        sb = 0
+
+        if tttttt:
+            sa += 1
+            if ret != tttttt:
+                sb += 1
+                print(f"rec:{self.records}")
+                print(f"ret:{ret}")
+                print(f"zob:{zod}")
+            # 这里出现 False 表示置换表出了问题
+
+        print(f"sa={sa},sb={sb}")
         return ret
 
     @timing
@@ -226,11 +261,18 @@ class Gomokuy(BaseGame):
                 elif next_player == player:
                     self.translation_table[self.zod_key] = {
                         "pos": poss[result.index(max(result))],
+                        "poss": poss,
                         "result": max(result),
                         "deep": max_deep - deep,
                     }
                     return max(result)
                 else:
+                    self.translation_table[self.zod_key] = {
+                        "pos": poss[result.index(min(result))],
+                        "poss": poss,
+                        "result": min(result),
+                        "deep": max_deep - deep,
+                    }
                     return min(result)
 
         if self.winner:
@@ -245,6 +287,7 @@ class Gomokuy(BaseGame):
     def iterative_deepening(self, max_deep):
         pos = False
         for d in range(1, max_deep + 1, 2):
+            print(d)
             ret = self.min_max_search(max_deep=d)
             if not ret:
                 continue

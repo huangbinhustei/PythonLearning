@@ -16,16 +16,16 @@ logger.setLevel(logging.WARNING)
 que_game2ui = Queue(maxsize=2)
 que_ui2game = Queue(maxsize=2)
 
-GUICONF = {
-    "gap": 40,  # 棋盘间隔
-    "half_gap": 20,  # 棋盘间隔的一半，用于识别点击位置
-    "flag": 16,  # 棋子半径
-    "stress": 4,  # 棋子中用来强调的标记的半径
+GUI_CONF = {
+    "gap": 30,  # 棋盘间隔
+    "half_gap": 15,  # 棋盘间隔的一半，用于识别点击位置
+    "flag": 12,  # 棋子半径
+    "stress": 2,  # 棋子中用来强调的标记的半径
 }
 
 
 class GAME(Gomokuy):
-    def __init__(self, restricted=True, ai="White", difficulty=4):
+    def __init__(self, restricted=True, ai=False, difficulty=4):
         """
         :param restricted: 是否支持悔棋，True/False
         :param ai: ai执黑还是执白，假如是PVP或者录入题目，ai=False
@@ -49,7 +49,10 @@ class GAME(Gomokuy):
         self.__init__(restricted=restricted, ai=ai, difficulty=difficulty)
 
     def solve(self):
+        print("Begin Solve")
+        self.settle = True
         pos = self.iterative_deepening(7)
+        print(f"The Best Choice is {pos}")
         self.move(pos)
         que_game2ui.put({
             "game": self,
@@ -81,7 +84,7 @@ class GAME(Gomokuy):
                     self.solve()
                 elif task["option"] == "undo":
                     self.undo_in_use()
-                time.sleep(0.1)
+                time.sleep(1)
             except queue.Empty:
                 time.sleep(0.1)
 
@@ -116,7 +119,7 @@ class GUI:
         print('Thread (%s) start in GUI' % threading.currentThread().getName())
         print("GUI打开")
 
-        self.bg = Canvas(ui, width=GUICONF["gap"] * 16, height=GUICONF["gap"] * 16, bg="white")
+        self.bg = Canvas(ui, width=GUI_CONF["gap"] * 16, height=GUI_CONF["gap"] * 16, bg="white")
         self.bg_draw()
         self.bg.grid(row=0, column=0, sticky=E)
         self.bg.bind("<Button-1>", self.on_click)
@@ -137,8 +140,8 @@ class GUI:
         self.queue_handler()
 
     def on_click(self, event):
-        col = (event.x + GUICONF["half_gap"]) // GUICONF["gap"] - 1
-        row = (event.y + GUICONF["half_gap"]) // GUICONF["gap"] - 1
+        col = (event.x + GUI_CONF["half_gap"]) // GUI_CONF["gap"] - 1
+        row = (event.y + GUI_CONF["half_gap"]) // GUI_CONF["gap"] - 1
         que_ui2game.put({
             "option": "move",
             "loc": (row, col),
@@ -150,17 +153,17 @@ class GUI:
 
     def bg_draw(self):
         for row in range(1, 16):
-            self.bg.create_line(row * GUICONF["gap"], GUICONF["gap"],
-                                row * GUICONF["gap"], GUICONF["gap"] * 15,
+            self.bg.create_line(row * GUI_CONF["gap"], GUI_CONF["gap"],
+                                row * GUI_CONF["gap"], GUI_CONF["gap"] * 15,
                                 fill="black", width=1)
-            self.bg.create_line(GUICONF["gap"], row * GUICONF["gap"],
-                                GUICONF["gap"] * 15, row * GUICONF["gap"],
+            self.bg.create_line(GUI_CONF["gap"], row * GUI_CONF["gap"],
+                                GUI_CONF["gap"] * 15, row * GUI_CONF["gap"],
                                 fill="black", width=1)
         self.bg.grid(row=0, column=0)
 
     def circle_draw(self, row, col, r, **kwargs):
-        x = (col + 1) * GUICONF["gap"]
-        y = (row + 1) * GUICONF["gap"]
+        x = (col + 1) * GUI_CONF["gap"]
+        y = (row + 1) * GUI_CONF["gap"]
         return self.bg.create_oval(x - r, y - r, x + r, y + r, **kwargs)
 
     def queue_handler(self):
@@ -174,11 +177,11 @@ class GUI:
                     if cell == 0:
                         continue
                     color = "white" if cell == 2 else "black"
-                    self.circle_draw(row, col, GUICONF["flag"], fill=color)
+                    self.circle_draw(row, col, GUI_CONF["flag"], fill=color)
                     if (row, col) in task["game"].check:
-                        self.circle_draw(row, col, GUICONF["stress"], fill="red")
+                        self.circle_draw(row, col, GUI_CONF["stress"], fill="red")
                     if (row, col) == task["game"].records[-1]:
-                        self.circle_draw(row, col, GUICONF["stress"], fill="green")
+                        self.circle_draw(row, col, GUI_CONF["stress"], fill="green")
             self.bg.after(1, self.queue_handler)
         except queue.Empty:
             self.bg.after(1, self.queue_handler)

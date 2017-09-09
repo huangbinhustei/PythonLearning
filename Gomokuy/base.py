@@ -15,13 +15,13 @@ ROADS = {0: (0, 1), 1: (1, 0), 2: (1, 1), 3: (1, -1)}
 ADR = {
     0: {
         "冲1": 0, "冲2": 2, "冲3": 2, "冲4": 1, "冲5": 0, "冲6": 0,
-        "活1": 1, "活2": 1, "活3": 1, "活4": 1, "活5": 0, "活6": 0},
+        "活1": 1, "活2": 2, "活3": 2, "活4": 1, "活5": 0, "活6": 0},
     1: {
         "冲1": 0, "冲2": 2, "冲3": 1, "冲4": 0, "冲5": 0, "冲6": 0,
         "活1": 1, "活2": 1, "活3": 1, "活4": 0, "活5": 0, "活6": 0},
     2: {
         "冲1": 0, "冲2": 1, "冲3": 0, "冲4": 0, "冲5": 0, "冲6": 0,
-        "活1": 1, "活2": 1, "活3": 0, "活4": 0, "活5": 0, "活6": 0},
+        "活1": 1, "活2": 0, "活3": 0, "活4": 0, "活5": 0, "活6": 0},
 }
 info = ""
 logger = logging.getLogger('Gomoku')
@@ -92,11 +92,10 @@ class BaseGame:
             else:
                 raise TypeError
 
-    def get_zod(self, deep):
+    def get_zod(self):
         k = self.zod_key
         if k in self.translation_table:
-            if self.translation_table[k]["result"] == 9999999 or deep <= self.translation_table[k]["deep"]:
-                return [self.translation_table[k]["pos"]]
+            return self.translation_table[k]
         else:
             return False
 
@@ -312,10 +311,10 @@ class BaseGame:
 
         if not self.winner:
             return
-        if show:
-            logger.info("{:<12}{}".format(info, self.records))
-        else:
-            logger.debug("{:<12}{}".format(info, self.records))
+        # if show:
+            # logger.info("{:<12}{}".format(info, self.records))
+        # else:
+            # logger.debug("{:<12}{}".format(info, self.records))
 
     @timing
     def move(self, loc, show=True):
