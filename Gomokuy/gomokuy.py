@@ -24,16 +24,13 @@ SCORE = {
     "禁手": -100,
 }
 logger = logging.getLogger('Gomoku')
+logger.setLevel(logging.INFO)
 
 
 class Gomokuy(BaseGame):
     def __init__(self, settle=False, restricted=True, manual=[]):
         BaseGame.__init__(self, restricted=restricted, manual=manual)
         self.settle = settle
-        if self.settle:
-            logger.setLevel(logging.DEBUG)
-        else:
-            logger.setLevel(logging.INFO)
         self.happiness = 0
         self.score = SCORE
 
@@ -182,43 +179,38 @@ class Gomokuy(BaseGame):
             
             return ret
 
-        ret = False
-        tttttt = False
-        zod = self.get_zod()
-        if zod:
-            if zod["result"] == 9999999 or deep <= zod["deep"]:
+        pos_from_zob = False
+        poss_from_zob = False
+        zob = self.get_zob()
+        if zob:
+            pos_from_zob = zob["pos"]
+            poss_from_zob = zob["poss"]
+            # if zob["result"] == 9999999 or deep <= zob["deep"]:
                 # 可以直接用之前的最佳结果
-                tttttt = [zod["pos"]]
-                # ret = [zod["pos"]]
+                # ret = [pos_from_zob]
             # else:
-                tttttt = zod["poss"]
                 # 之前的最佳结果不值得信任，但是 poss 可以直接用
-                # ret = zod["poss"]
-
-        if ret:
-            return ret
-
+                # ret = poss_from_zob
+        # else:
         self.inside_make_line()
         player = W if self.step % 2 else B
         opponent = W if player == B else B
         player_chance = self.values[player]
         opponent_chance = self.values[opponent]
+        temp = win_chance_single_line() or win_chance_mul_lines() or normal_chance()
+        ret = temp
 
-        ret = win_chance_single_line() or win_chance_mul_lines() or normal_chance()
-
-        sa = 0
-        sb = 0
-
-        if tttttt:
-            sa += 1
-            if ret != tttttt:
-                sb += 1
+        if pos_from_zob:
+            if pos_from_zob not in temp:
                 print(f"rec:{self.records}")
-                print(f"ret:{ret}")
-                print(f"zob:{zod}")
-            # 这里出现 False 表示置换表出了问题
+                print(f"ret:{temp}")
+                print(f"zob:{zob}")
+        elif poss_from_zob:
+            if not set(poss_from_zob).issubset(set(temp)):
+                print(f"rec:{self.records}")
+                print(f"ret:{temp}")
+                print(f"zob:{zob}")
 
-        print(f"sa={sa},sb={sb}")
         return ret
 
     @timing
@@ -259,7 +251,7 @@ class Gomokuy(BaseGame):
                 if deep == 0:
                     return result, poss
                 elif next_player == player:
-                    self.translation_table[self.zod_key] = {
+                    self.translation_table[self.zob_key] = {
                         "pos": poss[result.index(max(result))],
                         "poss": poss,
                         "result": max(result),
@@ -267,7 +259,7 @@ class Gomokuy(BaseGame):
                     }
                     return max(result)
                 else:
-                    self.translation_table[self.zod_key] = {
+                    self.translation_table[self.zob_key] = {
                         "pos": poss[result.index(min(result))],
                         "poss": poss,
                         "result": min(result),

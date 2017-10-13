@@ -43,12 +43,12 @@ def timing(func):
 
 
 def show_timing():
-    logger.debug("\nTiming\n+-%-24s-+-%-12s-+-%-8s-+" % ("-" * 24, "-" * 12, "-" * 8))
-    logger.debug("| %-24s | %-12s | %-8s |" % ("func name", "times", "cost(ms)"))
-    logger.debug("+-%-24s-+-%-12s-+-%-8s-+" % ("-" * 24, "-" * 12, "-" * 8))
+    print("\nTiming\n+-%-24s-+-%-12s-+-%-8s-+" % ("-" * 24, "-" * 12, "-" * 8))
+    print("| %-24s | %-12s | %-8s |" % ("func name", "times", "cost(ms)"))
+    print("+-%-24s-+-%-12s-+-%-8s-+" % ("-" * 24, "-" * 12, "-" * 8))
     for k, v in cost_dict.items():
-        logger.debug("| %-24s | %-12d | %-8s |" % (k, v[0], str(int(v[1] * 1000))))
-    logger.debug("+-%-24s-+-%-12s-+-%-8s-+\n" % ("-" * 24, "-" * 12, "-" * 8))
+        print("| %-24s | %-12d | %-8s |" % (k, v[0], str(int(v[1] * 1000))))
+    print("+-%-24s-+-%-12s-+-%-8s-+\n" % ("-" * 24, "-" * 12, "-" * 8))
 
 
 class BaseGame:
@@ -66,8 +66,8 @@ class BaseGame:
             W: defaultdict(list)}
         self.check = []
 
-        self.zod_grid = []
-        self.zod_key = 0
+        self.zob_grid = []
+        self.zob_key = 0
         ra = 2 ** 105
         for i in range(self.width):
             t = []
@@ -76,7 +76,7 @@ class BaseGame:
                 for k in range(3):
                     t1.append(int(random.random() * ra))
                 t.append(t1)
-            self.zod_grid.append(t)
+            self.zob_grid.append(t)
         self.translation_table = dict()
 
         if manual:
@@ -86,14 +86,14 @@ class BaseGame:
                 self.step = 0
                 for row, line in enumerate(manual):
                     for col, cell in enumerate(line):
-                        self.zod_key ^= self.zod_grid[row][col][cell]
+                        self.zob_key ^= self.zob_grid[row][col][cell]
                         if cell != 0:
                             self.step += 1
             else:
                 raise TypeError
 
-    def get_zod(self):
-        k = self.zod_key
+    def get_zob(self):
+        k = self.zob_key
         if k in self.translation_table:
             return self.translation_table[k]
         else:
@@ -332,7 +332,7 @@ class BaseGame:
         self.step += 1
         player = B if self.step % 2 == 1 else W
         self.table[row][col] = player
-        self.zod_key ^= self.zod_grid[row][col][0] ^ self.zod_grid[row][col][player]
+        self.zob_key ^= self.zob_grid[row][col][0] ^ self.zob_grid[row][col][player]
         self.records.append(loc)
         self.judge(loc, player, show=show)
         return True
@@ -345,6 +345,6 @@ class BaseGame:
             row, col = self.records.pop()
             tmp = self.table[row][col]
             self.table[row][col] = 0
-            self.zod_key ^= self.zod_grid[row][col][tmp] ^ self.zod_grid[row][col][0]
+            self.zob_key ^= self.zob_grid[row][col][tmp] ^ self.zob_grid[row][col][0]
         self.winner = False
         self.step -= count
