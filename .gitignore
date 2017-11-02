@@ -20,3 +20,4 @@ gonglve/tools/*
 *.pyc
 
 *.png
+.DS_Store

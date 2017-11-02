@@ -4,7 +4,7 @@
 from collections import Counter, defaultdict
 import logging
 
-from base import BaseGame, B, W, timing, show_timing
+from base import BaseGame, B, W, timing, show_timing, db, TransTable
 from conf import a
 
 v_max = -9999999
@@ -179,39 +179,24 @@ class Gomokuy(BaseGame):
             
             return ret
 
-        pos_from_zob = False
-        poss_from_zob = False
-        zob = self.get_zob()
-        if zob:
-            pos_from_zob = zob["pos"]
-            poss_from_zob = zob["poss"]
-            # if zob["result"] == 9999999 or deep <= zob["deep"]:
-                # 可以直接用之前的最佳结果
-                # ret = [pos_from_zob]
-            # else:
-                # 之前的最佳结果不值得信任，但是 poss 可以直接用
-                # ret = poss_from_zob
-        # else:
-        self.inside_make_line()
-        player = W if self.step % 2 else B
-        opponent = W if player == B else B
-        player_chance = self.values[player]
-        opponent_chance = self.values[opponent]
-        temp = win_chance_single_line() or win_chance_mul_lines() or normal_chance()
-        ret = temp
+        try:
+            # 用最低效率的办法：全部用 poss
+            # 其实：应该是判断得分，假如得分是必胜，可以直接返回 pos。
+            # zob_in_db = TransTable.get(key=str(self.zob_key))
+            zob_in_db = ntt[self.zob_key]
+            if zob_in_db.result == 9999999 or zob_in_db.result == -9999999 or deep <= zob_in_db.deep:
+                # 假如是胜负手，或者是之前的计算深度更深，直接使用最佳结果。
+                return [tuple((map(int, zob_in_db.pos[1:-1].split(","))))]
+            else:
+                return [(int(item / 15), item % 15) for item in list(map(int, zob_in_db.poss.split(",")))]
+        except:
+            self.inside_make_line()
+            player = W if self.step % 2 else B
+            opponent = W if player == B else B
+            player_chance = self.values[player]
+            opponent_chance = self.values[opponent]
 
-        if pos_from_zob:
-            if pos_from_zob not in temp:
-                print(f"rec:{self.records}")
-                print(f"ret:{temp}")
-                print(f"zob:{zob}")
-        elif poss_from_zob:
-            if not set(poss_from_zob).issubset(set(temp)):
-                print(f"rec:{self.records}")
-                print(f"ret:{temp}")
-                print(f"zob:{zob}")
-
-        return ret
+            return win_chance_single_line() or win_chance_mul_lines() or normal_chance()
 
     @timing
     def min_max_search(self, max_deep=5):
@@ -257,6 +242,27 @@ class Gomokuy(BaseGame):
                         "result": max(result),
                         "deep": max_deep - deep,
                     }
+
+                    try:
+                        old_deep = TransTable.get(key=str(self.zob_key)).deep
+                        if max_deep - deep > old_deep:
+                            # print("!!!!!!!!!!!!")
+                            TransTable.update(
+                                key=str(self.zob_key),
+                                pos=poss[result.index(max(result))],
+                                poss=",".join(map(str, [i[0]*15+i[1] for i in poss])),
+                                result=max(result),
+                                deep=max_deep - deep,
+                            )
+                    except:
+                        TransTable.create(
+                            key=str(self.zob_key),
+                            pos=poss[result.index(max(result))],
+                            poss=",".join(map(str, [i[0] * 15 + i[1] for i in poss])),
+                            result=max(result),
+                            deep=max_deep - deep,
+                        )
+
                     return max(result)
                 else:
                     self.translation_table[self.zob_key] = {
@@ -265,6 +271,26 @@ class Gomokuy(BaseGame):
                         "result": min(result),
                         "deep": max_deep - deep,
                     }
+
+                    try:
+                        old_deep = TransTable.get(key=str(self.zob_key)).deep
+                        if max_deep - deep > old_deep:
+                            TransTable.update(
+                                key=str(self.zob_key),
+                                pos=poss[result.index(min(result))],
+                                poss=",".join(map(str, [i[0] * 15 + i[1] for i in poss])),
+                                result=min(result),
+                                deep=max_deep - deep,
+                            )
+                    except:
+                        TransTable.create(
+                            key=str(self.zob_key),
+                            pos=poss[result.index(min(result))],
+                            poss=",".join(map(str, [i[0] * 15 + i[1] for i in poss])),
+                            result=min(result),
+                            deep=max_deep - deep,
+                        )
+
                     return min(result)
 
         if self.winner:
@@ -300,5 +326,10 @@ def settling():
 
 
 if __name__ == '__main__':
+    with db.execution_context():
+        ntt = dict()
+        for item in TransTable.select():
+            ntt[int(item.key)] = item
+        hhh = 34107196750145845359563260297216
     settling()
     show_timing()

@@ -25,7 +25,7 @@ GUI_CONF = {
 
 
 class GAME(Gomokuy):
-    def __init__(self, restricted=True, ai=False, difficulty=4):
+    def __init__(self, restricted=True, ai="Black", difficulty=4):
         """
         :param restricted: 是否支持悔棋，True/False
         :param ai: ai执黑还是执白，假如是PVP或者录入题目，ai=False
