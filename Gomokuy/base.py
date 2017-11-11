@@ -6,9 +6,6 @@ import time
 import logging
 from collections import defaultdict
 import random
-import os
-from peewee import *
-from playhouse.sqlite_ext import SqliteExtDatabase
 
 B = 1
 W = 2
@@ -29,57 +26,6 @@ ADR = {
 info = ""
 logger = logging.getLogger('Gomoku')
 logger.addHandler(logging.StreamHandler())
-basedir = os.path.abspath(os.path.dirname(__file__))
-db = SqliteExtDatabase(os.path.join(basedir, "translation_table.db"))
-
-
-class BaseModel(Model):
-    class Meta:
-        database = db
-
-
-class TransTable(BaseModel):
-    key = CharField(primary_key=True)
-    pos = CharField(null=True)
-    poss = CharField()
-    result = IntegerField()
-    deep = IntegerField()
-
-
-def init_zob_grid():
-    db.connect()
-    try:
-        db.create_table(TransTable)
-        print("创建置换表")
-    except:
-        print("置换表已经存在")
-    ret = []
-    if not os.path.exists(os.path.join(basedir, "zob.txt")):
-        print("创建并保存 Zobrist Hash 数组")
-        ra = 2 ** 105
-        for i in range(15):
-            t = []
-            for j in range(15):
-                t1 = []
-                for k in range(3):
-                    t1.append(int(random.random() * ra))
-                t.append(t1)
-            ret.append(t)
-
-        with open(os.path.join(basedir, "zob.txt"), "w") as f:
-            for line in ret:
-                for cell in line:
-                    f.write(",".join(map(str, cell)) + "\n")
-    else:
-        print("加载 Zobrist Hash 数组")
-        with open(os.path.join(basedir, "zob.txt"), "r") as f:
-            cont = [line.strip().split(",") for line in f.readlines()]
-            for i in range(15):
-                t = []
-                for j in range(15):
-                    t.append(list(map(int, cont[i*15+j])))
-                ret.append(t)
-    return ret
 
 
 def timing(func):
@@ -120,8 +66,17 @@ class BaseGame:
             W: defaultdict(list)}
         self.check = []
 
-        self.zob_grid = init_zob_grid()
+        self.zob_grid = []
         self.zob_key = 0
+        ra = 2 ** 105
+        for i in range(self.width):
+            t = []
+            for j in range(self.width):
+                t1 = []
+                for k in range(3):
+                    t1.append(int(random.random() * ra))
+                t.append(t1)
+            self.zob_grid.append(t)
         self.translation_table = dict()
 
         if manual:
@@ -393,8 +348,3 @@ class BaseGame:
             self.zob_key ^= self.zob_grid[row][col][tmp] ^ self.zob_grid[row][col][0]
         self.winner = False
         self.step -= count
-
-
-if __name__ == '__main__':
-    init_zob_grid()
-
