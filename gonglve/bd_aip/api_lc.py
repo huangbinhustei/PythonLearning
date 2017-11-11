@@ -1,7 +1,6 @@
+# -*- coding: utf-8 -*-
+
 import os
-import requests as req
-from aip import AipImageCensor
-from aip import AipFace
 from aip import AipOcr
 from aip import AipNlp
 from apps import get_tok, basedir, app_id
@@ -44,7 +43,7 @@ class MyNlp:
         self.nlp = AipNlp(app_id["APP_ID"], app_id["API_KEY"], app_id["SECRET_KEY"])
 
     def emotion_detection(self, content):
-        ret = self.nlp.commentTag(item)
+        ret = self.nlp.commentTag(content)
         return ret
 
 

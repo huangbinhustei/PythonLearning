@@ -20,3 +20,9 @@ gonglve/tools/*
 *.pyc
 
 *.png
+Gomokuy/.DS_Store
+gonglve/.DS_Store
+gonglve/bd_aip/.DS_Store
+gonglve/mycomposition/.DS_Store
+segmentation/.DS_Store
+.DS_Store
