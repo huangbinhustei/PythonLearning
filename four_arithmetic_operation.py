@@ -75,3 +75,7 @@ def remove_bracket(this_str):
 
 def main(str1):
     return remove_bracket(str1)
+
+if __name__ == '__main__':
+    s = input()
+    print(main(s))
