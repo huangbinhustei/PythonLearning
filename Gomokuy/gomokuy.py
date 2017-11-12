@@ -25,6 +25,7 @@ SCORE = {
 }
 logger = logging.getLogger('Gomoku')
 logger.setLevel(logging.INFO)
+jmp = [0, 0]
 
 
 class Gomokuy(BaseGame):
@@ -179,37 +180,31 @@ class Gomokuy(BaseGame):
             
             return ret
 
-        pos_from_zob = False
-        poss_from_zob = False
         zob = self.get_zob()
         if zob:
-            pos_from_zob = zob["pos"]
-            poss_from_zob = zob["poss"]
-            # if zob["result"] == 9999999 or deep <= zob["deep"]:
+            if zob["result"] == 9999999 or deep <= zob["deep"]:
                 # 可以直接用之前的最佳结果
-                # ret = [pos_from_zob]
-            # else:
+                jmp[0] += 1
+                ret = [zob["pos"]]
+            else:
                 # 之前的最佳结果不值得信任，但是 poss 可以直接用
-                # ret = poss_from_zob
-        # else:
-        self.inside_make_line()
-        player = W if self.step % 2 else B
-        opponent = W if player == B else B
-        player_chance = self.values[player]
-        opponent_chance = self.values[opponent]
-        temp = win_chance_single_line() or win_chance_mul_lines() or normal_chance()
-        ret = temp
-
-        if pos_from_zob:
-            if pos_from_zob not in temp:
-                print(f"rec:{self.records}")
-                print(f"ret:{temp}")
-                print(f"zob:{zob}")
-        elif poss_from_zob:
-            if not set(poss_from_zob).issubset(set(temp)):
-                print(f"rec:{self.records}")
-                print(f"ret:{temp}")
-                print(f"zob:{zob}")
+                # ret = zob["poss"]
+                jmp[1] += 1
+                self.inside_make_line()
+                player = W if self.step % 2 else B
+                opponent = W if player == B else B
+                player_chance = self.values[player]
+                opponent_chance = self.values[opponent]
+                ret = win_chance_single_line() or win_chance_mul_lines() or normal_chance()
+        else:
+            self.inside_make_line()
+            print(self.values)
+            exit()
+            player = W if self.step % 2 else B
+            opponent = W if player == B else B
+            player_chance = self.values[player]
+            opponent_chance = self.values[opponent]
+            ret = win_chance_single_line() or win_chance_mul_lines() or normal_chance()
 
         return ret
 
@@ -250,22 +245,16 @@ class Gomokuy(BaseGame):
                         break
                 if deep == 0:
                     return result, poss
-                elif next_player == player:
-                    self.translation_table[self.zob_key] = {
-                        "pos": poss[result.index(max(result))],
-                        "poss": poss,
-                        "result": max(result),
-                        "deep": max_deep - deep,
-                    }
-                    return max(result)
                 else:
+                    ret_result = max(result) if next_player == player else min(result)
+                    ret_pos = poss[result.index(ret_result)]
                     self.translation_table[self.zob_key] = {
-                        "pos": poss[result.index(min(result))],
+                        "pos": ret_pos,
                         "poss": poss,
-                        "result": min(result),
+                        "result": ret_result,
                         "deep": max_deep - deep,
                     }
-                    return min(result)
+                    return ret_result
 
         if self.winner:
             return False
@@ -302,3 +291,4 @@ def settling():
 if __name__ == '__main__':
     settling()
     show_timing()
+    print(jmp)
