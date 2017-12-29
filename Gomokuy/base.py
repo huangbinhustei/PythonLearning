@@ -51,39 +51,6 @@ def show_timing():
     print("+-%-24s-+-%-12s-+-%-8s-+\n" % ("-" * 24, "-" * 12, "-" * 8))
 
 
-def get_diagonals(width):
-    def get_starter():
-        tmp1 = []
-        tmp2 = []
-        for i in range(width):
-            tmp1.append([i, 0])
-            tmp2.append([0, i])
-        return tmp1, tmp2
-
-    fir, sec = get_starter()
-    diagonals = []
-
-    for way in (True, False):
-        for ind in range(len(fir)):
-            new_pos = fir[ind] if way else sec[ind]
-            temp = []
-            while 1:
-                temp.append((new_pos[0], new_pos[1]))
-                new_pos[0] += 1
-                new_pos[1] += 1 if way else -1
-                if max(new_pos) >= width or min(new_pos) < 0:
-                    break
-            if len(temp) >= 5:
-                diagonals.append(temp)
-                if len(temp) < width:
-                    if way:
-                        temp2 = [(item[1], item[0]) for item in temp]
-                    else:
-                        temp2 = [(width - item[1] - 1, width - item[0] - 1) for item in temp]
-                    diagonals.append(temp2)
-    return diagonals
-
-
 class BaseGame:
     def __init__(self, restricted=True, manual=[]):
         self.winner = False
@@ -98,7 +65,6 @@ class BaseGame:
             B: defaultdict(list),
             W: defaultdict(list)}
         self.check = []
-        self.lines = []
 
         self.zob_grid = []
         self.zob_key = 0
@@ -125,7 +91,6 @@ class BaseGame:
                             self.step += 1
             else:
                 raise TypeError
-        self.diagonals = get_diagonals(self.width)
 
     def get_zob(self):
         k = self.zob_key
@@ -383,117 +348,3 @@ class BaseGame:
             self.zob_key ^= self.zob_grid[row][col][tmp] ^ self.zob_grid[row][col][0]
         self.winner = False
         self.step -= count
-
-    @timing
-    def chesses(self, line, loc, cell):
-        if cell == 0:
-            if not line[0]:
-                # 全新状态，计入一边的空
-                line[1].append(loc)
-            else:
-                # 已经有子了，默认放另一边
-                line[3].append(loc)
-        elif cell == line[4]:
-            # 遇到相同的子。
-            if len(line[3]) >= 3:
-                self.lines.append(line)
-                l_tmp = line[3]
-                line = [
-                    [loc],  # 0：棋子
-                    [l_tmp],  # 1：第一边空
-                    [],  # 2：中空
-                    [],  # 3：第二边空
-                    cell,  # 4：棋子颜色
-                ]
-            elif line[3]:
-                line[2], line[3] = line[3], []
-                line[0].append(loc)
-            else:
-                line[0].append(loc)
-
-        elif not line[0]:
-            # 遇到第一个子
-            line[0].append(loc)
-            line[4] = cell
-        else:
-            # 遇到对方的子，清算
-            self.lines.append(line)
-            line = [
-                [loc],  # 0：棋子
-                [],  # 1：第一边空
-                [],  # 2：中空
-                [],  # 3：第二边空
-                cell,  # 4：棋子颜色
-            ]
-            # 一行看完，清算
-        return line
-
-
-    @timing
-    def new_inside_line_grouping(self, line, chess):
-        t = len(line[0])
-        t = 6 if t >= 6 else t
-        if line[1] and line[3]:
-            key = "活" + str(t) if t + len(line[2]) <= 4 else "冲" + str(t)
-        elif line[1] or line[2] or line[3]:
-            if t == 1:
-                return
-            key = "冲" + str(t)
-        else:
-            return
-        sli = ADR[len(line[2])][key]
-        line[1] = line[1][:sli]
-        line[3] = line[3][:sli]
-        format_line = line[1] + line[2] + line[3]
-        self.values[chess][key].append(format_line)
-
-    @timing
-    def new_make_lines(self):
-        self.values = {
-            B: defaultdict(list),
-            W: defaultdict(list)}
-        self.lines = []
-        for sid in (True, False):
-            for row in range(self.width):
-                line = [
-                    [],  # 0：棋子
-                    [],  # 1：第一边空
-                    [],  # 2：中空
-                    [],  # 3：第二边空
-                    False,  # 4：棋子颜色
-                ]
-                for col in range(self.width):
-                    loc = (row, col) if sid else (col, row)
-                    cell = self.table[row][col] if sid else self.table[col][row]
-                    line = self.chesses(line, loc, cell)
-
-                # 一行看完，清算
-                self.lines.append(line)
-
-        for diagonal in self.diagonals:
-            line = [
-                [],  # 0：棋子
-                [],  # 1：第一边空
-                [],  # 2：中空
-                [],  # 3：第二边空
-                False,  # 4：棋子颜色
-            ]
-            for loc in diagonal:
-                cell = self.table[loc[0]][loc[1]]
-                line = self.chesses(line, loc, cell)
-
-            self.lines.append(line)
-
-        final = []
-        for line in self.lines:
-            if not line[0]:
-                continue
-            if sum([len(i) for i in line[:4]]) < 5:
-                continue
-            space = line[1] + line[2] + line[3]
-            if not space:
-                continue
-            line[1].reverse()
-            final.append(line)
-        for line in final:
-            self.new_inside_line_grouping(line, line[4])

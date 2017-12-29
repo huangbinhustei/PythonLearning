@@ -181,7 +181,6 @@ class Gomokuy(BaseGame):
             return ret
 
         zob = self.get_zob()
-        zob = False
         if zob:
             if zob["result"] == 9999999 or deep <= zob["deep"]:
                 # 可以直接用之前的最佳结果
@@ -191,16 +190,16 @@ class Gomokuy(BaseGame):
                 # 之前的最佳结果不值得信任，但是 poss 可以直接用
                 # ret = zob["poss"]
                 jmp[1] += 1
-                # self.inside_make_line()
-                self.new_make_lines()
+                self.inside_make_line()
                 player = W if self.step % 2 else B
                 opponent = W if player == B else B
                 player_chance = self.values[player]
                 opponent_chance = self.values[opponent]
                 ret = win_chance_single_line() or win_chance_mul_lines() or normal_chance()
         else:
-            # self.inside_make_line()
-            self.new_make_lines()
+            self.inside_make_line()
+            print(self.values)
+            exit()
             player = W if self.step % 2 else B
             opponent = W if player == B else B
             player_chance = self.values[player]
@@ -286,15 +285,10 @@ class Gomokuy(BaseGame):
 
 def settling():
     g = Gomokuy(settle=True, restricted=True, manual=a)
-    g.iterative_deepening(5)
+    g.iterative_deepening(7)
 
 
 if __name__ == '__main__':
     settling()
-
-    # g = Gomokuy(settle=True, restricted=True, manual=a)
-    # g.new_make_lines()
-    # print(g.values)
-
     show_timing()
     print(jmp)
