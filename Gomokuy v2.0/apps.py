@@ -49,14 +49,13 @@ class GAME(Gomokuy):
 
     def restart(self, restricted=True, ai=False, difficulty=5):
         logger.info("重启游戏")
-        global cost_dict
-        cost_dict = defaultdict(lambda: [0, 0.0])
+        cost_dict.clear()
         self.__init__(restricted=restricted, ai=ai, difficulty=difficulty)
 
     def solve(self):
-        print(f"开始解题：{PRINTING[self.examinee]}先")
         if self.examinee == 2:
             self.examinee = 0 if self.step % 2 == 0 else 1
+        print(f"开始解题：{PRINTING[self.examinee]}先")
         pos = self.iterative_deepening(7)
         show_timing()
         print(f"The Best Choice is {pos}")
@@ -118,12 +117,10 @@ class GAME(Gomokuy):
     def show_situation(self):
         if self.examinee == 2:
             self.examinee = 0 if self.step % 2 == 0 else 1
-        tmp = Gomokuy.show_situation(self)
         tt = ["一二三四五六七八九ABCDEF"[x[0]] + "123456789abcdef"[x[1]] for x in self.candidates]
         print(f"{PRINTING[self.step % 2]}方选点：{tt}")
         que_game2ui.put({
             "game": self,
-            "tmp": tmp,
             "info": "debug"}, block=False)
 
 
@@ -182,7 +179,7 @@ class GUI:
             for row, line in enumerate(game.table):
                 for col, cell in enumerate(line):
                     if cell == 2:
-                        if task["info"] == "debug" and (row, col) in task["tmp"]:
+                        if task["info"] == "debug" and (row, col) in game.candidates:
                             # 调试信息：
                             self.__placing(row, col, GUI_CONF["flag"]//2, fill="yellow")
                         continue
