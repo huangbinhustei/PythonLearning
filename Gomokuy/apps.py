@@ -115,6 +115,7 @@ class GAME(Gomokuy):
                 "info": "Game Over"})
 
     def show_situation(self):
+        Gomokuy.show_situation(self)
         if self.examinee == 2:
             self.examinee = 0 if self.step % 2 == 0 else 1
         tt = ["一二三四五六七八九ABCDEF"[x[0]] + "123456789abcdef"[x[1]] for x in self.candidates]

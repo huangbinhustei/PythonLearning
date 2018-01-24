@@ -115,7 +115,7 @@ class Gomokuy(BlackWhite):
             return False
 
         player = W if self.step % 2 else B
-        fin_result, fin_poss = alpha_beta(0, -9999999, 9999999)
+        fin_result, fin_poss = alpha_beta(0, LOSE, WIN)
         best_choice = fin_poss[fin_result.index(max(fin_result))]
         return best_choice, max(fin_result), fin_poss, fin_result
 

@@ -6,6 +6,7 @@ __pycache__
 *.db
 *.one
 *.csv
+*.xlsx
 *.xml
 *.ini
 *.txt
@@ -19,3 +20,4 @@ __pycache__
 gonglve/bd_aip/apps.py
 config.py
 gonglve/tools/*
+
