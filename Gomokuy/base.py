@@ -9,7 +9,7 @@ import numpy as np
 import random
 from ctypes import *
 
-from conf import a, LC
+from conf import a, LC, get_way, ways
 
 B = 0
 W = 1
@@ -144,7 +144,8 @@ class BlackWhite:
             _win_by_line()
         elif attack:
             _win_by_attack()
-
+    
+    @timing
     def _aoe_when_move_or_undo(self, row, col, show=True):
         # 不管是下棋还是悔棋，这些都是受影响的区域，需要重新计算结果
         def get_offset_by_block(fir, sec, sd):
@@ -164,7 +165,8 @@ class BlackWhite:
             else:
                 block = 1 if bool_right else 3
             return block
-
+        
+        @timing
         def line_ordering(line):
             def get_ind():
                 rate = 1
@@ -205,22 +207,28 @@ class BlackWhite:
         self.sub_score[row][col] = [0, 0, 0, 0, 0, 0, 0, 0]
 
         for direction in range(4):
-            tmp_line = [(row, col)]
-            for side in (-1, 1):
-                for offset in range(1, 6):
-                    new_row = row + offset * side * ROADS[direction][0]
-                    new_col = col + offset * side * ROADS[direction][1]
-                    if new_row >= 15 or new_row < 0:
-                        break
-                    if new_col >= 15 or new_col < 0:
-                        break
-                    self.sub_score[new_row][new_col][direction] = 0
-                    self.sub_score[new_row][new_col][direction + 4] = 0
-                    new_loc = (new_row, new_col)
-                    if side == 1:
-                        tmp_line.append(new_loc)
-                    else:
-                        tmp_line.insert(0, new_loc)
+            tmp_line = get_way(row, col, direction)
+            for new_row, new_col in tmp_line:
+                self.sub_score[new_row][new_col][direction] = 0
+                self.sub_score[new_row][new_col][direction + 4] = 0
+
+        # for direction in range(4):
+        #     tmp_line = [(row, col)]
+        #     for side in (-1, 1):
+        #         for offset in range(1, 6):
+        #             new_row = row + offset * side * ROADS[direction][0]
+        #             new_col = col + offset * side * ROADS[direction][1]
+        #             if new_row >= 15 or new_row < 0:
+        #                 break
+        #             if new_col >= 15 or new_col < 0:
+        #                 break
+        #             self.sub_score[new_row][new_col][direction] = 0
+        #             self.sub_score[new_row][new_col][direction + 4] = 0
+        #             new_loc = (new_row, new_col)
+        #             if side == 1:
+        #                 tmp_line.append(new_loc)
+        #             else:
+        #                 tmp_line.insert(0, new_loc)
             for i in range(len(tmp_line) - 4):
                 ordered_line = line_ordering(tmp_line[i:i + 5])
                 if ordered_line:
@@ -243,6 +251,7 @@ class BlackWhite:
         self._gen()
         return ret
 
+    @timing
     def _gen(self):
         def _king_finding():
             fir = list(zip(*np.where(chance_of_mine[:, :] >= 8)))
@@ -273,7 +282,6 @@ class BlackWhite:
 
         self.situation = np.sum(chance_of_mine) - np.sum(chance_of_your)
 
-    @timing
     def load(self, table, records=False):
         if not records:
             blacks = []
@@ -367,7 +375,6 @@ class BlackWhite:
         else:
             return False
 
-    @timing
     def show_situation(self):
         def get_chess(_row, _col):
             if self.table[_row][_col] == 2:

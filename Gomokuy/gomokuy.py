@@ -32,7 +32,6 @@ class Gomokuy(BlackWhite):
         else:
             return self.candidates
 
-    @timing
     def min_max(self, max_deep=5):
 
         def alpha_beta(deep, v_max, v_min):

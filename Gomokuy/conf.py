@@ -1,3 +1,4 @@
+ROADS = {0: (0, 1), 1: (1, 0), 2: (1, 1), 3: (1, -1)}
 a = [
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # 0
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # 1
@@ -50,3 +51,31 @@ LC = [
     ["00008", "00008", "00008", "00008"],
     ["00000", "00000", "00000", "00000"]
 ]
+
+def init_ways():
+    ret = []
+    for row in range(15):
+        for col in range(15):
+            for direction in range(4):
+                tmp_line = [(row, col)]
+                for side in (-1, 1):
+                    for offset in range(1, 6):
+                        new_row = row + offset * side * ROADS[direction][0]
+                        new_col = col + offset * side * ROADS[direction][1]
+                        if new_row >= 15 or new_row < 0:
+                            break
+                        if new_col >= 15 or new_col < 0:
+                            break
+                        new_loc = (new_row, new_col)
+                        if side == 1:
+                            tmp_line.append(new_loc)
+                        else:
+                            tmp_line.insert(0, new_loc)
+                ret.append(tmp_line)
+    return ret
+
+ways = init_ways()
+
+def get_way(row, col, direction):
+    key = (row*15+col)*4 + direction
+    return ways[key]
