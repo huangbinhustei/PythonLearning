@@ -21,3 +21,6 @@ gonglve/bd_aip/apps.py
 config.py
 gonglve/tools/*
 
+segmentation/doc/frequency.py
+segmentation/doc/HMM.py
+segmentation/doc/read me.md
