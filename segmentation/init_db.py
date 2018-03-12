@@ -1,5 +1,5 @@
 import re
-
+import os
 from viewer import DBSession, Art
 
 
@@ -7,7 +7,9 @@ def get_json():
     par = re.compile("<.+?>")
     s_par = "[<>]"
 
-    with open("/Users/baidu/Downloads/用所选项目新建的文件夹2/news.txt", "r") as f:
+    base = os.path.abspath(os.path.dirname(__file__))
+
+    with open(os.path.join(base, "sogou", "news.txt"), "r") as f:
         cont = f.readlines()
 
     article = dict()
