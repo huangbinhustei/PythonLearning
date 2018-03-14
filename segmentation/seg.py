@@ -2,59 +2,45 @@ import re
 import os
 import time
 import logging
+import math
 from collections import defaultdict
-from threading import Thread
+from multiprocessing import Pool
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-
-
-class MyThread(Thread):
-    # 做这个是为了 get_result
-    def __init__(self, article, stops_config):
-        Thread.__init__(self)
-        self.article = article
-        self.stops_config = stops_config
-        self.result = None
-
-    def run(self):
-        self.result = cutting(self.article, self.stops_config)
-
-    def get_result(self):
-        return self.result
+base = os.path.abspath(os.path.dirname(__file__))
 
 
 class SEG:
-    def __init__(self, path, title="default", max_length=10, stops=""):
+    def __init__(self, cont, title="default", max_length=10, stops=""):
         self.title = "《" + title + "》"
         self.start = time.time()
-
-        par = re.compile("[:，.、。 ？！；：“”…‘’]")
-        with open(path, "r", encoding="utf-8") as f:
-            cont = [re.sub(par, "\t", line.strip()) for line in f.readlines()]
-            self.cont = sum([i.split("\t") for i in cont], [])
-
-        self.no_use_singles = "这那一二三四五六七八九十百千万里众在都全两双对个钱银的是把被若又才好坏还怎天日曰说回知只有没不儿个了着子女东西物样进出来去入过回之乎者也"
-        # self.no_use_singles = ""
+        self.cont = cont
         self.stops = stops
         self.max_length = max_length
-        self.door = int(len(",".join(self.cont)) / 100000) + 1
-        print(f"{self.title}加载完成，阈值 {self.door}，开始分析@{time.ctime()}")
-
+        self.door = int(len(",".join(self.cont)) / 100000) + 2
         self.en = defaultdict(int)
         self.zh = defaultdict(int)
         self.book = defaultdict(int)
         self.result = dict()
+        self.not_word = set([])
+
+        print(f"{self.title}加载完成，阈值 {self.door}，开始分析@{time.ctime()}")
 
     def booker(self):
         book_mark = re.compile("《.+?》")
-        for item in re.findall(book_mark, " ".join(self.cont)):
-            self.book[item] += 1
-        # print(self.book)
+        for ind, line in enumerate(self.cont):
+            for item in re.findall(book_mark, line):
+                self.book[item] += 1
+            self.cont[ind] = re.sub(book_mark, "\t", line)
 
     def filter(self):
         zp = re.compile(u'[\u4e00-\u9fa5]+')
+        par = re.compile("[()（）:，.、。 ？！；：“”…‘’]")
         tmp = []
+
+        cont = [re.sub(par, "\t", line) for line in self.cont]
+        self.cont = sum([i.split("\t") for i in cont], [])
 
         for item in self.cont:
             if not item:
@@ -104,31 +90,33 @@ class SEG:
             for i in range(len(word) - 1):
                 dangers.append(min(self.zh[word[:i + 1]], self.zh[word[i + 1:]]))
             p_danger = max(dangers)
-            if p_word / p_danger < 0.5:
-                # 假如父比最长子的出现概率小太多，那么父词可能不是词
+            if p_word / p_danger <= 0.5:
+                # 假如父比某个子对的出现概率小太多，那么父词可能不是词
                 jmp.add(word)
+
+        self.not_word = set([i for i in jmp if len(i) >= 2])
 
         for k, v in self.zh.items():
             if k not in jmp and len(k) != 1 and k not in self.stops:
-                rate = 0
-                for ch in k:
-                    if ch in self.no_use_singles:
-                        # 整体来说是个诡异的策略
-                        rate += 1
-                if rate == len(k):
-                    continue
-                self.result[k] = v / pow(4, rate)
+                self.result[k] = v
+        
 
-        for w, rate in sorted(self.result.items(), key=lambda x: x[1], reverse=True)[:10]:
-            print(f"{self.title}：\t{self.zh[w]}\t{int(rate)}\t{int(self.zh[w]//rate)}\t{w}")
+        # for w, rate in sorted(self.result.items(), key=lambda x: x[1], reverse=True)[:10]:
+            # print(f"{self.title}：\t{self.zh[w]}\t{int(rate)}\t{int(self.zh[w]//rate)}\t{w}")
         print(f"{self.title}分析完成@{time.ctime()}，耗时{int((time.time()-self.start)*1000)}ms")
 
+        
+def get_content(path):
+    ret = []
+    with open(path, "r", encoding="utf-8") as f:
+        ret = [line.strip() for line in f.readlines()]
+    return ret
 
-def cutting(title, _stops):
-    file = os.path.join(base, "doc", title + ".txt")
-    s = SEG(file, title=title, stops=_stops)
+
+def cutting(content, title, _stops):
+    s = SEG(cont=content, title=title, stops=_stops)
     s.run()
-    return s.result
+    return s.result, s.not_word
 
 
 def load_stop_words():
@@ -136,23 +124,84 @@ def load_stop_words():
         return [item.strip() for item in f.readlines()]
 
 
+def single_hander(paths,  _stops):
+    ret = []
+    idf = defaultdict(int)
+    tf = defaultdict(int)
+    neg = defaultdict(int)
+    for file, title in paths:
+        article = get_content(file)
+        tf, _neg = cutting(article, title, _stops)
+
+        for key, freq in tf.items():
+            idf[key] += 1
+            tf[key] += freq
+        for key in _neg:
+            neg[key] += 1
+
+        ret.append([title, tf])
+
+    final_idf = dict()
+    for k, v in idf.items():
+        if k not in neg or v >= neg[k]:
+            final_idf[k] = v
+
+    finnal_neg = dict()
+    for k, v in neg.items():
+        if k not in idf or v >= idf[k]:
+            finnal_neg[k] = v 
+
+    with open(os.path.join(base, "doc", "红楼梦IDF.txt"), "w") as f:
+        for k, v in final_idf.items():
+            # _tmp = []
+            # for sk in final_idf.keys():
+            #     if sk in k and sk != k:
+            #         _tmp.append(sk)
+            #     _p = "\t".join(_tmp)
+            # f.write(f"{v}\t{k}\t{_p}\n")
+            f.write(f"{v}\t{k}\n")
+
+
+    with open(os.path.join(base, "doc", "红楼梦NEG.txt"), "w") as f:
+        for k, v in finnal_neg.items():
+            f.write(f"{v}\t{k}\n")
+
+    def xu(arg):
+        word, freq = arg
+        if word not in neg or freq >= neg[word]:
+            if idf[word] == 1:
+                return freq * math.log(120/idf[word]) / 2
+            return freq * math.log(120/idf[word])
+        return 0
+
+    for title, d in ret:
+        for w, rate in sorted(d.items(), key=xu, reverse=True)[:10]:
+            print(f"{title}\t{int(d[w])}\t{idf[w]}\t{w}")
+
+
+def mult_hander(mult, _stops):
+    p = Pool(min(3, len(mult)))
+    for book, title in mult:
+        p.apply_async(single_hander, args=([book, title], ""))
+    p.close()
+    p.join()
+
+
+def red_dream():
+    folder = os.path.join(base, "doc", "红楼梦")
+    _, _, files = next(os.walk(folder))
+    tasks = [[os.path.join(folder, i), i.replace(".txt", "")] for i in files if i[-3:] == "txt"]
+    single_hander(tasks, "")
+
+
 if __name__ == '__main__':
     symbols = "-_——+=*/，。？！,.!?\n\t 、:：《》<>\"\';；“”‘’……^"
     chi_symbols = ":，.、。《》？！；：“”……‘’"
 
-    base = os.path.abspath(os.path.dirname(__file__))
-    stops_config = load_stop_words()
-
-    p = []
-    res = []
-    for article in ["红楼梦", "三国演义", "水浒传"]:
-        p.append(MyThread(article, stops_config))
-    for i in p:
-        i.start()
-    for i in p:
-        i.join()
-        res.append(i.get_result())
-
-
-
-
+    # ns = [["红楼梦"], ["三国演义"], ["水浒传"]]
+    ns = [[os.path.join(base, "doc", i + ".txt"), i] for i in ["红楼梦", "三国演义", "水浒传"]]
+    
+    t = time.time()
+    red_dream()
+    # mult_hander(ns, load_stop_words())
+    print(time.time()-t)
