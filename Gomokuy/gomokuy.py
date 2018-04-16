@@ -50,16 +50,12 @@ class Gomokuy(BlackWhite):
                     return WIN
                 else:
                     poss = self.candidates
-                # poss = self.get_candidates(max_deep - deep)
+                poss = self.get_candidates(max_deep - deep)
 
                 # ------------规避从 zob 中取出已经的位置已经有子的尝试 end -------------------
 
                 if not poss:
-                    if self.examinee != 2:
-                        # 解题时假如 poss 为空，就算解题失败
-                        return LOSE
-                    else:
-                        return False
+                    return False
                 result = [0] * len(poss)
                 if deep == 0 and len(poss) == 1:
                     new_deeps = max_deep

@@ -7,9 +7,8 @@ import logging
 from collections import defaultdict
 import numpy as np
 import random
-from ctypes import *
 
-from conf import a, LC, get_way, ways
+from conf import a, LC
 
 B = 0
 W = 1
@@ -19,8 +18,6 @@ ROADS = {0: (0, 1), 1: (1, 0), 2: (1, 1), 3: (1, -1)}
 info = ""
 logger = logging.getLogger('Gomoku')
 logger.addHandler(logging.StreamHandler())
-cdll.LoadLibrary("/Users/baidu/CLionProjects/untitled/four_to_one")
-libc = CDLL("/Users/baidu/CLionProjects/untitled/four_to_one")
 
 def timing(func):
     @wraps(func)
@@ -31,13 +28,37 @@ def timing(func):
         cost_dict[func.__name__][0] += 1
         cost_dict[func.__name__][1] += time_cost
         return ret
-
     return costing
+
+
+def init_ways():
+    ret = []
+    for row in range(15):
+        for col in range(15):
+            line = []
+            for direction in range(4):
+                tmp_line = [(row, col)]
+                for side in (-1, 1):
+                    for offset in range(1, 10):
+                        new_row = row + offset * side * ROADS[direction][0]
+                        new_col = col + offset * side * ROADS[direction][1]
+                        if new_row >= 15 or new_row < 0:
+                            break
+                        if new_col >= 15 or new_col < 0:
+                            break
+                        new_loc = (new_row, new_col)
+                        if side == 1:
+                            tmp_line.append(new_loc)
+                        else:
+                            tmp_line.insert(0, new_loc)
+                line.append(tmp_line)
+            ret.append(line)
+    return ret
 
 
 def show_timing():
     print("\nTiming\n+-%-24s-+-%-12s-+-%-8s-+" % ("-" * 24, "-" * 12, "-" * 8))
-    print("| %-24s | %-12s | %-8s |" % ("func name", "times", "cost(ms)"))
+    print("| %-24s | %-12s | %-8s |" % ("Func name", "Times", "Cost(ms)"))
     print("+-%-24s-+-%-12s-+-%-8s-+" % ("-" * 24, "-" * 12, "-" * 8))
     for k, v in cost_dict.items():
         print("| %-24s | %-12d | %-8s |" % (k, v[0], str(int(v[1] * 1000))))
@@ -64,7 +85,6 @@ class BlackWhite:
         self.winner = 2
         self.forbidden = forbidden
         self.dangerous = []  # 将军的棋子
-        self.examinee = examinee    # 解题时可以额外剪枝，examinee = 2/B/W
 
         self.table = np.array([[2] * 225]).reshape(15, 15)
         self.score = np.array([[0] * 450]).reshape(15, 15, 2)
@@ -85,6 +105,8 @@ class BlackWhite:
                 t.append(t1)
             self.zob_grid.append(t)
         self.translation_table = dict()
+
+        self.ways = init_ways()
 
     def _winning(self, sid, line=False, show=True, attack=[]):
         def declaring(p, information):
@@ -145,6 +167,10 @@ class BlackWhite:
         elif attack:
             _win_by_attack()
     
+
+    def get_way(self, row, col):
+        return self.ways[row * 15 + col]
+
     @timing
     def _aoe_when_move_or_undo(self, row, col, show=True):
         # 不管是下棋还是悔棋，这些都是受影响的区域，需要重新计算结果
@@ -202,12 +228,77 @@ class BlackWhite:
             else:
                 return False
 
+        @timing
+        def line_filter(line_input):
+            def t(l):
+                # print(line_input)
+                # print(l)
+                ret=[]
+                flag = l[0]
+                tmp = [flag]
+                for x in l[1:]:
+                    if x == flag:
+                        tmp.append(x)
+                    else:
+                        ret.append(tmp)
+                        tmp = [x]
+                        flag = x
+                ret.append(tmp)
+
+                fin = set([0])
+                offset = 0
+                for ind, line in enumerate(ret):
+                    lg = len(line)
+                    if line[0] == 2:
+                        offset += lg
+                        continue
+                    if ind > 0 and ret[ind-1][0] == 2:
+                        start = offset - 5 + lg
+                        if start >= 0:
+                            fin.add(start)
+                    if ind < len(ret)-1 and ret[ind+1][0] == 2:
+                        fin.add(offset)
+                    if lg >= 5:
+                        fin.add(offset)
+                    offset += lg
+                fin = [line_input[i: i + 5] for i in fin]
+                # fin.append(line_input[start: start + 5])
+                return fin
+            inp = [self.table[row][col] for row, col in line_input]
+
+            line_output = []
+            # print(f"{t(inp)}")
+            return t(inp)
+            # for i in t(inp):
+                # line_output.append(i)
+            # print(f"!!!!!!!\nline_input\t{line_input}")
+            # return line_output
+
+
+        @timing
+        def line_filter_old(line_input):
+            first_line = line_input[:5]
+            line_output = [first_line]
+            tou = self.table[first_line[0][0]][first_line[0][1]]
+            wei = self.table[first_line[-1][0]][first_line[-1][1]]
+            for i in range(1, len(line_input) - 4):
+                l = line_input[i: i+5]
+                nt = self.table[l[0][0]][l[0][1]]
+                nw = self.table[l[-1][0]][l[-1][1]]
+                if tou != 2 or nw != 2 or wei != 2 or nt != 2:
+                # if tou != nt or wei != nw:
+                    line_output.append(l)
+                tou = nt
+                wei = nw
+            # print(line_output)
+            return line_output
         ret = []
         changes = dict()
         self.sub_score[row][col] = [0, 0, 0, 0, 0, 0, 0, 0]
 
+        aoe_line = self.get_way(row, col)
         for direction in range(4):
-            tmp_line = get_way(row, col, direction)
+            tmp_line = aoe_line[direction]
             for new_row, new_col in tmp_line:
                 self.sub_score[new_row][new_col][direction] = 0
                 self.sub_score[new_row][new_col][direction + 4] = 0
@@ -229,10 +320,18 @@ class BlackWhite:
         #                 tmp_line.append(new_loc)
         #             else:
         #                 tmp_line.insert(0, new_loc)
-            for i in range(len(tmp_line) - 4):
-                ordered_line = line_ordering(tmp_line[i:i + 5])
-                if ordered_line:
-                    ret.append([direction, ordered_line])
+            # print(tmp_line)
+            # print([self.table[row][col] for row, col in tmp_line])
+            for l in line_filter(tmp_line):
+                if len(l) == 5:
+                    ordered_line = line_ordering(l)
+                    # print(f"{l}:\t{[self.table[row][col] for row, col in l]}\t{ordered_line}")
+
+            # for i in range(len(tmp_line) - 4):
+                # ordered_line = line_ordering(tmp_line[i:i + 5])
+                    if ordered_line:
+                        ret.append([direction, ordered_line])
+            # exit(0)
         for l in ret:
             direction, [sid, locations, _, _, result] = l
             for ind, loc in enumerate(locations):
@@ -245,8 +344,14 @@ class BlackWhite:
             sid, direction, (row, col) = k
             offset = sid * 4 + direction
             self.sub_score[row][col][offset] = v
-            values = self.sub_score[row][col]
-            self.score[row][col] = [four_to_one(values[0: 4]), four_to_one(values[4: 8])]
+            # values = self.sub_score[row][col]
+            # self.score[row][col] = [four_to_one(values[0: 4]), four_to_one(values[4: 8])]
+
+        for direction in range(4):
+            tmp_line = aoe_line[direction]
+            for row, col in tmp_line:
+                values = self.sub_score[row][col]
+                self.score[row][col] = [four_to_one(values[0: 4]), four_to_one(values[4: 8])]
 
         self._gen()
         return ret
@@ -270,15 +375,23 @@ class BlackWhite:
         def _knight_finding():
             return list(zip(*np.where(chance_of_mine[:, :] >= 2))) + list(zip(*np.where(chance_of_your[:, :] >= 4)))
 
+        def _soldier_finding():
+            return list(zip(*np.where(chance_of_mine[:, :] >= 1))) + list(zip(*np.where(chance_of_your[:, :] >= 1)))
+
+
         next_player = B if self.step % 2 == 0 else W
         opt_player = B if next_player == W else W
         chance_of_mine = self.score[:, :, next_player]
         chance_of_your = self.score[:, :, opt_player]
 
-        if self.examinee == next_player:
-            self.candidates = _king_finding() or _queen_finding() or []
-        else:
-            self.candidates = _king_finding() or _queen_finding() or _knight_finding()
+        self.candidates = _king_finding() or _queen_finding()
+        if self.candidates == []:
+            knight = _knight_finding()
+            if knight:
+                self.candidates = knight[:5]
+                # print(len(self.candidates))
+            else:
+                self.candidates = _soldier_finding()
 
         self.situation = np.sum(chance_of_mine) - np.sum(chance_of_your)
 
