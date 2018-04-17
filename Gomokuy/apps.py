@@ -38,7 +38,7 @@ class GAME(Gomokuy):
         self.ai = ai
         self.difficulty = difficulty
 
-        Gomokuy.__init__(self, forbidden=True, examinee=2)
+        Gomokuy.__init__(self, forbidden=True)
         if ai == "Black":
             self.move((7, 7))
             que_game2ui.put({
@@ -53,10 +53,10 @@ class GAME(Gomokuy):
         self.__init__(restricted=restricted, ai=ai, difficulty=difficulty)
 
     def solve(self):
-        if self.examinee == 2:
-            self.examinee = 0 if self.step % 2 == 0 else 1
-        print(f"开始解题：{PRINTING[self.examinee]}先")
-        pos = self.iterative_deepening(7)
+        if self.step <= 9:
+            pos = self.iterative_deepening(3)
+        else:
+            pos = self.iterative_deepening(self.difficulty)
         show_timing()
         print(f"The Best Choice is {pos}")
         self.move(pos)
@@ -85,6 +85,7 @@ class GAME(Gomokuy):
                     self.undo_in_use()
                 elif task["option"] == "debug":
                     self.show_situation()
+                    print(f"zob_key={self.zob_key}")
                 time.sleep(0.1)
             except queue.Empty:
                 time.sleep(0.1)
@@ -116,9 +117,7 @@ class GAME(Gomokuy):
 
     def show_situation(self):
         Gomokuy.show_situation(self)
-        if self.examinee == 2:
-            self.examinee = 0 if self.step % 2 == 0 else 1
-        tt = ["一二三四五六七八九ABCDEF"[x[0]] + "123456789abcdef"[x[1]] for x in self.candidates]
+        tt = ["零一二三四五六七八九ABCDE"[x[0]] + "0123456789abcde"[x[1]] for x in self.candidates]
         print(f"{PRINTING[self.step % 2]}方选点：{tt}")
         que_game2ui.put({
             "game": self,
@@ -135,11 +134,11 @@ class GUI:
         self.bg.grid(row=10, columnspan=8, sticky=E)
         self.bg.bind("<Button-1>", self.on_click)
 
-        tmp_h = "     ".join(["1", "2", "3", "4", " 5", "6", "7", "8", " 9", " a", "b", " c", "d", " e", "f"])
+        tmp_h = "    ".join(["      0", " 1", "  2", " 3", "  4", " 5", "  6", " 7", "  8", " 9", "10", "11", "12", "13", "14"])
         self.label_h = Label(text=tmp_h)
-        self.label_h.grid(row=11, columnspan=8, sticky=N)
+        self.label_h.grid(row=11, columnspan=8, sticky=W)
 
-        tmp_v = "\n".join(["\n一", "\n二", "\n三", "\n四", "\n五", "\n六", "\n七", "\n八", "\n九", "\nA", "\nB", "\nC", "\nD", "\nE", "\nF"])
+        tmp_v = "\n".join(["\n零", "\n一", "\n二", "\n三", "\n四", "\n五", "\n六", "\n七", "\n八", "\n九", "\n十", "\nB", "\nC", "\nD", "\nE"])
         self.label_h = Label(text=tmp_v, font=("Helvetica", 13))
         self.label_h.grid(row=10, columnspan=9, sticky=W)
 

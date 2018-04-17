@@ -16,73 +16,59 @@ WIN = 9999999
 LOSE = -9999999
 
 
-class Gomokuy(BlackWhite):
-    def __init__(self, forbidden=True, examinee=2):
-        BlackWhite.__init__(self, forbidden=forbidden, examinee=examinee)
+start = 12
+steps = []
+test = set([])
 
-    @timing
-    def get_candidates(self, deep):
-        zob = self.get_zob()
-        if not zob:
-            return self.candidates
-        elif zob["result"] == 9999999:
-            # 可以直接用之前的最佳结果
-            jmp[0] += 1
-            return [zob["pos"]]
-        else:
-            return self.candidates
+
+class Gomokuy(BlackWhite):
+    def __init__(self, forbidden=True):
+        BlackWhite.__init__(self, forbidden=forbidden)
 
     def min_max(self, max_deep=5):
-
         def alpha_beta(deep, v_max, v_min):
             if deep == max_deep:
+                steps.append([self.records[start:], "No"])
                 return self.situation
             else:
                 next_player = B if (self.step + 1) % 2 == 1 else W
-
-                # ------------规避从 zob 中取出已经的位置已经有子的尝试 begin -----------------
-                zob = self.get_zob()
-                if not zob:
-                    poss = self.candidates
-                elif zob["result"] == WIN:
-                    # 可以直接用之前的最佳结果
-                    jmp[0] += 1
-                    return WIN
-                else:
-                    poss = self.candidates
-                poss = self.get_candidates(max_deep - deep)
-
-                # ------------规避从 zob 中取出已经的位置已经有子的尝试 end -------------------
-
-                if not poss:
-                    return False
+                poss = self.candidates
                 result = [0] * len(poss)
-                if deep == 0 and len(poss) == 1:
-                    new_deeps = max_deep
+
+                if self.forced:
+                    if next_player == B:
+                        # todo：这个判断是不合理的。
+                        new_deeps = deep - 1
+                    else:
+                        new_deeps = deep
                 else:
                     new_deeps = deep + 1
+
                 for ind, pos in enumerate(poss):
                     ret = self.move(pos, show=False)
                     if not ret:
                         print(f"{pos}落子失败！{self.records}")
-                        # raise TypeError
-                        return 0
+                        raise TypeError
                     if self.winner == 2:
                         temp_score = alpha_beta(new_deeps, v_max, v_min)
                     elif self.winner == player:
+                        steps.append([self.records[start:], "Win"])
                         temp_score = WIN
+
                         self.translation_table[self.zob_key] = {
                             "pos": pos,
                             "result": WIN,
-                            "record": self.records,
                         }
+                        self.set_zob()
                     else:
+                        steps.append([self.records[start:], "Lose"])
                         temp_score = LOSE
+
                         self.translation_table[self.zob_key] = {
                             "pos": pos,
                             "result": LOSE,
-                            "record": self.records,
                         }
+                        self.set_zob()
 
                     self.undo()
                     result[ind] = temp_score
@@ -116,9 +102,11 @@ class Gomokuy(BlackWhite):
 
     @timing
     def iterative_deepening(self, max_deep):
+        if self.forced:
+            return self.candidates[0]
+
         pos = False
         for d in range(1, max_deep + 1, 2):
-            # logger.debug(f"迭代深度：{d}")
             print(f"迭代深度：{d}")
             ret = self.min_max(max_deep=d)
             if not ret:
@@ -132,17 +120,24 @@ class Gomokuy(BlackWhite):
             logger.info("result：{}".format(fin_result))
             logger.info("poss  ：{}".format(fin_poss))
             logger.info("best  ： {0} when step is {1}".format(pos, self.step))
+
+        # global steps
+        # for i in steps:
+        #     print(i)
+
         return pos
 
 
 def settling():
     g = Gomokuy()
     g.load(table=a)
-    g.examinee = B if g.step % 2 == 0 else W
-    print(f"{PRINTING[g.examinee]}方解题")
+    global start
+    start = g.step
     g.show_situation()
-    g.iterative_deepening(7)
+    g.iterative_deepening(5)
     print(f"置换表长度：{len(g.translation_table.keys())}")
+
+
 
 
 if __name__ == '__main__':

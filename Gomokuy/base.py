@@ -19,6 +19,7 @@ info = ""
 logger = logging.getLogger('Gomoku')
 logger.addHandler(logging.StreamHandler())
 
+
 def timing(func):
     @wraps(func)
     def costing(*args, **kw):
@@ -79,12 +80,13 @@ def four_to_one(tmp):
 
 
 class BlackWhite:
-    def __init__(self, forbidden=True, examinee=2):
+    def __init__(self, forbidden=True):
         self.step = 0
         self.records = []
         self.winner = 2
         self.forbidden = forbidden
         self.dangerous = []  # 将军的棋子
+        self.forced = False # 自己这一步是否是被迫走的
 
         self.table = np.array([[2] * 225]).reshape(15, 15)
         self.score = np.array([[0] * 450]).reshape(15, 15, 2)
@@ -155,24 +157,36 @@ class BlackWhite:
                 chance_of_mine = self.score[:, :, sid]
                 danger_pos = list(zip(*np.where(chance_of_mine == np.max(chance_of_mine))))
                 for pos in danger_pos:
+                    if pos == self.records[-1]:
+                        continue
                     if chance_of_your[pos[0]][pos[1]] >= 5:
                         # 假如对方堵住冲四的时候能够构成冲四，那么就不算赢。
                         break
                 else:
-                    # 四三胜利
-                    declaring(sid, "获胜")
+                    # 胜利
+                    declaring(sid, "四三胜")
 
         if line:
             _win_by_line()
         elif attack:
             _win_by_attack()
-    
 
     def get_way(self, row, col):
         return self.ways[row * 15 + col]
 
     @timing
     def _aoe_when_move_or_undo(self, row, col, show=True):
+        def zobing():
+            zob = self.get_zob()
+            if not zob:
+                # 新情况，等待存入数据
+                return False
+            self.candidates = zob["candidates"].copy()
+            self.score = zob["score"].copy()
+            self.sub_score = zob["sub_score"].copy()
+            self.forced = zob["forced"]
+            return True
+
         # 不管是下棋还是悔棋，这些都是受影响的区域，需要重新计算结果
         def get_offset_by_block(fir, sec, sd):
             def siding(side_location):
@@ -274,24 +288,9 @@ class BlackWhite:
             # print(f"!!!!!!!\nline_input\t{line_input}")
             # return line_output
 
+        if zobing():
+            return
 
-        @timing
-        def line_filter_old(line_input):
-            first_line = line_input[:5]
-            line_output = [first_line]
-            tou = self.table[first_line[0][0]][first_line[0][1]]
-            wei = self.table[first_line[-1][0]][first_line[-1][1]]
-            for i in range(1, len(line_input) - 4):
-                l = line_input[i: i+5]
-                nt = self.table[l[0][0]][l[0][1]]
-                nw = self.table[l[-1][0]][l[-1][1]]
-                if tou != 2 or nw != 2 or wei != 2 or nt != 2:
-                # if tou != nt or wei != nw:
-                    line_output.append(l)
-                tou = nt
-                wei = nw
-            # print(line_output)
-            return line_output
         ret = []
         changes = dict()
         self.sub_score[row][col] = [0, 0, 0, 0, 0, 0, 0, 0]
@@ -303,35 +302,12 @@ class BlackWhite:
                 self.sub_score[new_row][new_col][direction] = 0
                 self.sub_score[new_row][new_col][direction + 4] = 0
 
-        # for direction in range(4):
-        #     tmp_line = [(row, col)]
-        #     for side in (-1, 1):
-        #         for offset in range(1, 6):
-        #             new_row = row + offset * side * ROADS[direction][0]
-        #             new_col = col + offset * side * ROADS[direction][1]
-        #             if new_row >= 15 or new_row < 0:
-        #                 break
-        #             if new_col >= 15 or new_col < 0:
-        #                 break
-        #             self.sub_score[new_row][new_col][direction] = 0
-        #             self.sub_score[new_row][new_col][direction + 4] = 0
-        #             new_loc = (new_row, new_col)
-        #             if side == 1:
-        #                 tmp_line.append(new_loc)
-        #             else:
-        #                 tmp_line.insert(0, new_loc)
-            # print(tmp_line)
-            # print([self.table[row][col] for row, col in tmp_line])
             for l in line_filter(tmp_line):
                 if len(l) == 5:
                     ordered_line = line_ordering(l)
-                    # print(f"{l}:\t{[self.table[row][col] for row, col in l]}\t{ordered_line}")
-
-            # for i in range(len(tmp_line) - 4):
-                # ordered_line = line_ordering(tmp_line[i:i + 5])
                     if ordered_line:
                         ret.append([direction, ordered_line])
-            # exit(0)
+
         for l in ret:
             direction, [sid, locations, _, _, result] = l
             for ind, loc in enumerate(locations):
@@ -344,8 +320,6 @@ class BlackWhite:
             sid, direction, (row, col) = k
             offset = sid * 4 + direction
             self.sub_score[row][col][offset] = v
-            # values = self.sub_score[row][col]
-            # self.score[row][col] = [four_to_one(values[0: 4]), four_to_one(values[4: 8])]
 
         for direction in range(4):
             tmp_line = aoe_line[direction]
@@ -354,7 +328,7 @@ class BlackWhite:
                 self.score[row][col] = [four_to_one(values[0: 4]), four_to_one(values[4: 8])]
 
         self._gen()
-        return ret
+        self.set_zob()
 
     @timing
     def _gen(self):
@@ -365,6 +339,8 @@ class BlackWhite:
             else:
                 sec = list(zip(*np.where(chance_of_your[:, :] >= 8)))
                 if sec:
+                    # 返回的 True 表示自己这一步是不得不走
+                    self.forced = True
                     return sec
                 else:
                     return list(zip(*np.where(chance_of_mine[:, :] >= 6)))
@@ -378,18 +354,17 @@ class BlackWhite:
         def _soldier_finding():
             return list(zip(*np.where(chance_of_mine[:, :] >= 1))) + list(zip(*np.where(chance_of_your[:, :] >= 1)))
 
-
+        self.forced = False
         next_player = B if self.step % 2 == 0 else W
         opt_player = B if next_player == W else W
         chance_of_mine = self.score[:, :, next_player]
         chance_of_your = self.score[:, :, opt_player]
 
         self.candidates = _king_finding() or _queen_finding()
-        if self.candidates == []:
+        if not self.candidates:
             knight = _knight_finding()
             if knight:
                 self.candidates = knight[:5]
-                # print(len(self.candidates))
             else:
                 self.candidates = _soldier_finding()
 
@@ -437,7 +412,7 @@ class BlackWhite:
             return False
         row, col = loc
         if self.table[row][col] != 2:
-            logger.error("这个位置已经有棋了")
+            logger.error(f"{loc}:这个位置已经有棋了")
             return False
 
         # 落子，更新棋盘
@@ -445,17 +420,15 @@ class BlackWhite:
         self.table[row][col] = player
         self.step += 1
         self.records.append(loc)
-        attack = []
-
-        if self.score[row][col][player] >= 3:
-            attack = list(self.sub_score[loc[0]][loc[1]][player * 4: player * 4 + 4])
-
         self.zob_key ^= self.zob_grid[row][col][2] ^ self.zob_grid[row][col][player]
 
-        # 落子，更新局势
+        attack = []
+        if self.score[row][col][player] >= 3:
+            attack = list(self.sub_score[loc[0]][loc[1]][player * 4: player * 4 + 4])
+            if attack:
+                self._winning(player, show=show, attack=attack)
+
         self._aoe_when_move_or_undo(row, col, show=show)
-        if attack:
-            self._winning(player, show=show, attack=attack)
 
         return True
 
@@ -467,26 +440,31 @@ class BlackWhite:
             raise TypeError
 
         # 悔棋，更新棋盘
-        loc = self.records.pop()
-        row, col = loc
-
-        tmp = self.table[row][col]
-        self.zob_key ^= self.zob_grid[row][col][tmp] ^ self.zob_grid[row][col][2]
-
-        self.table[row][col] = 2
         self.winner = 2
         self.step -= 1
+        row, col = self.records.pop()
+        tmp = self.table[row][col]
+
+        self.zob_key ^= self.zob_grid[row][col][tmp] ^ self.zob_grid[row][col][2]
+        self.table[row][col] = 2
 
         # 悔棋，更新局势
         self._aoe_when_move_or_undo(row, col)
 
     @timing
     def get_zob(self):
-        k = self.zob_key
-        if k in self.translation_table:
-            return self.translation_table[k]
+        if self.zob_key in self.translation_table:
+            return self.translation_table[self.zob_key]
         else:
             return False
+
+    def set_zob(self):
+        self.translation_table[self.zob_key] = {
+            "candidates": self.candidates.copy(),
+            "score": self.score.copy(),
+            "sub_score": self.sub_score.copy(),
+            "forced": self.forced,
+        }
 
     def show_situation(self):
         def get_chess(_row, _col):
