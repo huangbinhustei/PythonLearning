@@ -4,7 +4,7 @@
 import logging
 
 from base import BlackWhite, B, W, timing, show_timing, PRINTING
-from conf import a
+from conf import *
 
 # v_max = -9999999
 # v_min = 9999999
@@ -24,6 +24,7 @@ test = set([])
 class Gomokuy(BlackWhite):
     def __init__(self, forbidden=True):
         BlackWhite.__init__(self, forbidden=forbidden)
+        self.player = 2
 
     def min_max(self, max_deep=5):
         def alpha_beta(deep, v_max, v_min):
@@ -35,12 +36,9 @@ class Gomokuy(BlackWhite):
                 poss = self.candidates
                 result = [0] * len(poss)
 
-                if self.forced:
-                    if next_player == B:
-                        # todo：这个判断是不合理的。
-                        new_deeps = deep - 1
-                    else:
-                        new_deeps = deep
+                if self.forced and next_player == self.player:
+                    # 被对方用冲四逼着走时，不计入步数，但是己方是没必要用冲四拖延时间的。
+                    new_deeps = deep - 1
                 else:
                     new_deeps = deep + 1
 
@@ -102,6 +100,8 @@ class Gomokuy(BlackWhite):
 
     @timing
     def iterative_deepening(self, max_deep):
+        self.player = W if self.step % 2 else B
+
         if self.forced:
             return self.candidates[0]
 
@@ -116,31 +116,38 @@ class Gomokuy(BlackWhite):
                 print(f"break in iterative_deepening @ deep = {d}")
                 break
 
+        global steps
+        for i in steps:
+            if i[0][0] == (6, 4):
+                print(i)
+
         if pos:
             logger.info("result：{}".format(fin_result))
             logger.info("poss  ：{}".format(fin_poss))
             logger.info("best  ： {0} when step is {1}".format(pos, self.step))
-
-        # global steps
-        # for i in steps:
-        #     print(i)
 
         return pos
 
 
 def settling():
     g = Gomokuy()
-    g.load(table=a)
+    g.load(table=eleven)
     global start
     start = g.step
     g.show_situation()
-    g.iterative_deepening(5)
+    # g.iterative_deepening(5)
+
+    g.move((5, 5))
+    g.move((5, 7))
+    g.move((3, 7))
+    g.move((2, 8))
+    g.move((2, 6))
+    g.show_situation()
     print(f"置换表长度：{len(g.translation_table.keys())}")
-
-
 
 
 if __name__ == '__main__':
     settling()
     show_timing()
     print(jmp)
+    _a = input()

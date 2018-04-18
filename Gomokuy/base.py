@@ -8,7 +8,7 @@ from collections import defaultdict
 import numpy as np
 import random
 
-from conf import a, LC
+from conf import LC
 
 B = 0
 W = 1
@@ -154,8 +154,12 @@ class BlackWhite:
                     declaring(W, "获胜")
 
             elif 5 in attack and 4 in attack:
+                print("!!!!!!!!!")
                 chance_of_mine = self.score[:, :, sid]
                 danger_pos = list(zip(*np.where(chance_of_mine == np.max(chance_of_mine))))
+                # if self.records[12] == (5, 5) and self.records[14] == (3, 7):
+                #     self.show_situation()
+                #     print(f"{self.records[12:]}\t{danger_pos}\t{np.max(chance_of_mine)}")
                 for pos in danger_pos:
                     if pos == self.records[-1]:
                         continue
