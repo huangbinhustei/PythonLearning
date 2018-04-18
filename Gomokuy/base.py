@@ -154,20 +154,29 @@ class BlackWhite:
                     declaring(W, "获胜")
 
             elif 5 in attack and 4 in attack:
-                print("!!!!!!!!!")
-                chance_of_mine = self.score[:, :, sid]
-                danger_pos = list(zip(*np.where(chance_of_mine == np.max(chance_of_mine))))
-                # if self.records[12] == (5, 5) and self.records[14] == (3, 7):
-                #     self.show_situation()
-                #     print(f"{self.records[12:]}\t{danger_pos}\t{np.max(chance_of_mine)}")
-                for pos in danger_pos:
-                    if pos == self.records[-1]:
-                        continue
-                    if chance_of_your[pos[0]][pos[1]] >= 5:
-                        # 假如对方堵住冲四的时候能够构成冲四，那么就不算赢。
-                        break
+                direction = attack.index(5)
+                last_pos = self.records[-1]
+                four_range = []
+                for j in (-1, 1):
+                    for i in range(1, 5):
+                        pos = (last_pos[0] + ROADS[direction][0] * i * j, last_pos[1] + ROADS[direction][1] * i * j)
+                        if min(pos) < 0:
+                            continue
+                        if max(pos) > 14:
+                            continue
+                        if self.table[pos[0]][pos[1]] == 2:
+                            four_range.append(pos)
+                        elif self.table[pos[0]][pos[1]] == sid:
+                            continue
+                        else:
+                            break
+                # four_range = [pos for pos in four_range if min(pos) >= 0 and max(pos) <= 14]
+                counterattack = [pos for pos in four_range if self.table[pos[0]][pos[1]] == 2 and chance_of_your[pos[0]][pos[1]] >= 5]
+
+                if counterattack:
+                    pass
+                    # print(f"伪四三胜：{counterattack}")
                 else:
-                    # 胜利
                     declaring(sid, "四三胜")
 
         if line:

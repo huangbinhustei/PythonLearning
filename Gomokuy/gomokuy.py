@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
-
+import time
 from base import BlackWhite, B, W, timing, show_timing, PRINTING
 from conf import *
 
@@ -107,19 +107,14 @@ class Gomokuy(BlackWhite):
 
         pos = False
         for d in range(1, max_deep + 1, 2):
-            print(f"迭代深度：{d}")
+            logger.debug(f"迭代深度：{d}")
             ret = self.min_max(max_deep=d)
             if not ret:
                 continue
             pos, fen, fin_poss, fin_result = ret
             if fen == 9999999:
-                print(f"break in iterative_deepening @ deep = {d}")
+                logger.info(f"break in iterative_deepening @ deep = {d}")
                 break
-
-        global steps
-        for i in steps:
-            if i[0][0] == (6, 4):
-                print(i)
 
         if pos:
             logger.info("result：{}".format(fin_result))
@@ -129,25 +124,50 @@ class Gomokuy(BlackWhite):
         return pos
 
 
-def settling():
+def settling(ending):
+    logger.setLevel(logging.INFO)
+
+    logger.info("开始解题")
+
     g = Gomokuy()
-    g.load(table=eleven)
+    g.load(table=ending)
     global start
     start = g.step
     g.show_situation()
-    # g.iterative_deepening(5)
+    result = g.iterative_deepening(7)
+    logger.info(f"置换表长度：{len(g.translation_table.keys())}")
 
-    g.move((5, 5))
-    g.move((5, 7))
-    g.move((3, 7))
-    g.move((2, 8))
-    g.move((2, 6))
-    g.show_situation()
-    print(f"置换表长度：{len(g.translation_table.keys())}")
+    show_timing()
+    print(jmp)
+
+    return result
+
+
+def test_case():
+    logger.setLevel(logging.ERROR)
+    case = {
+        "name": [one, two, three, four, five, six, seven, eight, nine, ten, eleven],
+        "result": [(2, 6), (3, 5), (6, 6), (4, 7), (7, 4), (3, 8), (5, 7), (5, 8), (7, 8), (7, 9), (5, 5)]
+    }
+    result = []
+
+    for idx, ending in enumerate(case["name"]):
+        print(f"正在解题，当前第{idx+1}题")
+        g = Gomokuy()
+        g.load(ending)
+        time_start = time.time()
+        res = g.iterative_deepening(5)
+        time_cost = int((time.time() - time_start) * 1000)
+        result.append([res == case["result"][idx], time_cost])
+    for ind, line in enumerate(result):
+        if ind < 9:
+            print(f"第 {ind+1}题：{line}")
+        else:
+            print(f"第{ind+1}题：{line}")
 
 
 if __name__ == '__main__':
-    settling()
-    show_timing()
-    print(jmp)
+    settling(six)
+    # test_case()
     _a = input()
+
