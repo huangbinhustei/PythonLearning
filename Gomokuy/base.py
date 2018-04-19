@@ -115,8 +115,8 @@ class BlackWhite:
             self.winner = p
             if show:
                 logger.info(f"{PRINTING[sid]}方{information}")
-            else:
-                logger.debug(f"{PRINTING[sid]}{information}")
+            # else:
+                # logger.debug(f"{PRINTING[sid]}{information}")
 
         def _win_by_line():
             if sid == W:
@@ -134,6 +134,7 @@ class BlackWhite:
             opt = W if sid == B else B
 
             chance_of_your = self.score[:, :, opt]
+            chance_of_mine = self.score[:, :, sid]
             best_score_your = np.max(chance_of_your)
 
             if 6 in attack:
@@ -143,12 +144,12 @@ class BlackWhite:
                     declaring(sid, "四连胜")
             elif attack.count(5) >= 2:
                 if sid == B:
-                    declaring(W, "禁手胜")
+                    declaring(W, "禁手负")
                 else:
                     declaring(W, "获胜")
             elif attack.count(4) >= 2:
                 if sid == B:
-                    declaring(W, "禁手胜")
+                    declaring(W, "禁手负")
                 elif best_score_your < 5:
                     # 三三时只要对方有冲四就不能算赢
                     declaring(W, "获胜")
@@ -164,18 +165,18 @@ class BlackWhite:
                             continue
                         if max(pos) > 14:
                             continue
-                        if self.table[pos[0]][pos[1]] == 2:
+                        if self.table[pos[0]][pos[1]] == 2 and chance_of_mine[pos[0]][pos[1]] == 5:
                             four_range.append(pos)
                         elif self.table[pos[0]][pos[1]] == sid:
                             continue
                         else:
                             break
-                # four_range = [pos for pos in four_range if min(pos) >= 0 and max(pos) <= 14]
+
                 counterattack = [pos for pos in four_range if self.table[pos[0]][pos[1]] == 2 and chance_of_your[pos[0]][pos[1]] >= 5]
 
                 if counterattack:
                     pass
-                    # print(f"伪四三胜：{counterattack}")
+                    logger.debug(f"伪四三胜：{counterattack}")
                 else:
                     declaring(sid, "四三胜")
 

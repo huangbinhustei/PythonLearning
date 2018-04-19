@@ -125,7 +125,7 @@ class Gomokuy(BlackWhite):
 
 
 def settling(ending):
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
 
     logger.info("开始解题")
 
@@ -134,11 +134,16 @@ def settling(ending):
     global start
     start = g.step
     g.show_situation()
-    result = g.iterative_deepening(7)
+    result = g.iterative_deepening(5)
     logger.info(f"置换表长度：{len(g.translation_table.keys())}")
 
     show_timing()
     print(jmp)
+
+    # global steps
+    # for l in steps:
+    #     if l[0][0] == (3, 8):
+    #         print(l)
 
     return result
 
@@ -167,7 +172,7 @@ def test_case():
 
 
 if __name__ == '__main__':
-    settling(six)
-    # test_case()
+    # settling(three)
+    test_case()
     _a = input()
 
