@@ -5,20 +5,16 @@ import logging
 import time
 from base import BlackWhite, B, W, timing, show_timing, PRINTING
 from conf import *
+from casing import *
 
 # v_max = -9999999
 # v_min = 9999999
-ROADS = {0: (0, 1), 1: (1, 0), 2: (1, 1), 3: (1, -1)}
+
 logger = logging.getLogger('Gomoku')
 logger.setLevel(logging.INFO)
 jmp = [0, 0]
 WIN = 9999999
 LOSE = -9999999
-
-
-start = 12
-steps = []
-test = set([])
 
 
 class Gomokuy(BlackWhite):
@@ -29,7 +25,6 @@ class Gomokuy(BlackWhite):
     def min_max(self, max_deep=5):
         def alpha_beta(deep, v_max, v_min):
             if deep == max_deep:
-                steps.append([self.records[start:], "No"])
                 return self.situation
             else:
                 next_player = B if (self.step + 1) % 2 == 1 else W
@@ -45,28 +40,23 @@ class Gomokuy(BlackWhite):
                 for ind, pos in enumerate(poss):
                     ret = self.move(pos, show=False)
                     if not ret:
-                        print(f"{pos}落子失败！{self.records}")
-                        raise TypeError
+                        logger.error(f"{pos}落子失败！{self.records}")
+                        raise RuntimeError
                     if self.winner == 2:
                         temp_score = alpha_beta(new_deeps, v_max, v_min)
                     elif self.winner == player:
-                        steps.append([self.records[start:], "Win"])
                         temp_score = WIN
 
-                        self.translation_table[self.zob_key] = {
-                            "pos": pos,
-                            "result": WIN,
-                        }
                         self.set_zob()
+                        self.translation_table[self.zob_key]["pos"] = pos
+                        self.translation_table[self.zob_key]["result"] = WIN
+                        
                     else:
-                        steps.append([self.records[start:], "Lose"])
                         temp_score = LOSE
 
-                        self.translation_table[self.zob_key] = {
-                            "pos": pos,
-                            "result": LOSE,
-                        }
                         self.set_zob()
+                        self.translation_table[self.zob_key]["pos"] = pos
+                        self.translation_table[self.zob_key]["result"] = LOSE                        
 
                     self.undo()
                     result[ind] = temp_score
@@ -113,13 +103,13 @@ class Gomokuy(BlackWhite):
                 continue
             pos, fen, fin_poss, fin_result = ret
             if fen == 9999999:
-                logger.info(f"break in iterative_deepening @ deep = {d}")
+                logger.debug(f"break in iterative_deepening @ deep = {d}")
                 break
 
         if pos:
-            logger.info("result：{}".format(fin_result))
-            logger.info("poss  ：{}".format(fin_poss))
-            logger.info("best  ： {0} when step is {1}".format(pos, self.step))
+            logger.debug("result：{}".format(fin_result))
+            logger.debug("poss  ：{}".format(fin_poss))
+            logger.debug("best  ： {0} when step is {1}".format(pos, self.step))
 
         return pos
 
@@ -131,48 +121,40 @@ def settling(ending):
 
     g = Gomokuy()
     g.load(table=ending)
-    global start
-    start = g.step
     g.show_situation()
     result = g.iterative_deepening(5)
     logger.info(f"置换表长度：{len(g.translation_table.keys())}")
 
     show_timing()
-    print(jmp)
-
-    # global steps
-    # for l in steps:
-    #     if l[0][0] == (3, 8):
-    #         print(l)
-
+    logger.info(jmp)
+    
+    _a = input()
+    logger.info("任务完成，点击回车键退出")
+    
     return result
 
 
 def test_case():
-    logger.setLevel(logging.ERROR)
-    case = {
-        "name": [one, two, three, four, five, six, seven, eight, nine, ten, eleven],
-        "result": [(2, 6), (3, 5), (6, 6), (4, 7), (7, 4), (3, 8), (5, 7), (5, 8), (7, 8), (7, 9), (5, 5)]
-    }
+    logger.setLevel(logging.INFO)
+
     result = []
 
-    for idx, ending in enumerate(case["name"]):
-        print(f"正在解题，当前第{idx+1}题")
+    logger.info("开始解题")
+    for idx, ending in enumerate(case):
+        ind_str = " " + str(idx+1) if idx < 9 else str(idx+1)
+        
         g = Gomokuy()
         g.load(ending)
+
         time_start = time.time()
         res = g.iterative_deepening(5)
         time_cost = int((time.time() - time_start) * 1000)
-        result.append([res == case["result"][idx], time_cost])
-    for ind, line in enumerate(result):
-        if ind < 9:
-            print(f"第 {ind+1}题：{line}")
-        else:
-            print(f"第{ind+1}题：{line}")
+
+        passing = "通过" if res == ans[idx] else "未通过"
+
+        logger.info(f"第{ind_str}题：{passing}\t耗时: {time_cost} ms")
 
 
 if __name__ == '__main__':
-    # settling(three)
+    # settling(case[14])
     test_case()
-    _a = input()
-

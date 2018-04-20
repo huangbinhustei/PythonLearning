@@ -33,7 +33,7 @@ class GAME(Gomokuy):
         :param ai: ai执黑还是执白（执黑 ai="Black"），假如是PVP或者录入题目，ai=False
         :param difficulty: 思考深度
         """
-        print('Thread (%s) start in GAME' % threading.currentThread().getName())
+        logger.info('Thread (%s) start in GAME' % threading.currentThread().getName())
 
         self.ai = ai
         self.difficulty = difficulty
@@ -58,7 +58,7 @@ class GAME(Gomokuy):
         else:
             pos = self.iterative_deepening(self.difficulty)
         show_timing()
-        print(f"The Best Choice is {pos}")
+        logger.info(f"The Best Choice is {pos}")
         self.move(pos)
         que_game2ui.put({
             "game": self,
@@ -85,14 +85,13 @@ class GAME(Gomokuy):
                     self.undo_in_use()
                 elif task["option"] == "debug":
                     self.show_situation()
-                    print(f"zob_key={self.zob_key}")
                 time.sleep(0.1)
             except queue.Empty:
                 time.sleep(0.1)
 
     def moving(self, row, col):
         if self.winner != 2:
-            print("游戏结束")
+            logger.info("游戏结束")
             return
 
         ret = self.move((row, col))
@@ -118,7 +117,7 @@ class GAME(Gomokuy):
     def show_situation(self):
         Gomokuy.show_situation(self)
         tt = ["零一二三四五六七八九ABCDE"[x[0]] + "0123456789abcde"[x[1]] for x in self.candidates]
-        print(f"{PRINTING[self.step % 2]}方选点：{tt}")
+        logger.info(f"{PRINTING[self.step % 2]}方选点：{tt}")
         que_game2ui.put({
             "game": self,
             "info": "debug"}, block=False)
