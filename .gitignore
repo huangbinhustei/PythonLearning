@@ -24,3 +24,25 @@ gonglve/tools/*
 segmentation/doc/frequency.py
 segmentation/doc/HMM.py
 segmentation/doc/read me.md
+mycomposition/data.py
+mycomposition/config.json
+mycomposition/init_search_db.py
+mycomposition/my_search.py
+mycomposition/preparations.py
+mycomposition/readme.md
+mycomposition/static/hotkeys.js
+mycomposition/static/jquery.min.js
+mycomposition/static/module.js
+mycomposition/static/simditor.css
+mycomposition/static/simditor.js
+mycomposition/static/uploader.js
+mycomposition/static/style.css
+mycomposition/templates/dashboard_edit.html
+mycomposition/templates/dashboard.html
+mycomposition/templates/layout.html
+mycomposition/templates/dashboard_list.html
+mycomposition/templates/page_list.html
+mycomposition/templates/page_view.html
+mycomposition/views.py
+mycomposition/templates/page_search.html
+image_compare.py
