@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
-from gomokuy import Gomokuy
+from renju import Renjuy
 import logging
 import time
 from tkinter import *
@@ -11,9 +11,9 @@ logger = logging.getLogger('Gomoku')
 logger.setLevel(logging.WARNING)
 
 
-class EVEV2(Gomokuy):
+class EVEV2(Renjuy):
     def __init__(self):
-        Gomokuy.__init__(self)
+        Renjuy.__init__(self)
         self.desktop = Tk()
         self.c = Canvas(self.desktop, width = 480, height = 480, bg = "white")
         self.c.pack()
@@ -71,10 +71,10 @@ class EVEV2(Gomokuy):
         
 
 
-class EVE(Gomokuy):
+class EVE(Renjuy):
     def __init__(self):
-        self.black = Gomokuy()
-        self.white = Gomokuy()
+        self.black = Renjuy()
+        self.white = Renjuy()
         self.black.move((7, 7))
         self.white.move((7, 7))
         # self.black.score  = {
