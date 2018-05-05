@@ -1,173 +1,216 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import logging
-import time
-from base import BlackWhite, B, W, timing, show_timing
-import numpy as np
-from casing import *
 
+import queue
+# from queue import Queue
+import logging
+import threading
+import time
+from tkinter import *
+
+from base import show_timing, PRINTING, cost_dict, Renjuy
 
 logger = logging.getLogger('Renju')
-jmp = [0, 0]
-WIN = 9999999
-LOSE = -9999999
+logger.setLevel(logging.INFO)
+que_game2ui = queue.Queue(maxsize=2)
+que_ui2game = queue.Queue(maxsize=2)
+
+GUI_CONF = {
+    "gap": 30,  # 棋盘间隔
+    "half_gap": 15,  # 棋盘间隔的一半，用于识别点击位置
+    "flag": 12,  # 棋子半径
+    "stress": 2,  # 棋子中用来强调的标记的半径
+}
 
 
-class Renjuy(BlackWhite):
-    def __init__(self, forbidden=True):
-        BlackWhite.__init__(self, forbidden=forbidden)
-        self.player = 2
+class GAME(Renjuy):
+    def __init__(self, ai=False, difficulty=3):
+        """
+        :param ai: ai执黑还是执白（执黑 ai="Black"），假如是PVP或者录入题目，ai=False
+        :param difficulty: 思考深度
+        """
+        logger.info('Thread (%s) start in GAME' % threading.currentThread().getName())
 
-    def probe(self, loc, show=True):
-        ret = BlackWhite.move(self, loc, show=show)
-        if not ret:
-            self.show_situation()
-            logger.error(f"self.winner = {self.winner}")
-            logger.error(f"{loc}落子失败！{self.records}")
-            raise RuntimeError
+        self.ai = ai
+        self.difficulty = difficulty
 
-    def get_score(self):
-        if self.player == 2:
-            logger.error("初始化失败")
-            raise RuntimeError
+        Renjuy.__init__(self, forbidden=True)
+        if ai == "Black":
+            self.move((7, 7))
+            que_game2ui.put({
+                "game": self,
+                "info": "move"})
+
+        self.queue_handler()
+
+    def restart(self, restricted=True, ai=False, difficulty=5):
+        logger.info("重启游戏")
+        cost_dict.clear()
+        self.__init__(ai=ai, difficulty=difficulty)
+
+    def solve(self):
+        if self.step <= 9:
+            pos = self.iterative_deepening(2)
         else:
-            if self.winner == 2:
-                opt_player = B if self.player == W else W
-                chance_of_mine = self.score[:, :, self.player]
-                chance_of_your = self.score[:, :, opt_player]
-                return np.sum(chance_of_mine) - np.sum(chance_of_your)
-            elif self.winner == self.player:
-                return WIN
-            else:
-                return LOSE
+            pos = self.iterative_deepening(self.difficulty)
+        show_timing()
+        logger.info(f"The Best Choice is {pos}")
+        self.move(pos)
+        que_game2ui.put({
+            "game": self,
+            "info": "move"})
 
-    def min_max(self, max_deep=3):
-        def alpha_beta(deep, p, alpha, beta):
-            if p:
-                situation = LOSE
-                for i in self.candidates:
-                    self.probe(i, show=False)
-                    if self.winner == self.player:
-                        situation = WIN
-                    elif self.winner != 2:
-                        situation = LOSE
-                    # 上面两个条件，分出胜负了，直接打分，不用进入下一层
-                    elif deep == max_deep:
-                        # 上面这个条件，没有分出胜负但是已经深度够了，直接打分，也不进入下一层
-                        situation = self.get_score()
-                    else:
-                        situation = max(situation, alpha_beta(deep, False, alpha, beta))
-                    alpha = max(alpha, situation)
-                    self.undo()
-                    # if situation == WIN:
-                    #     self.translation_table[self.zob_key]["candidates"] = [i]
-                    if beta <= alpha:
-                        jmp[0] += 1
-                        break
-            else:
-                situation = WIN
-                for i in self.candidates:
-                    self.probe(i, show=False)
-                    if self.winner == self.player:
-                        situation = WIN
-                    elif self.winner != 2:
-                        situation = LOSE
-                    # 上面两个条件，分出胜负了，直接打分，不用进入下一层
-                    elif deep == max_deep:
-                        # 上面这个条件，没有分出胜负但是已经深度够了，直接打分，也不进入下一层
-                        situation = self.get_score()
-                    else:
-                        if self.forced:
-                            # 假如下一步，黑方是被迫走的，那么不算深度
-                            situation = min(situation, alpha_beta(deep, True, alpha, beta))
-                        else:
-                            situation = min(situation, alpha_beta(deep + 1, True, alpha, beta))
-                    beta = min(beta, situation)
-                    self.undo()
-                    # if situation == LOSE:
-                    #     self.translation_table[self.zob_key]["candidates"] = [i]
-                    if beta <= alpha:
-                        jmp[0] += 1
-                        break
+    def undo_in_use(self):
+        Renjuy.undo(self)
+        que_game2ui.put({
+            "game": self,
+            "info": "move"})
 
-            return situation
+    def queue_handler(self):
+        while True:
+            try:
+                task = que_ui2game.get(block=False)
+                if task["option"] == "move":
+                    row, col = task["loc"]
+                    self.moving(row, col)
+                elif task["option"] == "restart":
+                    self.restart()
+                elif task["option"] == "solve":
+                    self.solve()
+                elif task["option"] == "undo":
+                    self.undo_in_use()
+                elif task["option"] == "debug":
+                    self.show_situation()
+                time.sleep(0.1)
+            except queue.Empty:
+                time.sleep(0.1)
 
-        if self.forced:
-            best_choice = self.candidates[0]
-            return best_choice, 0, self.candidates, [0, 0]
+    def moving(self, row, col):
+        if self.winner != 2:
+            logger.info("游戏结束")
+            return
+
+        ret = self.move((row, col))
+        if ret:
+            que_game2ui.put({
+                "game": self,
+                "info": "move"}, block=False)
+            logger.debug(f"first put\tsize={que_game2ui.qsize()} @ {time.ctime()}")
+            if not self.ai:
+                return
+            pos2 = self.iterative_deepening(self.difficulty)
+            if pos2:
+                self.move(pos2)
+                que_game2ui.put({
+                    "game": self,
+                    "info": "move"}, block=False)
+                logger.debug(f"second put\tsize={que_game2ui.qsize()} @ {time.ctime()}")
         else:
-            result = []
-            for candidate in self.candidates:
-                self.probe(candidate, show=False)
-                if self.winner == self.player:
-                    exam = WIN
-                elif self.winner != 2:
-                    exam = LOSE
-                else:
-                    exam = alpha_beta(0, False, LOSE, WIN)
-                result.append(exam)
-                self.undo()
-                if exam == WIN:
-                    break
+            que_game2ui.put({
+                "game": self,
+                "info": "Game Over"})
 
-            best_choice = self.candidates[result.index(max(result))]
-            return best_choice, max(result), self.candidates, result
-
-    @timing
-    def iterative_deepening(self, max_deep):
-        self.player = W if self.step % 2 else B
-
-        for d in range(1, max_deep + 1):
-            logger.debug(f"迭代深度：{d}")
-            pos, fen, fin_poss, fin_result = self.min_max(max_deep=d)
-            if fen == WIN:
-                logger.debug(f"break in iterative_deepening @ deep = {d}")
-                break
-
-        logger.debug(f"result：{fin_result}")
-        logger.debug(f"poss  ：{fin_poss}")
-        logger.debug(f"best  ： {pos} when step is {self.step}")
-
-        return pos
+    def show_situation(self):
+        Renjuy.show_situation(self)
+        tt = ["零一二三四五六七八九ABCDE"[x[0]] + "0123456789abcde"[x[1]] for x in self.candidates]
+        logger.info(f"{PRINTING[self.step % 2]}方选点：{tt}")
+        que_game2ui.put({
+            "game": self,
+            "info": "debug"}, block=False)
 
 
-def settling(ending):
-    logger.setLevel(logging.DEBUG)
+class GUI:
+    def __init__(self, ui):
+        print('Thread (%s) start in GUI' % threading.currentThread().getName())
+        print("GUI打开")
 
-    logger.info("开始解题")
+        self.bg = Canvas(ui,
+                         width=GUI_CONF["gap"] * 16,
+                         height=GUI_CONF["gap"] * 15 + GUI_CONF["flag"],
+                         bg="white")
+        self.__bg_draw()
+        self.bg.grid(row=10, columnspan=8, sticky=E)
+        self.bg.bind("<Button-1>", self.on_click)
 
-    g = Renjuy()
-    g.load(table=ending)
-    g.show_situation()
-    result = g.iterative_deepening(5)
-    logger.info(f"置换表长度：{len(g.translation_table.keys())}")
+        tmp_h = "    ".join(["      0", " 1", "  2", " 3", "  4", " 5", "  6",
+                             " 7", "  8", " 9", "10", "11", "12", "13", "14"])
+        self.label_h = Label(text=tmp_h)
+        self.label_h.grid(row=11, columnspan=8, sticky=W)
 
-    show_timing()
-    logger.info(jmp)
-    
-    _a = input("任务完成，点击回车键退出\n")
-    
-    return result
+        tmp_v = "\n".join(["\n零", "\n一", "\n二", "\n三", "\n四", "\n五", "\n六",
+                           "\n七", "\n八", "\n九", "\n十", "\nB", "\nC", "\nD", "\nE"])
+        self.label_h = Label(text=tmp_v, font=("Helvetica", 13))
+        self.label_h.grid(row=10, columnspan=9, sticky=W)
 
+        self.btn_solve = Button(ui, text="解题", command=lambda: que_ui2game.put({"option": "solve"}))
+        self.btn_solve.grid(row=15, column=0, sticky=N)
+        self.btn_restart = Button(ui, text="重启", command=lambda: que_ui2game.put({"option": "restart"}))
+        self.btn_restart.grid(row=15, column=1, sticky=N)
+        self.btn_undo = Button(ui, text="悔棋", command=lambda: que_ui2game.put({"option": "undo"}))
+        self.btn_undo.grid(row=15, column=2, sticky=N)
+        self.btn_debug = Button(ui, text="调试", command=lambda: que_ui2game.put({"option": "debug"}))
+        self.btn_debug.grid(row=15, column=3, sticky=N)
 
-def test_case():
-    logger.setLevel(logging.INFO)
-    logger.info("开始解题")
+        ui.title("Gomokuy")
 
-    for idx, ending in enumerate(case):
-        ind_str = " " + str(idx+1) if idx < 9 else str(idx+1)
+        self.queue_handler()
 
-        time_start = time.time()
-        g = Renjuy()
-        g.load(ending)
-        res = g.iterative_deepening(5)
-        passing = "通过" if res == ans[idx] else "未通过"
-        time_cost = int((time.time() - time_start) * 1000)
+    def __bg_draw(self):
+        for row in range(1, 16):
+            self.bg.create_line(row * GUI_CONF["gap"], GUI_CONF["gap"],
+                                row * GUI_CONF["gap"], GUI_CONF["gap"] * 15,
+                                fill="black", width=1)
+            self.bg.create_line(GUI_CONF["gap"], row * GUI_CONF["gap"],
+                                GUI_CONF["gap"] * 15, row * GUI_CONF["gap"],
+                                fill="black", width=1)
+            self.bg.grid(row=10, columnspan=8, sticky=E)
 
-        logger.info(f"第{ind_str}题：{passing}\t耗时: {time_cost} ms")
+    def __placing(self, row, col, r, **kwargs):
+        x = (col + 1) * GUI_CONF["gap"]
+        y = (row + 1) * GUI_CONF["gap"]
+        return self.bg.create_oval(x - r, y - r, x + r, y + r, **kwargs)
+
+    def queue_handler(self):
+        try:
+            task = que_game2ui.get(block=False)
+            self.__renew()
+            game = task["game"]
+            logger.debug(f"{game.step}\t{time.ctime()}")
+            for row, line in enumerate(game.table):
+                for col, cell in enumerate(line):
+                    if cell == 2:
+                        if task["info"] == "debug" and (row, col) in game.candidates:
+                            # 调试信息：
+                            self.__placing(row, col, GUI_CONF["flag"]//2, fill="yellow")
+                        continue
+                    color = "white" if cell == 1 else "black"
+                    self.__placing(row, col, GUI_CONF["flag"], fill=color)
+                    # if (row, col) in task["game"].check:
+                    #     self.circle_draw(row, col, GUI_CONF["stress"], fill="red")
+                    if (row, col) == task["game"].records[-1]:
+                        self.__placing(row, col, GUI_CONF["stress"], fill="green")
+            self.bg.after(1, self.queue_handler)
+        except queue.Empty:
+            self.bg.after(1, self.queue_handler)
+
+    def on_click(self, event):
+        col = (event.x + GUI_CONF["half_gap"]) // GUI_CONF["gap"] - 1
+        row = (event.y + GUI_CONF["half_gap"]) // GUI_CONF["gap"] - 1
+        que_ui2game.put({
+            "option": "move",
+            "loc": (row, col),
+        })
+
+    def __renew(self):
+        self.bg.delete(ALL)
+        self.__bg_draw()
 
 
 if __name__ == '__main__':
-    # settling(case[1])
-    test_case()
+    window = Tk()
+    gui = GUI(window)
+    t1 = threading.Thread(target=GAME, args=(False, 3))
+    t1.setDaemon = True
+    t1.start()
+    window.mainloop()
