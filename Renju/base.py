@@ -11,11 +11,12 @@ import numpy as np
 logger = logging.getLogger('Renju')
 logger.addHandler(logging.StreamHandler())
 
-B = 0
-W = 1
+B = 0  # 黑方
+W = 1  # 白方
+N = 2  # 空
 WIN = 9999999
 LOSE = -9999999
-PRINTING = {B: "黑", W: "白"}
+PRINTING = ("黑","白")
 cost_dict = defaultdict(lambda: [0, 0.0])
 ROADS = ((0, 1), (1, 0), (1, 1), (1, -1))
 LC = [
@@ -53,6 +54,8 @@ LC = [
     ["00008", "00008", "00008", "00008"],   # 11110
     ["00000", "00000", "00000", "00000"]    # 11111
 ]
+
+score_in_sc = (16,8,4,2,1)
 
 
 def timing(func):
@@ -101,6 +104,7 @@ def show_timing():
     logger.info("+-%-24s-+-%-12s-+-%-8s-+\n" % ("-" * 24, "-" * 12, "-" * 8))
 
 
+@timing
 def four_to_one(tmp):
     return [max(tmp[0: 4]), max(tmp[4: 8])]
 
@@ -114,7 +118,7 @@ class BlackWhite:
         self.dangerous = []  # 将军的棋子
         self.forced = False  # 自己这一步是否是被迫走的
 
-        self.table = np.array([[2] * 225]).reshape(15, 15)
+        self.table = np.array([[N] * 225]).reshape(15, 15)
         self.score = np.array([[0] * 450]).reshape(15, 15, 2)
         self.sub_score = np.array([[0] * 1800]).reshape(15, 15, 8)
 
@@ -160,7 +164,7 @@ class BlackWhite:
                             continue
                         if max(pos) > 14:
                             continue
-                        if self.table[pos[0]][pos[1]] == 2 and chance_of_mine[pos[0]][pos[1]] == 5:
+                        if self.table[pos[0]][pos[1]] == N and chance_of_mine[pos[0]][pos[1]] == 5:
                             four_range.append(pos)
                         elif self.table[pos[0]][pos[1]] == sid:
                             continue
@@ -168,7 +172,7 @@ class BlackWhite:
                             break
 
                 return [pos for pos in four_range
-                        if self.table[pos[0]][pos[1]] == 2
+                        if self.table[pos[0]][pos[1]] == N
                         and chance_of_your[pos[0]][pos[1]] >= 5]
 
             opt = W if sid == B else B
@@ -204,7 +208,7 @@ class BlackWhite:
             _win_by_attack()
 
     @timing
-    def _situation_updater(self, row, col, show=True):
+    def old_situation_updater(self, row, col, show=True):
         def get_offset_by_block(fir, sec, sd):
             def siding(side_location):
                 # 用于判断边上是否堵住了，仅用于 line_ordering 函数
@@ -340,6 +344,82 @@ class BlackWhite:
         self.set_zob()
 
     @timing
+    def _situation_updater(self, row, col, show=True):
+        changes = set([])
+        aoe_line = self.ways[row * 15 + col]
+
+        for direction in range(4):
+            tmp_line = aoe_line[direction]
+            for x, y in tmp_line:
+                self.sub_score[x][y][direction] = 0
+                self.sub_score[x][y][direction + 4] = 0
+                changes.add((x, y))
+
+            _index = 0
+            while _index < len(tmp_line) - 4:
+                last = N
+                chess_type_index_of_lc = 0
+                for j in range(5):
+                    this_row, this_col = tmp_line[_index + j]
+                    this_cell = self.table[this_row][this_col]
+                    if this_cell == N:
+                        # 全部为空，什么操作都不做
+                        continue
+                    else:
+                        if last == N:
+                            # 之前有棋，现在为空，开始计分
+                            last = this_cell
+                            chess_type_index_of_lc += score_in_sc[j]
+                        elif last == this_cell:
+                            # 现在的棋和之前的棋相同，继续积分
+                            chess_type_index_of_lc += score_in_sc[j]
+                        else:
+                            # 现在的棋和之前的棋不同，不在积分，且可以跳格。
+                            _index += j
+                            break
+                else:
+                    # 假如 no break，表示没有跳格
+                    if last == N:
+                        _index += 1
+                        continue
+                    changed_locations = tmp_line[_index: _index + 5]
+
+                    if chess_type_index_of_lc == 31:
+                        # 5 连了
+                        self._winning(last, line=changed_locations, show=show)
+
+                    opt = B if last == W else W
+                    if _index == 0:
+                        left = False
+                    else:
+                        side_row, side_col = tmp_line[_index - 1]
+                        left = False if self.table[side_row][side_col] == opt else True
+                    if _index + 5 == len(tmp_line):
+                        right = False
+                    else:
+                        side_row, side_col = tmp_line[_index + 5]
+                        right = False if self.table[side_row][side_col] == opt else True
+
+                    if left:
+                        block = 0 if right else 2
+                    else:
+                        block = 1 if right else 3
+                    
+                    offset = last * 4 + direction
+                    for ind, (row, col) in enumerate(changed_locations):
+                        self.sub_score[row][col][offset] = max(
+                            self.sub_score[row][col][offset],
+                            int(LC[chess_type_index_of_lc][block][ind]))
+
+                    _index += 1
+
+        for change_row, change_col in changes:
+            self.score[change_row][change_col] = four_to_one(self.sub_score[change_row][change_col])
+
+        self._gen()
+        self.set_zob()
+
+    @timing
     def _aoe(self, row, col, show=True):
         # 不管是下棋还是悔棋，这些都是受影响的区域，需要重新计算结果
         zob = self.get_zob()
@@ -350,7 +430,6 @@ class BlackWhite:
             self.forced = zob["forced"]
         else:
             self._situation_updater(row, col, show=show)
-
 
     @timing
     def _gen(self):
@@ -431,7 +510,7 @@ class BlackWhite:
             logger.error("子落棋盘外")
             return False
         row, col = loc
-        if self.table[row][col] != 2:
+        if self.table[row][col] != N:
             logger.error(f"{loc}:这个位置已经有棋了")
             return False
 
@@ -465,7 +544,7 @@ class BlackWhite:
         tmp = self.table[row][col]
 
         self.zob_key ^= int(self.zob_grid[row][col][tmp]) ^ int(self.zob_grid[row][col][2])
-        self.table[row][col] = 2
+        self.table[row][col] = N
 
         # 悔棋，更新局势
         self._aoe(row, col)
@@ -488,9 +567,9 @@ class BlackWhite:
 
     def show_situation(self):
         def get_chess(_row, _col):
-            if self.table[_row][_col] == 2:
+            if self.table[_row][_col] == N:
                 return "   "
-            elif self.table[_row][_col] == 1:
+            elif self.table[_row][_col] == W:
                 return " W "
             else:
                 return " B "
