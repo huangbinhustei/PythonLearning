@@ -1,3 +1,168 @@
+@timing
+def old_gen(self):
+    def finder():
+        fir = list(zip(*np.where(chance_of_mine[:, :] >= 8)))
+        if fir:
+            return fir
+        elif list(zip(*np.where(chance_of_your[:, :] >= 8))):
+            self.forced = True
+            return list(zip(*np.where(chance_of_your[:, :] >= 8)))
+        elif list(zip(*np.where(chance_of_mine[:, :] >= 6))):
+            return list(zip(*np.where(chance_of_mine[:, :] >= 6)))
+        elif list(zip(*np.where(chance_of_mine[:, :] >= 4))) + list(zip(*np.where(chance_of_your[:, :] >= 5))):
+            return list(zip(*np.where(chance_of_mine[:, :] >= 4))) + list(zip(*np.where(chance_of_your[:, :] >= 5)))
+        elif list(zip(*np.where(chance_of_mine[:, :] >= 2))) + list(zip(*np.where(chance_of_your[:, :] >= 4))):
+            return list(zip(*np.where(chance_of_mine[:, :] >= 2))) + list(zip(*np.where(chance_of_your[:, :] >= 4)))
+        else:
+            return list(zip(*np.where(chance_of_mine[:, :] >= 1))) + list(zip(*np.where(chance_of_your[:, :] >= 1)))
+
+
+    self.forced = False
+    next_player = B if self.step % 2 == 0 else W
+    opt_player = B if next_player == W else W
+    chance_of_mine = self.score[:, :, next_player]
+    chance_of_your = self.score[:, :, opt_player]
+
+    self.candidates = finder()
+
+
+@timing
+def old_situation_updater(self, row, col, show=True):
+    def get_offset_by_block(fir, sec, sd):
+        def siding(side_location):
+            # 用于判断边上是否堵住了，仅用于 line_ordering 函数
+            # 返回 True 表示没有堵住
+            if min(side_location) < 0 or max(side_location) >= 15:
+                return False
+            else:
+                return False if self.table[side_location[0]][side_location[1]] == opt else True
+
+        opt = B if sd == W else W
+        bool_left = siding(fir)
+        bool_right = siding(sec)
+        if bool_left:
+            block = 0 if bool_right else 2
+        else:
+            block = 1 if bool_right else 3
+        return block
+
+    @timing
+    def line_ordering(line):
+        def get_ind():
+            rate = 1
+            chess_type_index_of_lc = 0
+            for item in chesses[::-1]:
+                if item != 2:
+                    chess_type_index_of_lc += rate
+                rate *= 2
+            return chess_type_index_of_lc
+
+        # 将连续五颗字整型，仅用于 self.aoe 函数
+        chesses = [self.table[item[0]][item[1]] for item in line]
+
+        if W in chesses and B in chesses:
+            return False
+
+        left = [line[0][0] * 2 - line[1][0], line[0][1] * 2 - line[1][1]]
+        right = [line[-1][0] * 2 - line[-2][0], line[-1][1] * 2 - line[-2][1]]
+
+        if B in chesses:
+            situation = get_ind()
+            if situation == 31:
+                # 5连了
+                self._winning(B, line=line, show=show)
+            n_block = get_offset_by_block(left, right, B)
+            return [B, line, chesses, situation, LC[situation][n_block]]
+        elif W in chesses:
+            situation = get_ind()
+            if situation == 31:
+                self._winning(W, line=line, show=show)
+            n_block = get_offset_by_block(left, right, W)
+            return [W, line, chesses, situation, LC[situation][n_block]]
+        else:
+            return False
+
+    @timing
+    def line_filter(line_input):
+        def line_cutter(_line):
+            ret = []
+            flag = _line[0]
+            tmp = [flag]
+            for x in _line[1:]:
+                if x == flag:
+                    tmp.append(x)
+                else:
+                    ret.append(tmp)
+                    tmp = [x]
+                    flag = x
+            ret.append(tmp)
+            return ret
+
+        def line_grouper(_line):
+            ret = line_cutter(_line)
+
+            fin = set([0])
+            offset = 0
+            for ind, line in enumerate(ret):
+                lg = len(line)
+                if line[0] == 2:
+                    offset += lg
+                    continue
+                if ind > 0 and ret[ind - 1][0] == 2:
+                    start = offset - 5 + lg
+                    if start >= 0:
+                        fin.add(start)
+                if ind < len(ret) - 1 and ret[ind + 1][0] == 2:
+                    fin.add(offset)
+                if lg >= 5:
+                    fin.add(offset)
+                offset += lg
+            fin = [line_input[i: i + 5] for i in fin]
+            return fin
+
+        inp = [self.table[row][col] for row, col in line_input]
+        return line_grouper(inp)
+
+    ret = []
+    changes = dict()
+    self.sub_score[row][col] = [0, 0, 0, 0, 0, 0, 0, 0]
+
+    aoe_line = self.ways[row * 15 + col]
+    for direction in range(4):
+        tmp_line = aoe_line[direction]
+        for new_row, new_col in tmp_line:
+            self.sub_score[new_row][new_col][direction] = 0
+            self.sub_score[new_row][new_col][direction + 4] = 0
+
+        for l in line_filter(tmp_line):
+            if len(l) == 5:
+                ordered_line = line_ordering(l)
+                if ordered_line:
+                    ret.append([direction, ordered_line])
+
+    for l in ret:
+        direction, [sid, locations, _, _, result] = l
+        for ind, loc in enumerate(locations):
+            key = (sid, direction, loc)
+            if key in changes:
+                changes[key] = max(int(result[ind]), changes[key])
+            else:
+                changes[key] = int(result[ind])
+    for k, v in changes.items():
+        sid, direction, (row, col) = k
+        offset = sid * 4 + direction
+        self.sub_score[row][col][offset] = v
+
+    for direction in range(4):
+        tmp_line = aoe_line[direction]
+        for row, col in tmp_line:
+            values = self.sub_score[row][col]
+            self.score[row][col] = four_to_one(values)
+
+    self._gen()
+    self.set_zob()
+
+
 
 class Base:
     def evaluate(self):

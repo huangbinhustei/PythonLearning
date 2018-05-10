@@ -448,5 +448,5 @@ def test_case():
 
 
 if __name__ == '__main__':
-    # settling(case[1])
-    test_case()
+    settling(case[1])
+    # test_case()

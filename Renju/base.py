@@ -19,41 +19,41 @@ LOSE = -9999999
 PRINTING = ("黑","白")
 cost_dict = defaultdict(lambda: [0, 0.0])
 ROADS = ((0, 1), (1, 0), (1, 1), (1, -1))
-LC = [
+LC = (
     # 两边空    左边被堵   右边被堵  两边被堵
-    ["00000", "00000", "00000", "00000"],   # 00000
-    ["00020", "00020", "00010", "00010"],   # 00001
-    ["00202", "00202", "00201", "00101"],   # 00010
-    ["34400", "34400", "33300", "33300"],   # 00011
-    ["02020", "02020", "02020", "01010"],   # 00100
-    ["34040", "34040", "33030", "33030"],   # 00101
-    ["44004", "34004", "34003", "33003"],   # 00110
-    ["56000", "56000", "55000", "55000"],   # 00111
-    ["20200", "10200", "20200", "10100"],   # 01000
-    ["30440", "30440", "30330", "30330"],   # 01001
-    ["40404", "30404", "40403", "30303"],   # 01010
-    ["50600", "50600", "50500", "50500"],   # 01011
-    ["40044", "30043", "40043", "30033"],   # 01100
-    ["50060", "50060", "50050", "50050"],   # 01101
-    ["60006", "50006", "60005", "50005"],   # 01110
-    ["80000", "80000", "80000", "80000"],   # 01111
-    ["02000", "01000", "02000", "01000"],   # 10000
-    ["03330", "03330", "03330", "03330"],   # 10001
-    ["04403", "03303", "04403", "03303"],   # 10010
-    ["05500", "05500", "05500", "05500"],   # 10011
-    ["04043", "03033", "04043", "03033"],   # 10100
-    ["05050", "05050", "05050", "05050"],   # 10101
-    ["06005", "05005", "06005", "05005"],   # 10110
-    ["08000", "08000", "08000", "08000"],   # 10111
-    ["00443", "00333", "00443", "00333"],   # 11000
-    ["00550", "00550", "00550", "00550"],   # 11001
-    ["00605", "00505", "00605", "00505"],   # 11010
-    ["00800", "00800", "00800", "00800"],   # 11011
-    ["00065", "00055", "00065", "00055"],   # 11100
-    ["00080", "00080", "00080", "00080"],   # 11101
-    ["00008", "00008", "00008", "00008"],   # 11110
-    ["00000", "00000", "00000", "00000"]    # 11111
-]
+    ((0,0,0,0,0), (0,0,0,0,0), (0,0,0,0,0), (0,0,0,0,0)),   # 00000
+    ((0,0,0,2,0), (0,0,0,2,0), (0,0,0,1,0), (0,0,0,1,0)),   # 00001
+    ((0,0,2,0,2), (0,0,2,0,2), (0,0,2,0,1), (0,0,1,0,1)),   # 00010
+    ((3,4,4,0,0), (3,4,4,0,0), (3,3,3,0,0), (3,3,3,0,0)),   # 00011
+    ((0,2,0,2,0), (0,2,0,2,0), (0,2,0,2,0), (0,1,0,1,0)),   # 00100
+    ((3,4,0,4,0), (3,4,0,4,0), (3,3,0,3,0), (3,3,0,3,0)),   # 00101
+    ((4,4,0,0,4), (3,4,0,0,4), (3,4,0,0,3), (3,3,0,0,3)),   # 00110
+    ((5,6,0,0,0), (5,6,0,0,0), (5,5,0,0,0), (5,5,0,0,0)),   # 00111
+    ((2,0,2,0,0), (1,0,2,0,0), (2,0,2,0,0), (1,0,1,0,0)),   # 01000
+    ((3,0,4,4,0), (3,0,4,4,0), (3,0,3,3,0), (3,0,3,3,0)),   # 01001
+    ((4,0,4,0,4), (3,0,4,0,4), (4,0,4,0,3), (3,0,3,0,3)),   # 01010
+    ((5,0,6,0,0), (5,0,6,0,0), (5,0,5,0,0), (5,0,5,0,0)),   # 01011
+    ((4,0,0,4,4), (3,0,0,4,3), (4,0,0,4,3), (3,0,0,3,3)),   # 01100
+    ((5,0,0,6,0), (5,0,0,6,0), (5,0,0,5,0), (5,0,0,5,0)),   # 01101
+    ((6,0,0,0,6), (5,0,0,0,6), (6,0,0,0,5), (5,0,0,0,5)),   # 01110
+    ((8,0,0,0,0), (8,0,0,0,0), (8,0,0,0,0), (8,0,0,0,0)),   # 01111
+    ((0,2,0,0,0), (0,1,0,0,0), (0,2,0,0,0), (0,1,0,0,0)),   # 10000
+    ((0,3,3,3,0), (0,3,3,3,0), (0,3,3,3,0), (0,3,3,3,0)),   # 10001
+    ((0,4,4,0,3), (0,3,3,0,3), (0,4,4,0,3), (0,3,3,0,3)),   # 10010
+    ((0,5,5,0,0), (0,5,5,0,0), (0,5,5,0,0), (0,5,5,0,0)),   # 10011
+    ((0,4,0,4,3), (0,3,0,3,3), (0,4,0,4,3), (0,3,0,3,3)),   # 10100
+    ((0,5,0,5,0), (0,5,0,5,0), (0,5,0,5,0), (0,5,0,5,0)),   # 10101
+    ((0,6,0,0,5), (0,5,0,0,5), (0,6,0,0,5), (0,5,0,0,5)),   # 10110
+    ((0,8,0,0,0), (0,8,0,0,0), (0,8,0,0,0), (0,8,0,0,0)),   # 10111
+    ((0,0,4,4,3), (0,0,3,3,3), (0,0,4,4,3), (0,0,3,3,3)),   # 11000
+    ((0,0,5,5,0), (0,0,5,5,0), (0,0,5,5,0), (0,0,5,5,0)),   # 11001
+    ((0,0,6,0,5), (0,0,5,0,5), (0,0,6,0,5), (0,0,5,0,5)),   # 11010
+    ((0,0,8,0,0), (0,0,8,0,0), (0,0,8,0,0), (0,0,8,0,0)),   # 11011
+    ((0,0,0,6,5), (0,0,0,5,5), (0,0,0,6,5), (0,0,0,5,5)),   # 11100
+    ((0,0,0,8,0), (0,0,0,8,0), (0,0,0,8,0), (0,0,0,8,0)),   # 11101
+    ((0,0,0,0,8), (0,0,0,0,8), (0,0,0,0,8), (0,0,0,0,8)),   # 11110
+    ((0,0,0,0,0), (0,0,0,0,0), (0,0,0,0,0), (0,0,0,0,0))    # 11111
+)
 
 score_in_sc = (16,8,4,2,1)
 
@@ -208,142 +208,6 @@ class BlackWhite:
             _win_by_attack()
 
     @timing
-    def old_situation_updater(self, row, col, show=True):
-        def get_offset_by_block(fir, sec, sd):
-            def siding(side_location):
-                # 用于判断边上是否堵住了，仅用于 line_ordering 函数
-                # 返回 True 表示没有堵住
-                if min(side_location) < 0 or max(side_location) >= 15:
-                    return False
-                else:
-                    return False if self.table[side_location[0]][side_location[1]] == opt else True
-
-            opt = B if sd == W else W
-            bool_left = siding(fir)
-            bool_right = siding(sec)
-            if bool_left:
-                block = 0 if bool_right else 2
-            else:
-                block = 1 if bool_right else 3
-            return block
-
-        @timing
-        def line_ordering(line):
-            def get_ind():
-                rate = 1
-                chess_type_index_of_lc = 0
-                for item in chesses[::-1]:
-                    if item != 2:
-                        chess_type_index_of_lc += rate
-                    rate *= 2
-                return chess_type_index_of_lc
-
-            # 将连续五颗字整型，仅用于 self.aoe 函数
-            chesses = [self.table[item[0]][item[1]] for item in line]
-
-            if W in chesses and B in chesses:
-                return False
-
-            left = [line[0][0] * 2 - line[1][0], line[0][1] * 2 - line[1][1]]
-            right = [line[-1][0] * 2 - line[-2][0], line[-1][1] * 2 - line[-2][1]]
-
-            if B in chesses:
-                situation = get_ind()
-                if situation == 31:
-                    # 5连了
-                    self._winning(B, line=line, show=show)
-                n_block = get_offset_by_block(left, right, B)
-                return [B, line, chesses, situation, LC[situation][n_block]]
-            elif W in chesses:
-                situation = get_ind()
-                if situation == 31:
-                    self._winning(W, line=line, show=show)
-                n_block = get_offset_by_block(left, right, W)
-                return [W, line, chesses, situation, LC[situation][n_block]]
-            else:
-                return False
-
-        @timing
-        def line_filter(line_input):
-            def line_cutter(_line):
-                ret = []
-                flag = _line[0]
-                tmp = [flag]
-                for x in _line[1:]:
-                    if x == flag:
-                        tmp.append(x)
-                    else:
-                        ret.append(tmp)
-                        tmp = [x]
-                        flag = x
-                ret.append(tmp)
-                return ret
-
-            def line_grouper(_line):
-                ret = line_cutter(_line)
-
-                fin = set([0])
-                offset = 0
-                for ind, line in enumerate(ret):
-                    lg = len(line)
-                    if line[0] == 2:
-                        offset += lg
-                        continue
-                    if ind > 0 and ret[ind - 1][0] == 2:
-                        start = offset - 5 + lg
-                        if start >= 0:
-                            fin.add(start)
-                    if ind < len(ret) - 1 and ret[ind + 1][0] == 2:
-                        fin.add(offset)
-                    if lg >= 5:
-                        fin.add(offset)
-                    offset += lg
-                fin = [line_input[i: i + 5] for i in fin]
-                return fin
-
-            inp = [self.table[row][col] for row, col in line_input]
-            return line_grouper(inp)
-
-        ret = []
-        changes = dict()
-        self.sub_score[row][col] = [0, 0, 0, 0, 0, 0, 0, 0]
-
-        aoe_line = self.ways[row * 15 + col]
-        for direction in range(4):
-            tmp_line = aoe_line[direction]
-            for new_row, new_col in tmp_line:
-                self.sub_score[new_row][new_col][direction] = 0
-                self.sub_score[new_row][new_col][direction + 4] = 0
-
-            for l in line_filter(tmp_line):
-                if len(l) == 5:
-                    ordered_line = line_ordering(l)
-                    if ordered_line:
-                        ret.append([direction, ordered_line])
-
-        for l in ret:
-            direction, [sid, locations, _, _, result] = l
-            for ind, loc in enumerate(locations):
-                key = (sid, direction, loc)
-                if key in changes:
-                    changes[key] = max(int(result[ind]), changes[key])
-                else:
-                    changes[key] = int(result[ind])
-        for k, v in changes.items():
-            sid, direction, (row, col) = k
-            offset = sid * 4 + direction
-            self.sub_score[row][col][offset] = v
-
-        for direction in range(4):
-            tmp_line = aoe_line[direction]
-            for row, col in tmp_line:
-                values = self.sub_score[row][col]
-                self.score[row][col] = four_to_one(values)
-
-        self._gen()
-        self.set_zob()
-
-    @timing
     def _situation_updater(self, row, col, show=True):
         changes = set([])
         aoe_line = self.ways[row * 15 + col]
@@ -356,6 +220,14 @@ class BlackWhite:
                 changes.add((x, y))
 
             _index = 0
+            # for item in tmp_line:
+            #     if item == 0:
+            #         _index += 1
+            #     else:
+            #         break
+
+            # _index = max(0, _index - 4)
+
             while _index < len(tmp_line) - 4:
                 last = N
                 chess_type_index_of_lc = 0
@@ -409,7 +281,7 @@ class BlackWhite:
                     for ind, (row, col) in enumerate(changed_locations):
                         self.sub_score[row][col][offset] = max(
                             self.sub_score[row][col][offset],
-                            int(LC[chess_type_index_of_lc][block][ind]))
+                            LC[chess_type_index_of_lc][block][ind])
 
                     _index += 1
 
