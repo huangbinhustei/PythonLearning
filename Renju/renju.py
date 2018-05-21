@@ -12,7 +12,7 @@ from tkinter import *
 from base import show_timing, PRINTING, cost_dict, Renjuy
 
 logger = logging.getLogger('Renju')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 que_game2ui = queue.Queue(maxsize=2)
 que_ui2game = queue.Queue(maxsize=2)
 
@@ -44,13 +44,13 @@ class GAME(Renjuy):
 
         self.queue_handler()
 
-    def restart(self, restricted=True, ai=False, difficulty=5):
+    def restart(self, restricted=True, ai=False, difficulty=3):
         logger.info("重启游戏")
         cost_dict.clear()
         self.__init__(ai=ai, difficulty=difficulty)
 
     def solve(self):
-        if self.step <= 9:
+        if self.step <= 7:
             pos = self.iterative_deepening(2)
         else:
             pos = self.iterative_deepening(self.difficulty)
@@ -96,7 +96,7 @@ class GAME(Renjuy):
             que_game2ui.put({
                 "game": self,
                 "info": "move"}, block=False)
-            logger.debug(f"first put\tsize={que_game2ui.qsize()} @ {time.ctime()}")
+            # logger.debug(f"first put\tsize={que_game2ui.qsize()} @ {time.ctime()}")
             if not self.ai:
                 return
             pos2 = self.iterative_deepening(self.difficulty)
@@ -105,7 +105,7 @@ class GAME(Renjuy):
                 que_game2ui.put({
                     "game": self,
                     "info": "move"}, block=False)
-                logger.debug(f"second put\tsize={que_game2ui.qsize()} @ {time.ctime()}")
+                # logger.debug(f"second put\tsize={que_game2ui.qsize()} @ {time.ctime()}")
         else:
             que_game2ui.put({
                 "game": self,
@@ -176,7 +176,7 @@ class GUI:
             task = que_game2ui.get(block=False)
             self.__renew()
             game = task["game"]
-            logger.debug(f"{game.step}\t{time.ctime()}")
+            # logger.debug(f"{game.step}\t{time.ctime()}")
             for row, line in enumerate(game.table):
                 for col, cell in enumerate(line):
                     if cell == 2:

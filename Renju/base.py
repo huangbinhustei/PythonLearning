@@ -321,7 +321,12 @@ class BlackWhite:
                     return list(zip(*np.where(chance_of_mine[:, :] >= 6)))
 
         def _queen_finding():
-            return list(zip(*np.where(chance_of_mine[:, :] >= 4))) + list(zip(*np.where(chance_of_your[:, :] >= 5)))
+            fir = list(zip(*np.where(chance_of_your[:, :] >= 6)))
+            if fir:
+                # 对方有活3，而自己没有活3或更好的棋型，但是自己不一定非要走对方6的这一步，比如空 B B 空 B 空，中间个空是6分，但是两边的空也能阻止对方，此时自己还能反击
+                return list(zip(*np.where(chance_of_your[:, :] >= 5))) + list(zip(*np.where(chance_of_mine[:, :] >= 5)))
+            else:
+                return list(zip(*np.where(chance_of_mine[:, :] >= 4))) + list(zip(*np.where(chance_of_your[:, :] >= 5)))
 
         def _knight_finding():
             return list(zip(*np.where(chance_of_mine[:, :] >= 2))) + list(zip(*np.where(chance_of_your[:, :] >= 4)))
@@ -471,6 +476,7 @@ class Renjuy(BlackWhite):
     def __init__(self, forbidden=True):
         BlackWhite.__init__(self, forbidden=forbidden)
         self.player = 2
+        self.forced_time = 0
 
     def probe(self, loc, show=True):
         ret = BlackWhite.move(self, loc, show=show)
@@ -512,8 +518,10 @@ class Renjuy(BlackWhite):
                         situation = max(situation, alpha_beta(deep, False, alpha, beta))
                     alpha = max(alpha, situation)
                     self.undo()
-                    if situation == WIN:
+                    if WIN == situation:
                         self.translation_table[self.zob_key]["candidates"] = [i]
+                    elif LOSE == situation:
+                        self.translation_table[self.zob_key]["candidates"].remove(i)
                     if beta <= alpha:
                         break
             else:
@@ -530,14 +538,21 @@ class Renjuy(BlackWhite):
                         situation = self.get_score()
                     else:
                         if self.forced:
-                            # 假如下一步，黑方是被迫走的，那么不算深度
-                            situation = min(situation, alpha_beta(deep, True, alpha, beta))
+                            if self.forced_time <= 5:
+                                # 假如下一步，黑方是被迫走的，那么不算深度，但是这个不能无限制的算
+                                situation = min(situation, alpha_beta(deep, True, alpha, beta))
+                                self.forced_time += 1
+                            else:
+                                logger.debug("被强制太多次了")
+                                situation = min(situation, alpha_beta(deep + 1, True, alpha, beta))
                         else:
                             situation = min(situation, alpha_beta(deep + 1, True, alpha, beta))
                     beta = min(beta, situation)
                     self.undo()
-                    # if situation == LOSE:
-                    #     self.translation_table[self.zob_key]["candidates"] = [i]
+                    if LOSE == situation:
+                        self.translation_table[self.zob_key]["candidates"] = [i]
+                    elif WIN == situation:
+                        self.translation_table[self.zob_key]["candidates"].remove(i)
                     if beta <= alpha:
                         break
 
@@ -569,6 +584,7 @@ class Renjuy(BlackWhite):
         self.player = W if self.step % 2 else B
 
         for d in range(1, max_deep + 1):
+            self.forced_time = 0
             logger.debug(f"迭代深度：{d}")
             pos, fen, fin_poss, fin_result = self.min_max(max_deep=d)
             if fen == WIN:
