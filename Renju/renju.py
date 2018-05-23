@@ -50,10 +50,7 @@ class GAME(Renjuy):
         self.__init__(ai=ai, difficulty=difficulty)
 
     def solve(self):
-        if self.step <= 7:
-            pos = self.iterative_deepening(2)
-        else:
-            pos = self.iterative_deepening(self.difficulty)
+        pos, fen = self.iterative_deepening(self.difficulty)
         show_timing()
         logger.info(f"The Best Choice is {pos}")
         self.move(pos)
@@ -99,7 +96,7 @@ class GAME(Renjuy):
             # logger.debug(f"first put\tsize={que_game2ui.qsize()} @ {time.ctime()}")
             if not self.ai:
                 return
-            pos2 = self.iterative_deepening(self.difficulty)
+            pos2, fen2 = self.iterative_deepening(self.difficulty)
             if pos2:
                 self.move(pos2)
                 que_game2ui.put({
@@ -113,6 +110,7 @@ class GAME(Renjuy):
 
     def show_situation(self):
         Renjuy.show_situation(self)
+        print(self.forced)
         tt = ["零一二三四五六七八九ABCDE"[x[0]] + "0123456789abcde"[x[1]] for x in self.candidates]
         logger.info(f"{PRINTING[self.step % 2]}方选点：{tt}")
         que_game2ui.put({

@@ -420,7 +420,7 @@ def settling(ending):
     g = Renjuy()
     g.load(table=ending)
     g.show_situation()
-    result = g.iterative_deepening(3)
+    result, fen = g.iterative_deepening(3)
     logger.info(f"置换表长度：{len(g.translation_table.keys())}")
 
     show_timing()
@@ -441,13 +441,18 @@ def test_case():
         time_start = time.time()
         g = Renjuy()
         g.load(ending)
-        res = g.iterative_deepening(3)
-        passing = "通过" if res == ans[idx] else "未通过"
+        res, fen = g.iterative_deepening(3)
+        
+        if fen == WIN and res == ans[idx]:
+            passing = "通过"
+        else:
+            passing = "未通过"
+        
         time_cost = int((time.time() - time_start) * 1000)
 
         logger.info(f"第{ind_str}题：{passing}\t耗时：{time_cost} ms\t试下：{cost_dict['move'][0]} 步")
 
 
 if __name__ == '__main__':
-    # settling(case[1])
+    # settling(case[2])
     test_case()

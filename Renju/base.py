@@ -222,13 +222,6 @@ class BlackWhite:
                 changes.add((x, y))
 
             _index = 0
-            # for item in tmp_line:
-            #     if item == 0:
-            #         _index += 1
-            #     else:
-            #         break
-
-            # _index = max(0, _index - 4)
 
             while _index < len(tmp_line) - 4:
                 last = N
@@ -477,6 +470,7 @@ class Renjuy(BlackWhite):
         BlackWhite.__init__(self, forbidden=forbidden)
         self.player = 2
         self.forced_time = 0
+        self.forced_key = set([])
 
     def probe(self, loc, show=True):
         ret = BlackWhite.move(self, loc, show=show)
@@ -518,6 +512,9 @@ class Renjuy(BlackWhite):
                         situation = max(situation, alpha_beta(deep, False, alpha, beta))
                     alpha = max(alpha, situation)
                     self.undo()
+                    if self.zob_key in self.forced_key:
+                        self.forced_time -= 1
+                        self.forced_key.remove(self.zob_key)
                     if WIN == situation:
                         self.translation_table[self.zob_key]["candidates"] = [i]
                     elif LOSE == situation:
@@ -538,12 +535,13 @@ class Renjuy(BlackWhite):
                         situation = self.get_score()
                     else:
                         if self.forced:
-                            if self.forced_time <= 5:
+                            if self.forced_time < 2:
+                                self.forced_key.add(self.zob_key)
+                                self.forced_time += 1
                                 # 假如下一步，黑方是被迫走的，那么不算深度，但是这个不能无限制的算
                                 situation = min(situation, alpha_beta(deep, True, alpha, beta))
-                                self.forced_time += 1
+                                
                             else:
-                                logger.debug("被强制太多次了")
                                 situation = min(situation, alpha_beta(deep + 1, True, alpha, beta))
                         else:
                             situation = min(situation, alpha_beta(deep + 1, True, alpha, beta))
@@ -564,6 +562,8 @@ class Renjuy(BlackWhite):
         else:
             result = []
             for candidate in self.candidates:
+                self.forced_time = 0
+                self.forced_key = set([])
                 self.probe(candidate, show=False)
                 if self.winner == self.player:
                     exam = WIN
@@ -584,9 +584,12 @@ class Renjuy(BlackWhite):
         self.player = W if self.step % 2 else B
 
         for d in range(1, max_deep + 1):
-            self.forced_time = 0
             logger.debug(f"迭代深度：{d}")
             pos, fen, fin_poss, fin_result = self.min_max(max_deep=d)
+            
+            self.candidates = [i[0] for i in sorted(zip(fin_poss, fin_result),key=lambda x:x[1],reverse=True)]
+            self.translation_table[self.zob_key]["candidates"] = self.candidates.copy()
+
             if fen == WIN:
                 logger.debug(f"break in iterative_deepening @ deep = {d}")
                 break
@@ -595,4 +598,4 @@ class Renjuy(BlackWhite):
         logger.debug(f"poss  ：{fin_poss}")
         logger.debug(f"best  ： {pos} when step is {self.step}")
 
-        return pos
+        return pos, fen
