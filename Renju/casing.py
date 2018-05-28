@@ -432,8 +432,10 @@ def settling(ending):
 
 def test_case():
     logger.setLevel(logging.INFO)
-    logger.info("开始解题")
-
+    logger.info("开始解题：\n题\t结果\t耗时\t步数")
+    total_time = 0
+    total_move = 0
+    total_pass = 0
     for idx, ending in enumerate(case):
         cost_dict.clear()
         ind_str = " " + str(idx + 1) if idx < 9 else str(idx + 1)
@@ -445,14 +447,19 @@ def test_case():
         
         if fen == WIN and res == ans[idx]:
             passing = "通过"
+            total_pass += 1
         else:
             passing = "未通过"
         
         time_cost = int((time.time() - time_start) * 1000)
 
-        logger.info(f"第{ind_str}题：{passing}\t耗时：{time_cost} ms\t试下：{cost_dict['move'][0]} 步")
+        total_time += time_cost
+        total_move += cost_dict['move'][0]
+        
+        logger.info(f"{ind_str}\t{passing}\t{time_cost}\t{cost_dict['move'][0]}")
+    logger.info(f"汇总情况：\nAll\t{total_pass * 5}%\t{total_time//20}\t{total_move//20}")
 
 
 if __name__ == '__main__':
-    # settling(case[2])
-    test_case()
+    settling(case[1])
+    # test_case()
