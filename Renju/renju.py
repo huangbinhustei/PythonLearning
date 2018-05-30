@@ -50,7 +50,12 @@ class GAME(Renjuy):
         self.__init__(ai=ai, difficulty=difficulty)
 
     def solve(self):
-        pos, fen = self.iterative_deepening(self.difficulty)
+        if self.step <= 5:
+            pos, fen = self.iterative_deepening(1)
+        elif self.step <= 9:
+            pos, fen = self.iterative_deepening(2)
+        else:
+            pos, fen = self.iterative_deepening(self.difficulty)
         show_timing()
         logger.info(f"The Best Choice is {pos}")
         self.move(pos)

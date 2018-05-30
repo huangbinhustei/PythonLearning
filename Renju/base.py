@@ -6,6 +6,7 @@ import time
 import logging
 from collections import defaultdict
 import numpy as np
+import random
 
 logger = logging.getLogger('Renju')
 logger.addHandler(logging.StreamHandler())
@@ -52,7 +53,6 @@ LC = (
     (0, 0, 0, 6, 5), (0, 0, 0, 5, 5), (0, 0, 0, 6, 5), (0, 0, 0, 5, 5),  # 11100
     (0, 0, 0, 8, 0), (0, 0, 0, 8, 0), (0, 0, 0, 8, 0), (0, 0, 0, 8, 0),  # 11101
     (0, 0, 0, 0, 8), (0, 0, 0, 0, 8), (0, 0, 0, 0, 8), (0, 0, 0, 0, 8),  # 11110
-    (0, 0, 0, 0, 0), (0, 0, 0, 0, 0), (0, 0, 0, 0, 0), (0, 0, 0, 0, 0)  # 11111
 )
 
 score_in_sc = (16, 8, 4, 2, 1)
@@ -251,29 +251,29 @@ class BlackWhite:
                     if chess_type_index_of_lc == 31:
                         # 5 连了
                         self._winning(last, line=changed_locations, show=show)
-
-                    opt = B if last == W else W
-                    if _index == 0:
-                        left = False
                     else:
-                        side_row, side_col = tmp_line[_index - 1]
-                        left = False if self.table[side_row][side_col] == opt else True
-                    if _index + 5 == len(tmp_line):
-                        right = False
-                    else:
-                        side_row, side_col = tmp_line[_index + 5]
-                        right = False if self.table[side_row][side_col] == opt else True
+                        opt = B if last == W else W
+                        if _index == 0:
+                            left = False
+                        else:
+                            side_row, side_col = tmp_line[_index - 1]
+                            left = False if self.table[side_row][side_col] == opt else True
+                        if _index + 5 == len(tmp_line):
+                            right = False
+                        else:
+                            side_row, side_col = tmp_line[_index + 5]
+                            right = False if self.table[side_row][side_col] == opt else True
 
-                    if left:
-                        block = 0 if right else 2
-                    else:
-                        block = 1 if right else 3
+                        if left:
+                            block = 0 if right else 2
+                        else:
+                            block = 1 if right else 3
 
-                    offset = last * 4 + direction
-                    for ind, (row, col) in enumerate(changed_locations):
-                        self.sub_score[row][col][offset] = max(
-                            self.sub_score[row][col][offset],
-                            LC[chess_type_index_of_lc * 4 + block][ind])
+                        offset = last * 4 + direction
+                        for ind, (row, col) in enumerate(changed_locations):
+                            self.sub_score[row][col][offset] = max(
+                                self.sub_score[row][col][offset],
+                                LC[chess_type_index_of_lc * 4 + block][ind])
 
                     _index += 1
 
@@ -288,55 +288,48 @@ class BlackWhite:
         # 不管是下棋还是悔棋，这些都是受影响的区域，需要重新计算结果
         zob = self.get_zob()
         if zob:
-            self.candidates = zob["candidates"].copy()
-            self.score = zob["score"].copy()
-            self.sub_score = zob["sub_score"].copy()
-            self.forced = zob["forced"]
+            self.candidates = zob[0].copy()
+            self.score = zob[1].copy()
+            self.sub_score = zob[2].copy()
+            self.forced = zob[3]
         else:
             self._situation_updater(row, col, show=show)
 
     @timing
     def _gen(self):
-        def _king_finding():
-            fir = list(zip(*np.where(chance_of_mine[:, :] >= 8)))
-            if fir:
-                return fir
-            else:
-                sec = list(zip(*np.where(chance_of_your[:, :] >= 8)))
-                if sec:
-                    # 返回的 True 表示自己这一步是不得不走
-                    self.forced = True
-                    return sec
-                else:
-                    return list(zip(*np.where(chance_of_mine[:, :] >= 6)))
-
-        def _queen_finding():
-            fir = list(zip(*np.where(chance_of_your[:, :] >= 6)))
-            if fir:
-                # 对方有活3，而自己没有活3或更好的棋型，但是自己不一定非要走对方6的这一步，比如空 B B 空 B 空，中间个空是6分，但是两边的空也能阻止对方，此时自己还能反击
-                return list(zip(*np.where(chance_of_your[:, :] >= 5))) + list(zip(*np.where(chance_of_mine[:, :] >= 5)))
-            else:
-                return list(zip(*np.where(chance_of_mine[:, :] >= 4))) + list(zip(*np.where(chance_of_your[:, :] >= 5)))
-
-        def _knight_finding():
-            return list(zip(*np.where(chance_of_mine[:, :] >= 2))) + list(zip(*np.where(chance_of_your[:, :] >= 4)))
-
-        def _soldier_finding():
-            return list(zip(*np.where(chance_of_mine[:, :] >= 1))) + list(zip(*np.where(chance_of_your[:, :] >= 1)))
-
         self.forced = False
         next_player = B if self.step % 2 == 0 else W
         opt_player = B if next_player == W else W
         chance_of_mine = self.score[:, :, next_player]
         chance_of_your = self.score[:, :, opt_player]
 
-        self.candidates = _king_finding() or _queen_finding()
-        if not self.candidates:
-            knight = _knight_finding()
-            if knight:
-                self.candidates = knight[:5]
-            else:
-                self.candidates = _soldier_finding()
+        score_mine = np.max(chance_of_mine)
+        score_your = np.max(chance_of_your)
+
+        if score_mine >= 8:
+            # 己方有活四冲四，直接致胜
+            self.candidates = list(zip(*np.where(chance_of_mine[:, :] >= 8)))
+        elif score_your >= 8:
+            # 对方有活四冲四，赌一下试试，此时自己是被迫走棋。
+            self.candidates = list(zip(*np.where(chance_of_your[:, :] >= 8)))
+            self.forced = True
+        elif score_mine >= 6:
+            # 自己有活三，且对方没有冲四
+            self.candidates = list(zip(*np.where(chance_of_mine[:, :] >= 6)))
+        elif score_your >= 6:
+            # 对方有活三，自己可以通过走冲四或者是堵对方。
+            self.candidates = list(zip(*np.where(chance_of_your[:, :] >= 5))) + list(zip(*np.where(chance_of_mine[:, :] >= 5)))
+            self.candidates = list(set(self.candidates))
+        elif score_mine >= 4:
+            # 自己有活二，可以走成活三进攻对方，也需要考虑去堵住对方的冲四。
+            self.candidates = list(zip(*np.where(chance_of_your[:, :] >= 5))) + list(zip(*np.where(chance_of_mine[:, :] >= 4)))
+            self.candidates = list(set(self.candidates))
+        elif score_your >= 4:
+            self.candidates = list(zip(*np.where(chance_of_mine[:, :] >= 2))) + list(zip(*np.where(chance_of_your[:, :] >= 4)))
+            self.candidates = list(set(self.candidates))
+        else:
+            self.candidates = list(zip(*np.where(chance_of_mine[:, :] >= 1))) + list(zip(*np.where(chance_of_your[:, :] >= 1)))
+            self.candidates = list(set(self.candidates))
 
     def load(self, table, records=False):
         if not records:
@@ -396,6 +389,14 @@ class BlackWhite:
                 self._winning(player, show=show, attack=attack)
 
         self._aoe(row, col, show=show)
+        # if show:
+        #     t = []
+        #     for k in self.translation_table.keys(): 
+        #         if self.translation_table[k][4] < self.step:
+        #             t.append(k)
+        #     for k in t:
+        #         del self.translation_table[k]
+        # print(f"{self.step}\t{len(self.translation_table)}")
 
         return True
 
@@ -427,12 +428,13 @@ class BlackWhite:
 
     @timing
     def set_zob(self):
-        self.translation_table[self.zob_key] = {
-            "candidates": self.candidates.copy(),
-            "score": self.score.copy(),
-            "sub_score": self.sub_score.copy(),
-            "forced": self.forced,
-        }
+        self.translation_table[self.zob_key] = [
+            self.candidates.copy(),
+            self.score.copy(),
+            self.sub_score.copy(),
+            self.forced,
+            self.step,
+        ]
 
     def show_situation(self):
         def get_chess(_row, _col):
@@ -482,7 +484,6 @@ class Renjuy(BlackWhite):
             raise RuntimeError
         else:
             if self.winner == 2:
-                # tmp_score = np.sum(self.score[:, :, 0]) - np.sum(self.score[:, :, 1])
                 tmp_score = np.sum(self.sub_score[:, :, :4]) - np.sum(self.sub_score[:, :, 4:])
                 return tmp_score if self.player == B else - tmp_score
             elif self.winner == self.player:
@@ -493,6 +494,7 @@ class Renjuy(BlackWhite):
     def min_max(self, max_deep=3):
         def alpha_beta(deep, p, alpha, beta):
             if p:
+                # result_T = []
                 situation = LOSE
                 for i in self.candidates:
                     self.probe(i, show=False)
@@ -506,17 +508,22 @@ class Renjuy(BlackWhite):
                         situation = self.get_score()
                     else:
                         situation = max(situation, alpha_beta(deep, False, alpha, beta))
+                    # result_T.append(situation)
                     alpha = max(alpha, situation)
                     self.undo()
                     if self.zob_key in self.forced_key:
                         self.forced_time -= 1
                         self.forced_key.remove(self.zob_key)
                     if WIN == situation:
-                        self.translation_table[self.zob_key]["candidates"] = [i]
+                        self.translation_table[self.zob_key][0] = [i]
                     elif LOSE == situation:
-                        self.translation_table[self.zob_key]["candidates"].remove(i)
+                        self.translation_table[self.zob_key][0].remove(i)
                     if beta <= alpha:
                         break
+                
+                # new_candidates = [item for item in zip(self.candidates, result_T)]
+                # self.candidates = [i[0] for i in sorted(new_candidates, key=lambda x: x[1], reverse=False)]
+                # self.translation_table[self.zob_key][0] = self.candidates.copy()
             else:
                 situation = WIN
                 for i in self.candidates:
@@ -543,9 +550,9 @@ class Renjuy(BlackWhite):
                     beta = min(beta, situation)
                     self.undo()
                     if LOSE == situation:
-                        self.translation_table[self.zob_key]["candidates"] = [i]
+                        self.translation_table[self.zob_key][0] = [i]
                     elif WIN == situation:
-                        self.translation_table[self.zob_key]["candidates"].remove(i)
+                        self.translation_table[self.zob_key][0].remove(i)
                     if beta <= alpha:
                         break
 
@@ -583,13 +590,17 @@ class Renjuy(BlackWhite):
             pos, fen, fin_poss, fin_result = self.min_max(max_deep=d)
 
             # print(d, fin_poss, fin_result)
+            new_candidates = [item for item in zip(fin_poss, fin_result) if item[1] > LOSE]
 
-            self.candidates = [i[0] for i in sorted(zip(fin_poss, fin_result), key=lambda x: x[1], reverse=True)]
-            self.translation_table[self.zob_key]["candidates"] = self.candidates.copy()
+            if not new_candidates:
+                return random.choice(self.candidates), LOSE
+            else:
+                self.candidates = [i[0] for i in sorted(new_candidates, key=lambda x: x[1], reverse=True)]
+                self.translation_table[self.zob_key][0] = self.candidates.copy()
 
-            if fen == WIN:
-                logger.debug(f"break in iterative_deepening @ deep = {d}")
-                break
+                if fen == WIN:
+                    logger.debug(f"break in iterative_deepening @ deep = {d}")
+                    break
 
         logger.debug(f"result：{fin_result}")
         logger.debug(f"poss  ：{fin_poss}")

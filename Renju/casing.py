@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import sys
 from base import *
 
 
@@ -445,9 +446,12 @@ def test_case():
         g.load(ending)
         res, fen = g.iterative_deepening(3)
         
-        if fen == WIN and res == ans[idx]:
-            passing = "通过"
-            total_pass += 1
+        if fen == WIN:
+            if res == ans[idx]:
+                passing = "通过"
+                total_pass += 1
+            else:
+                passing = "半通过"
         else:
             passing = "未通过"
         
@@ -456,10 +460,10 @@ def test_case():
         total_time += time_cost
         total_move += cost_dict['move'][0]
         
-        logger.info(f"{ind_str}\t{passing}\t{time_cost}\t{cost_dict['move'][0]}")
+        logger.info(f"{ind_str}\t{passing}\t{time_cost}\t{cost_dict['move'][0]}\t{sys.getsizeof(g.translation_table)}")
     logger.info(f"汇总情况：\nAll\t{total_pass * 5}%\t{total_time//20}\t{total_move//20}")
 
 
 if __name__ == '__main__':
-    settling(case[1])
-    # test_case()
+    # settling(case[1])
+    test_case()
