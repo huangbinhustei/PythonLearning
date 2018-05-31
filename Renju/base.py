@@ -389,14 +389,9 @@ class BlackWhite:
                 self._winning(player, show=show, attack=attack)
 
         self._aoe(row, col, show=show)
-        # if show:
-        #     t = []
-        #     for k in self.translation_table.keys(): 
-        #         if self.translation_table[k][4] < self.step:
-        #             t.append(k)
-        #     for k in t:
-        #         del self.translation_table[k]
-        # print(f"{self.step}\t{len(self.translation_table)}")
+
+        if show:
+            self.translation_table.clear()
 
         return True
 
@@ -433,7 +428,6 @@ class BlackWhite:
             self.score.copy(),
             self.sub_score.copy(),
             self.forced,
-            self.step,
         ]
 
     def show_situation(self):
@@ -471,8 +465,8 @@ class Renjuy(BlackWhite):
         self.forced_time = 0
         self.forced_key = set([])
 
-    def probe(self, loc, show=True):
-        ret = BlackWhite.move(self, loc, show=show)
+    def probe(self, loc):
+        ret = BlackWhite.move(self, loc, show=False)
         if not ret:
             self.show_situation()
             logger.error(f"{loc}落子失败！\tself.winner = {self.winner}\nrecords = {self.records}")
@@ -497,7 +491,7 @@ class Renjuy(BlackWhite):
                 # result_T = []
                 situation = LOSE
                 for i in self.candidates:
-                    self.probe(i, show=False)
+                    self.probe(i)
                     if self.winner == self.player:
                         situation = WIN
                     elif self.winner != 2:
@@ -527,7 +521,7 @@ class Renjuy(BlackWhite):
             else:
                 situation = WIN
                 for i in self.candidates:
-                    self.probe(i, show=False)
+                    self.probe(i)
                     if self.winner == self.player:
                         situation = WIN
                     elif self.winner != 2:
@@ -566,7 +560,7 @@ class Renjuy(BlackWhite):
             for candidate in self.candidates:
                 self.forced_time = 0
                 self.forced_key = set([])
-                self.probe(candidate, show=False)
+                self.probe(candidate)
                 if self.winner == self.player:
                     exam = WIN
                 elif self.winner != 2:
@@ -590,17 +584,14 @@ class Renjuy(BlackWhite):
             pos, fen, fin_poss, fin_result = self.min_max(max_deep=d)
 
             # print(d, fin_poss, fin_result)
-            new_candidates = [item for item in zip(fin_poss, fin_result) if item[1] > LOSE]
+            new_candidates = [item for item in zip(fin_poss, fin_result)]
 
-            if not new_candidates:
-                return random.choice(self.candidates), LOSE
-            else:
-                self.candidates = [i[0] for i in sorted(new_candidates, key=lambda x: x[1], reverse=True)]
-                self.translation_table[self.zob_key][0] = self.candidates.copy()
+            self.candidates = [i[0] for i in sorted(new_candidates, key=lambda x: x[1], reverse=True)]
+            self.set_zob()
 
-                if fen == WIN:
-                    logger.debug(f"break in iterative_deepening @ deep = {d}")
-                    break
+            if fen == WIN:
+                logger.debug(f"break in iterative_deepening @ deep = {d}")
+                break
 
         logger.debug(f"result：{fin_result}")
         logger.debug(f"poss  ：{fin_poss}")
