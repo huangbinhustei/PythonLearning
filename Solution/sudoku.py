@@ -243,12 +243,9 @@ class SUDOKU:
 
     def solving(self):
         self.solve_from_dict()
-        if not self.blank:
-            return
+        if self.blank:
+            self.cage()
 
-        self.cage()
-        
-        return
 
 class DFF(SUDOKU):
     def __init__(self):
@@ -278,7 +275,6 @@ class DFF(SUDOKU):
         self.undo(row, col)
     
     def big_solving(self):
-        # self.solving()
         if self.blank:
             r, c = self.get_first_zero()
             for candidate in self.candidates[r][c]:
