@@ -2,77 +2,82 @@ from collections import defaultdict
 import time
 import copy
 
-
 grid1 = [
-    [2,0,4,0,0,6,0,0,5],
-    [0,0,3,5,0,0,9,2,0],
-    [0,0,5,0,4,0,8,0,7],
-    [5,0,0,0,2,8,6,7,3],
-    [3,2,7,0,0,0,0,0,0],
-    [4,6,0,7,0,1,2,0,0],
-    [1,0,2,0,6,0,0,0,0],
-    [0,0,9,0,8,2,0,0,0],
-    [8,0,6,9,0,5,1,4,0]]
-
+    [2, 0, 4, 0, 0, 6, 0, 0, 5],
+    [0, 0, 3, 5, 0, 0, 9, 2, 0],
+    [0, 0, 5, 0, 4, 0, 8, 0, 7],
+    [5, 0, 0, 0, 2, 8, 6, 7, 3],
+    [3, 2, 7, 0, 0, 0, 0, 0, 0],
+    [4, 6, 0, 7, 0, 1, 2, 0, 0],
+    [1, 0, 2, 0, 6, 0, 0, 0, 0],
+    [0, 0, 9, 0, 8, 2, 0, 0, 0],
+    [8, 0, 6, 9, 0, 5, 1, 4, 0]]
 
 grid2 = [
-    [5,8,4,6,2,7,0,0,0],
-    [0,0,0,9,0,0,0,0,0],
-    [9,0,7,0,0,0,0,0,6],
-    [0,0,0,0,3,0,0,0,0],
-    [8,0,6,0,5,0,0,4,0],
-    [0,4,0,7,0,9,0,0,1],
-    [0,0,8,0,0,0,0,3,0],
-    [1,6,0,3,0,0,2,0,7],
-    [0,2,5,8,0,1,0,6,4]]
-
+    [5, 8, 4, 6, 2, 7, 0, 0, 0],
+    [0, 0, 0, 9, 0, 0, 0, 0, 0],
+    [9, 0, 7, 0, 0, 0, 0, 0, 6],
+    [0, 0, 0, 0, 3, 0, 0, 0, 0],
+    [8, 0, 6, 0, 5, 0, 0, 4, 0],
+    [0, 4, 0, 7, 0, 9, 0, 0, 1],
+    [0, 0, 8, 0, 0, 0, 0, 3, 0],
+    [1, 6, 0, 3, 0, 0, 2, 0, 7],
+    [0, 2, 5, 8, 0, 1, 0, 6, 4]]
 
 grid3 = [
-    [0,0,0,5,1,9,3,8,0],
-    [6,0,0,0,0,3,0,0,5],
-    [0,0,0,0,0,0,0,4,0],
-    [0,4,0,0,0,0,0,9,8],
-    [1,7,0,0,0,2,0,0,0],
-    [0,0,5,0,4,0,0,0,0],
-    [0,0,0,0,6,0,0,0,4],
-    [8,0,0,0,0,0,2,0,0],
-    [0,0,0,0,0,4,0,5,1],]
-
+    [0, 0, 0, 5, 1, 9, 3, 8, 0],
+    [6, 0, 0, 0, 0, 3, 0, 0, 5],
+    [0, 0, 0, 0, 0, 0, 0, 4, 0],
+    [0, 4, 0, 0, 0, 0, 0, 9, 8],
+    [1, 7, 0, 0, 0, 2, 0, 0, 0],
+    [0, 0, 5, 0, 4, 0, 0, 0, 0],
+    [0, 0, 0, 0, 6, 0, 0, 0, 4],
+    [8, 0, 0, 0, 0, 0, 2, 0, 0],
+    [0, 0, 0, 0, 0, 4, 0, 5, 1], ]
 
 grid4 = [
-    [0,0,0,0,0,7,6,0,4],
-    [0,3,0,0,6,0,9,0,0],
-    [0,0,0,0,0,0,0,0,5],
-    [0,6,4,5,0,0,7,0,9],
-    [0,0,2,6,7,0,0,0,0],
-    [0,7,0,9,2,0,0,6,0],
-    [0,9,1,0,0,0,0,3,0],
-    [0,0,6,0,9,0,0,0,8],
-    [8,2,0,0,0,0,0,0,7]]
-
+    [0, 0, 0, 0, 0, 7, 6, 0, 4],
+    [0, 3, 0, 0, 6, 0, 9, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 5],
+    [0, 6, 4, 5, 0, 0, 7, 0, 9],
+    [0, 0, 2, 6, 7, 0, 0, 0, 0],
+    [0, 7, 0, 9, 2, 0, 0, 6, 0],
+    [0, 9, 1, 0, 0, 0, 0, 3, 0],
+    [0, 0, 6, 0, 9, 0, 0, 0, 8],
+    [8, 2, 0, 0, 0, 0, 0, 0, 7]]
 
 grid5 = [
-    [1,0,0,0,0,0,0,2,6],
-    [0,7,0,8,0,0,0,5,0],
-    [0,0,0,6,0,4,8,0,0],
-    [0,0,0,0,0,0,9,7,0],
-    [0,5,7,9,0,0,0,1,0],
-    [0,0,0,0,3,0,0,0,5],
-    [0,1,0,3,0,0,0,0,0],
-    [3,0,0,0,0,0,0,6,7],
-    [0,9,0,4,0,6,0,0,8]]
-
+    [1, 0, 0, 0, 0, 0, 0, 2, 6],
+    [0, 7, 0, 8, 0, 0, 0, 5, 0],
+    [0, 0, 0, 6, 0, 4, 8, 0, 0],
+    [0, 0, 0, 0, 0, 0, 9, 7, 0],
+    [0, 5, 7, 9, 0, 0, 0, 1, 0],
+    [0, 0, 0, 0, 3, 0, 0, 0, 5],
+    [0, 1, 0, 3, 0, 0, 0, 0, 0],
+    [3, 0, 0, 0, 0, 0, 0, 6, 7],
+    [0, 9, 0, 4, 0, 6, 0, 0, 8]]
 
 grid6 = [
-    [0,0,5,3,0,0,0,0,0],
-    [8,0,0,0,0,0,0,2,0],
-    [0,7,0,0,1,0,5,0,0],
-    [4,0,0,0,0,5,3,0,0],
-    [0,1,0,0,7,0,0,0,6],
-    [0,0,3,2,0,0,0,8,0],
-    [0,6,0,5,0,0,0,0,9],
-    [0,0,4,0,0,0,0,3,0],
-    [0,0,0,0,0,9,7,0,0],]
+    [0, 0, 5, 3, 0, 0, 0, 0, 0],
+    [8, 0, 0, 0, 0, 0, 0, 2, 0],
+    [0, 7, 0, 0, 1, 0, 5, 0, 0],
+    [4, 0, 0, 0, 0, 5, 3, 0, 0],
+    [0, 1, 0, 0, 7, 0, 0, 0, 6],
+    [0, 0, 3, 2, 0, 0, 0, 8, 0],
+    [0, 6, 0, 5, 0, 0, 0, 0, 9],
+    [0, 0, 4, 0, 0, 0, 0, 3, 0],
+    [0, 0, 0, 0, 0, 9, 7, 0, 0], ]
+
+grid7 = [
+    [0, 0, 0, 0, 7, 0, 0, 0, 0],
+    [0, 0, 0, 1, 0, 5, 9, 0, 2],
+    [0, 0, 0, 0, 0, 9, 0, 3, 0],
+    [8, 0, 0, 0, 0, 0, 0, 0, 3],
+    [6, 0, 4, 2, 0, 0, 0, 0, 0],
+    [0, 9, 0, 0, 4, 0, 0, 0, 8],
+    [1, 2, 0, 0, 0, 0, 0, 7, 0],
+    [0, 7, 0, 0, 9, 0, 1, 0, 0],
+    [0, 6, 5, 0, 0, 3, 2, 0, 9], ]
 
 
 class SUDOKU:
@@ -91,7 +96,7 @@ class SUDOKU:
             line_grid = []
             for col in range(9):
                 line_grid.append(0)
-                line_candidates.append([1,2,3,4,5,6,7,8,9])
+                line_candidates.append([1, 2, 3, 4, 5, 6, 7, 8, 9])
             self.candidates.append(line_candidates)
             self.grid.append(line_grid)
 
@@ -104,14 +109,14 @@ class SUDOKU:
     def checkout(self, row, col, shu):
         if self.grid[row][col]:
             return shu == self.grid[row][col]
-        
+
         for i in range(9):
             if self.grid[row][i] == shu or self.grid[i][col] == shu:
                 return False
 
         for i in range(3):
             for j in range(3):
-                if self.grid[row//3*3+i][col//3*3+j] == shu:
+                if self.grid[row // 3 * 3 + i][col // 3 * 3 + j] == shu:
                     return False
 
         self.grid[row][col] = shu
@@ -123,20 +128,20 @@ class SUDOKU:
         self.grid[row][col] = 0
 
     def danger(self, row, col, shu):
-        def pop(row, col, shu):
-            if self.grid[row][col] == 0 and shu in self.candidates[row][col]:
-                self.candidates[row][col].remove(shu)
-                if len(self.candidates[row][col]) == 1:
+        def pop(_row, _col):
+            if self.grid[_row][_col] == 0 and shu in self.candidates[_row][_col]:
+                self.candidates[_row][_col].remove(shu)
+                if len(self.candidates[_row][_col]) == 1:
                     # 假如排除不可能数字之后，一个位置仅可能是一个数字
-                    self.move(row, col, self.candidates[row][col][0])
-        
+                    self.move(_row, _col, self.candidates[_row][_col][0])
+
         for i in range(9):
-            pop(row, i, shu)
-            pop(i, col, shu)
+            pop(row, i)
+            pop(i, col)
 
         for i in range(3):
             for j in range(3):
-                pop(row//3 * 3 + i, col //3 * 3 + j, shu)
+                pop(row // 3 * 3 + i, col // 3 * 3 + j)
 
     def move(self, row, col, shu):
         ret = self.checkout(row, col, shu)
@@ -144,7 +149,7 @@ class SUDOKU:
             print(f'落子失败{row, col, shu}, {self.grid[row][col]}')
             exit(1)
         self.danger(row, col, shu)
-    
+
     def update(self, grid):
         self.__init__()
         for row, line in enumerate(grid):
@@ -210,10 +215,10 @@ class SUDOKU:
             ret = defaultdict(list)
             for row in range(3):
                 for col in range(3):
-                    if 0 == self.grid[l*3+row][t*3+col]:
-                        for maybe in self.candidates[l*3+row][t*3+col]:
-                            ret[maybe].append([l*3+row, t*3+col])
-            
+                    if 0 == self.grid[l * 3 + row][t * 3 + col]:
+                        for maybe in self.candidates[l * 3 + row][t * 3 + col]:
+                            ret[maybe].append([l * 3 + row, t * 3 + col])
+
             # 如果行相同，过滤行，如果列相同，过滤列
             for k, v in ret.items():
                 rows = [i[0] for i in v]
@@ -221,12 +226,11 @@ class SUDOKU:
                     # 说明这个数只可能在这一行，而它又必须在九宫之中
                     cage_row = rows[0]
                     for _col in range(9):
-                        if _col //3 != t and self.grid[cage_row][_col] == 0 and k in self.candidates[cage_row][_col]:
+                        if _col // 3 != t and self.grid[cage_row][_col] == 0 and k in self.candidates[cage_row][_col]:
                             self.candidates[cage_row][_col].remove(k)
                             if len(self.candidates[cage_row][_col]) == 1:
                                 self.move(cage_row, _col, self.candidates[cage_row][_col][0])
 
-                
                 cols = [i[1] for i in v]
                 if len(set(cols)) == 1:
                     # 说明这个数只可能在这一列，而它又必须在九宫之中
@@ -267,30 +271,28 @@ class DFF(SUDOKU):
 
         if self.blank == 0:
             return True
-        
+
         r, c = self.get_first_zero()
         for candidate in self.candidates[r][c]:
             if self.search(r, c, candidate):
                 self.winning()
         self.undo(row, col)
-    
+
     def big_solving(self):
         if self.blank:
             r, c = self.get_first_zero()
             for candidate in self.candidates[r][c]:
                 self.search(r, c, candidate)
-        # for offset, l in enumerate(self.protal):
-        #     print(l + ': ' + ', '.join([g[offset] for g in self.solutions]))
+        for offset, l in enumerate(self.protal):
+            print(l + ': ' + ', '.join([g[offset] for g in self.solutions]))
 
 
-
-for ind, grid in enumerate([grid1, grid2, grid3, grid4, grid5, grid6]):
+for ind, grid in enumerate([grid1, grid2, grid3, grid4, grid5, grid6, grid7]):
     start = time.time()
 
     s = DFF()
     s.update(grid)
     s.solving()
     s.big_solving()
-    print(f'第{ind + 1}题：词典{s.dict_count}，搜索{s.search_count}，解{len(s.solutions)}组，耗时{(time.time() - start)* 1000:.2f}ms')
-
-
+    print(
+        f'第{ind + 1}题：词典{s.dict_count}，搜索{s.search_count}，解{len(s.solutions)}组，耗时{(time.time() - start) * 1000:.2f}ms')
